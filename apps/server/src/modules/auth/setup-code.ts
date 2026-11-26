@@ -1,31 +1,42 @@
-import { randomInt, timingSafeEqual } from 'node:crypto'
-import { count } from 'drizzle-orm'
+import { createHash, randomInt, timingSafeEqual } from 'node:crypto'
+import { count, eq } from 'drizzle-orm'
 import type { Database } from '../../database.ts'
-import { users } from '../../db/schema.ts'
+import { instanceSettings, users } from '../../db/schema.ts'
 import type { Logger } from '../../logger.ts'
 
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const codeLength = 8
 
-/** The one-time code that proves the person setting up the server can read its log. */
-export function createSetupCode() {
-  let code: string | undefined
+const hashCode = (code: string) => createHash('sha256').update(code.trim().toUpperCase()).digest()
 
-  return {
-    /** Prints a fresh code to the log, but only while no account exists. */
-    async issueIfNoAccount(database: Database, logger: Logger) {
-      const [row] = await database.db.select({ total: count() }).from(users)
-      if (row?.total !== 0) return
-      code = Array.from({ length: codeLength }, () => alphabet[randomInt(alphabet.length)]).join('')
-      logger.info({ setupCode: code }, 'setup code for the first account')
-    },
-    matches(candidate: string) {
-      if (code === undefined) return false
-      const expected = Buffer.from(code)
-      const given = Buffer.from(candidate.trim().toUpperCase())
-      return expected.length === given.length && timingSafeEqual(expected, given)
-    },
+/**
+ * The one-time code that proves the person setting up the server can read its log.
+ * Only a hash is stored, in the database, so every instance agrees on it.
+ * Needs the instance settings row to exist.
+ */
+export async function issueSetupCode({ db }: Database, logger: Logger) {
+  const [row] = await db.select({ total: count() }).from(users)
+  if (row?.total !== 0) {
+    await db.update(instanceSettings).set({ setupCodeHash: null }).where(eq(instanceSettings.id, 1))
+    return
   }
+  const code = Array.from({ length: codeLength }, () => alphabet[randomInt(alphabet.length)]).join(
+    '',
+  )
+  await db
+    .update(instanceSettings)
+    .set({ setupCodeHash: hashCode(code).toString('hex') })
+    .where(eq(instanceSettings.id, 1))
+  logger.info({ setupCode: code }, 'setup code for the first account')
 }
 
-export type SetupCode = ReturnType<typeof createSetupCode>
+export async function isSetupCode({ db }: Database, candidate: string) {
+  const [row] = await db
+    .select({ hash: instanceSettings.setupCodeHash })
+    .from(instanceSettings)
+    .where(eq(instanceSettings.id, 1))
+  if (!row?.hash) return false
+  const expected = Buffer.from(row.hash, 'hex')
+  const given = hashCode(candidate)
+  return expected.length === given.length && timingSafeEqual(expected, given)
+}

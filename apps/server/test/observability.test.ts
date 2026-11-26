@@ -15,7 +15,8 @@ const once = <T>(run: () => Promise<T>) => {
   return () => (pending ??= run())
 }
 
-const usersTable = 'create table users (id uuid);'
+const usersTable =
+  'create table users (id uuid); create table instance_settings (id int primary key, transcription_enabled boolean not null default false, auth_secret text not null, setup_code_hash text, updated_at timestamptz not null default now());'
 const shippedMigrations = join(import.meta.dirname, '../migrations')
 
 describe('007-observability: health, migrations and metrics against a real Postgres', () => {

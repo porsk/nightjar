@@ -1,7 +1,8 @@
 import type { Config } from './config.ts'
 import { createDatabase } from './database.ts'
 import { serializeFullError, type Logger } from './logger.ts'
-import { createSetupCode } from './modules/auth/setup-code.ts'
+import { createAuth, type Auth } from './modules/auth/auth.ts'
+import { issueSetupCode } from './modules/auth/setup-code.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
 import { startWeb } from './web.ts'
@@ -22,7 +23,11 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
   const database = createDatabase(config.DATABASE_URL, logger)
   const readiness = createReadiness(database.ping)
   const metrics = createMetrics()
-  const setupCode = createSetupCode()
+  let auth: Auth | undefined
+  const getAuth = () => {
+    if (!auth) throw new Error('auth is not ready')
+    return auth
+  }
 
   const web = await startWeb(
     {
@@ -30,7 +35,7 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
       readiness,
       metrics,
       database,
-      setupCode,
+      getAuth,
       trustProxy: config.NIGHTJAR_TRUST_PROXY,
       webDir: config.NIGHTJAR_WEB_DIR,
     },
@@ -48,7 +53,10 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
   let worker: ReturnType<typeof startWorker> | undefined
   const ready = database
     .migrate(migrationsFolder)
-    .then(() => setupCode.issueIfNoAccount(database, logger))
+    .then(async () => {
+      auth = await createAuth(database)
+      await issueSetupCode(database, logger)
+    })
     .then(
       () => {
         readiness.markMigrated()

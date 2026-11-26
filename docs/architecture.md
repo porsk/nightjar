@@ -111,7 +111,7 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 | Table | Key columns | Notes |
 |---|---|---|
 | `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
-| `instance_settings` | id (always 1), `transcription_enabled` (default false), `auth_secret`, updated_at | The only instance-wide table, so no `user_id`. `auth_secret` is made on first start and signs session cookies |
+| `instance_settings` | id (always 1), `transcription_enabled` (default false), `auth_secret`, `setup_code_hash`, updated_at | The only instance-wide table, so no `user_id`. `auth_secret` is made on first start and signs session cookies. `setup_code_hash` holds the hash of the current setup code until the first account exists |
 | `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
 | `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
 | `transcripts` | id (uuid), user_id, recording_id (unique), `model`, `language` (`hu`/`en`, detected), `text`, `is_user_edited`, created_at, updated_at | One per recording. User edits are never overwritten |

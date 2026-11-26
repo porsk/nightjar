@@ -2,18 +2,19 @@ import { buildApp } from '../../src/app.ts'
 import { createDatabase, type Database } from '../../src/database.ts'
 import { createLogger } from '../../src/logger.ts'
 import { createMetrics } from '../../src/metrics.ts'
-import { createSetupCode, type SetupCode } from '../../src/modules/auth/setup-code.ts'
+import type { Auth } from '../../src/modules/auth/auth.ts'
 import { createReadiness } from '../../src/readiness.ts'
 import { captureLogs } from './log-capture.ts'
 
-export function buildTestApp(
+export async function buildTestApp(
   options: {
     checkDatabase?: () => Promise<void>
     level?: string
     webDir?: string
     database?: Database
-    setupCode?: SetupCode
-    trustProxy?: boolean
+    auth?: Auth
+    trustProxy?: number
+    rateLimitMax?: number
   } = {},
 ) {
   const capture = captureLogs()
@@ -21,15 +22,18 @@ export function buildTestApp(
   const readiness = createReadiness(options.checkDatabase ?? (() => Promise.resolve()))
   const metrics = createMetrics()
   const database = options.database ?? createDatabase('postgres://localhost:1/unused', logger)
-  const setupCode = options.setupCode ?? createSetupCode()
-  const app = buildApp({
+  const app = await buildApp({
     logger,
     readiness,
     metrics,
     database,
-    setupCode,
+    getAuth: () => {
+      if (!options.auth) throw new Error('this test app has no auth')
+      return options.auth
+    },
     trustProxy: options.trustProxy,
+    rateLimitMax: options.rateLimitMax,
     webDir: options.webDir,
   })
-  return { app, capture, readiness, metrics, logger, setupCode }
+  return { app, capture, readiness, metrics, logger }
 }

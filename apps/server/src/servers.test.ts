@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createDatabase } from './database.ts'
 import { createLogger } from './logger.ts'
-import { createSetupCode } from './modules/auth/setup-code.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
 import { startWeb } from './web.ts'
@@ -30,7 +29,9 @@ describe('web and worker entry points', () => {
         readiness: createReadiness(() => Promise.resolve()),
         metrics: createMetrics(),
         database: createDatabase('postgres://localhost:1/unused', logger),
-        setupCode: createSetupCode(),
+        getAuth: () => {
+          throw new Error('no auth')
+        },
       },
       0,
     )

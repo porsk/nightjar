@@ -3,10 +3,11 @@ import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
 import { healthResponseSchema, readyResponseSchema } from '@nightjar/shared'
 import type { Database } from './database.ts'
+import { AppError } from './errors.ts'
 import type { Logger } from './logger.ts'
 import type { Metrics } from './metrics.ts'
+import type { Auth } from './modules/auth/auth.ts'
 import { registerAuthRoutes } from './modules/auth/routes.ts'
-import type { SetupCode } from './modules/auth/setup-code.ts'
 import type { Readiness } from './readiness.ts'
 
 export interface AppDependencies {
@@ -14,8 +15,11 @@ export interface AppDependencies {
   readiness: Readiness
   metrics: Metrics
   database: Database
-  setupCode: SetupCode
-  trustProxy?: boolean | undefined
+  /** Returns the auth instance, which exists once migrations are done. */
+  getAuth: () => Auth
+  /** Number of reverse proxies in front of the server. 0 trusts no forwarded headers. */
+  trustProxy?: number | undefined
+  rateLimitMax?: number | undefined
   webDir?: string | undefined
 }
 
@@ -28,18 +32,19 @@ const stackFrames = (error: Error) =>
 
 const apiPrefix = '/api/v1'
 
-export function buildApp({
+export async function buildApp({
   logger,
   readiness,
   metrics,
   database,
-  setupCode,
+  getAuth,
   trustProxy,
+  rateLimitMax,
   webDir,
 }: AppDependencies) {
   const app = Fastify({
     loggerInstance: logger,
-    trustProxy: trustProxy ?? false,
+    trustProxy: (_address: string, hop: number) => hop < (trustProxy ?? 0),
     logController: new LogController({ disableRequestLogging: true }),
   })
 
@@ -54,8 +59,12 @@ export function buildApp({
     return undefined
   })
 
-  app.register(rateLimit, { max: 300, timeWindow: '1 minute' })
-  registerAuthRoutes(app, { database, setupCode })
+  await app.register(rateLimit, {
+    max: rateLimitMax ?? 300,
+    timeWindow: '1 minute',
+    errorResponseBuilder: () => new AppError(429, 'too_many_attempts'),
+  })
+  registerAuthRoutes(app, { database, getAuth })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'

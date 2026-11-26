@@ -5,6 +5,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createDatabase, type Database } from '../src/database.ts'
 import { accounts, instanceSettings, sessions, users } from '../src/db/schema.ts'
 import { createLogger } from '../src/logger.ts'
+import { createAuth } from '../src/modules/auth/auth.ts'
+import { issueSetupCode } from '../src/modules/auth/setup-code.ts'
 import { expectNoMarkersInLogs } from './support/log-capture.ts'
 import { startPostgres } from './support/postgres.ts'
 import { buildTestApp } from './support/test-app.ts'
@@ -40,10 +42,11 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     await database.db.update(instanceSettings).set({ transcriptionEnabled: false })
   })
 
-  async function launch(options: { trustProxy?: boolean } = {}) {
-    const test = buildTestApp({ database, ...options })
+  async function launch(options: { trustProxy?: number; rateLimitMax?: number } = {}) {
+    const auth = await createAuth(database)
+    const test = await buildTestApp({ database, auth, ...options })
     test.readiness.markMigrated()
-    await test.setupCode.issueIfNoAccount(database, test.logger)
+    await issueSetupCode(database, test.logger)
     await test.app.ready()
     const issued = test.capture.lines().find((line) => typeof line['setupCode'] === 'string')
     const setupCode = issued ? String(issued['setupCode']) : 'none'
@@ -149,7 +152,7 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   })
 
   it('AC-9: the session cookie is HttpOnly and SameSite=Lax, Secure over https', async () => {
-    const { setup, login, request } = await launch({ trustProxy: true })
+    const { setup, login, request } = await launch({ trustProxy: 1 })
     await setup()
     const plain = await login('owner@example.test', password)
     expect(plain.statusCode).toBe(200)
@@ -165,6 +168,17 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     expect(overHttps.statusCode).toBe(200)
     expect(String(overHttps.headers['set-cookie']).toLowerCase()).toContain('secure')
     expect(String(overHttps.headers['set-cookie']).toLowerCase()).toContain('httponly')
+  })
+
+  it('AC-9: an active session is renewed and the new cookie is passed on', async () => {
+    const { setup, request } = await launch()
+    const cookie = cookieOf(await setup())
+    await database.db.execute(sql`update sessions set expires_at = now() + interval '5 days'`)
+    const response = await request('GET', '/api/v1/me', { cookie })
+    expect(response.statusCode).toBe(200)
+    expect(String(response.headers['set-cookie'])).toContain('better-auth.session_token=')
+    const [session] = await database.db.select().from(sessions)
+    expect(session?.expiresAt.getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600 * 1000)
   })
 
   it('AC-10: wrong password and unknown email give the same status and code', async () => {
@@ -184,6 +198,39 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
       expect((await login('owner@example.test', 'wrong password')).statusCode).toBe(401)
     }
     const blocked = await login('owner@example.test', password)
+    expect(blocked.statusCode).toBe(429)
+    expect(blocked.json()).toMatchObject({ error: { code: 'too_many_attempts' } })
+  })
+
+  it('AC-11: a burst of 20 parallel wrong logins lets at most 10 reach the password check', async () => {
+    const { setup, login } = await launch()
+    await setup()
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => login('owner@example.test', 'wrong password')),
+    )
+    const statuses = results.map((response) => response.statusCode)
+    expect(statuses.filter((status) => status === 401).length).toBeLessThanOrEqual(10)
+    expect(statuses.filter((status) => status === 429).length).toBeGreaterThanOrEqual(10)
+  })
+
+  it('AC-11: a spoofed leftmost X-Forwarded-For does not change who is counted, behind one proxy', async () => {
+    const { request } = await launch({ trustProxy: 1 })
+    const attempt = (forwardedFor: string) =>
+      request('POST', '/api/v1/auth/sign-in/email', {
+        payload: { email: 'nobody@example.test', password: 'wrong password' },
+        headers: { 'x-forwarded-for': forwardedFor },
+      })
+    for (let n = 0; n < 10; n++) {
+      expect((await attempt(`198.51.100.${String(n)}, 203.0.113.9`)).statusCode).toBe(401)
+    }
+    expect((await attempt('198.51.100.99, 203.0.113.9')).statusCode).toBe(429)
+    expect((await attempt('198.51.100.99, 203.0.113.10')).statusCode).toBe(401)
+  })
+
+  it('AC-11: the global limit answers 429 once a client is past it', async () => {
+    const { request } = await launch({ rateLimitMax: 3 })
+    for (let n = 0; n < 3; n++) expect((await request('GET', '/api/v1/setup')).statusCode).toBe(200)
+    const blocked = await request('GET', '/api/v1/setup')
     expect(blocked.statusCode).toBe(429)
     expect(blocked.json()).toMatchObject({ error: { code: 'too_many_attempts' } })
   })
@@ -240,6 +287,16 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     const withAccount = await launch()
     expect(withAccount.capture.lines().filter((line) => 'setupCode' in line)).toHaveLength(0)
     expect(withAccount.capture.text()).not.toContain(empty.setupCode)
+  })
+
+  it('AC-16: only a hash of the setup code is stored, and it is cleared once the account exists', async () => {
+    const { setup, setupCode } = await launch()
+    const [before] = await database.db.select().from(instanceSettings)
+    expect(before?.setupCodeHash).toMatch(/^[0-9a-f]{64}$/)
+    expect(before?.setupCodeHash).not.toContain(setupCode)
+    await setup()
+    const [after] = await database.db.select().from(instanceSettings)
+    expect(after?.setupCodeHash).toBeNull()
   })
 
   it('AC-17: a missing or wrong setup code answers 403, the right one works', async () => {

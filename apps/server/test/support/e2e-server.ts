@@ -11,7 +11,7 @@ const postgres = await startPostgres()
 const config = loadConfig({
   ...process.env,
   DATABASE_URL: postgres.getConnectionUri(),
-  NIGHTJAR_TRUST_PROXY: 'true',
+  NIGHTJAR_TRUST_PROXY: '1',
 })
 
 writeFileSync(e2eServerFiles.databaseUrl, postgres.getConnectionUri())

@@ -15,6 +15,13 @@
       "when": 1795717973947,
       "tag": "0001_bored_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795720230388,
+      "tag": "0002_wandering_kingpin",
+      "breakpoints": true
     }
   ]
 }

@@ -7,10 +7,9 @@ import type { Database } from '../../database.ts'
 import type { Logger } from '../../logger.ts'
 import { accounts, instanceSettings, users } from '../../db/schema.ts'
 import { AppError } from '../../errors.ts'
-import { createAuth, authBasePath, type Auth } from './auth.ts'
-import { createFailedAttempts } from './failed-attempts.ts'
+import { authBasePath, type Auth } from './auth.ts'
 import { hashPassword } from './password.ts'
-import type { SetupCode } from './setup-code.ts'
+import { isSetupCode } from './setup-code.ts'
 
 type App = FastifyInstance<Server, IncomingMessage, ServerResponse, Logger>
 
@@ -22,7 +21,6 @@ declare module 'fastify' {
 
 const apiPrefix = '/api/v1'
 const setupLockKey = 7_281_978
-const failedAttemptsLimit = { max: 10, windowMs: 60_000 }
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -31,6 +29,9 @@ declare module 'fastify' {
 }
 
 const publicRoute = { config: { public: true } }
+const strictRoute = {
+  config: { public: true, rateLimit: { max: 10, timeWindow: '1 minute' } },
+}
 
 const toHeaders = (raw: FastifyRequest['headers']) => {
   const headers = new Headers()
@@ -60,8 +61,7 @@ const toMe = (user: {
 
 const authErrorSchema = z.object({ code: z.string(), message: z.string() })
 
-function copyCookies(reply: FastifyReply, response: Response, secure: boolean) {
-  const cookies = response.headers.getSetCookie()
+function setCookies(reply: FastifyReply, cookies: string[], secure: boolean) {
   if (cookies.length === 0) return
   reply.header('set-cookie', secure ? cookies.map((cookie) => `${cookie}; Secure`) : cookies)
 }
@@ -71,7 +71,7 @@ async function sendAuthResponse(reply: FastifyReply, response: Response, secure:
   for (const [name, value] of response.headers) {
     if (name !== 'set-cookie' && name !== 'content-length') reply.header(name, value)
   }
-  copyCookies(reply, response, secure)
+  setCookies(reply, response.headers.getSetCookie(), secure)
   const text = await response.text()
   if (response.status < 400) return reply.send(text)
   const parsed = authErrorSchema.safeParse(JSON.parse(text || '{}'))
@@ -83,13 +83,9 @@ async function sendAuthResponse(reply: FastifyReply, response: Response, secure:
 
 export function registerAuthRoutes(
   app: App,
-  { database, setupCode }: { database: Database; setupCode: SetupCode },
+  { database, getAuth }: { database: Database; getAuth: () => Auth },
 ) {
   const { db } = database
-  let auth: Promise<Auth> | undefined
-  const getAuth = () => (auth ??= createAuth(database))
-  const loginFailures = createFailedAttempts(failedAttemptsLimit)
-  const setupFailures = createFailedAttempts(failedAttemptsLimit)
 
   app.decorateRequest('me', null)
 
@@ -104,16 +100,20 @@ export function registerAuthRoutes(
       init.body = JSON.stringify(request.body)
     }
     const url = `${request.protocol}://${request.host}${request.url}`
-    const response = await (await getAuth()).handler(new Request(url, init))
+    const response = await getAuth().handler(new Request(url, init))
     return sendAuthResponse(reply, response, request.protocol === 'https')
   }
 
-  app.addHook('onRequest', async (request) => {
+  app.addHook('onRequest', async (request, reply) => {
     const path = request.url.split('?')[0] ?? ''
     if (!path.startsWith(`${apiPrefix}/`)) return
     if (request.routeOptions.config.public) return
-    const session = await (await getAuth()).api.getSession({ headers: toHeaders(request.headers) })
+    const { headers, response: session } = await getAuth().api.getSession({
+      headers: toHeaders(request.headers),
+      returnHeaders: true,
+    })
     if (!session) throw new AppError(401, 'unauthorized')
+    setCookies(reply, headers.getSetCookie(), request.protocol === 'https')
     request.me = toMe(session.user)
   })
 
@@ -121,23 +121,19 @@ export function registerAuthRoutes(
     setupStatusSchema.parse({ needed: !(await accountExists()) }),
   )
 
-  app.post(`${apiPrefix}/setup`, publicRoute, async (request, reply) => {
+  app.post(`${apiPrefix}/setup`, strictRoute, async (request, reply) => {
     if (await accountExists()) throw new AppError(409, 'setup_done')
-    if (setupFailures.isBlocked(request.ip)) throw new AppError(429, 'too_many_attempts')
     const { setupCode: given } = z
       .object({ setupCode: z.string() })
       .catch({ setupCode: '' })
       .parse(request.body)
-    if (!setupCode.matches(given)) {
-      setupFailures.record(request.ip)
-      throw new AppError(403, 'invalid_setup_code')
-    }
+    if (!(await isSetupCode(database, given))) throw new AppError(403, 'invalid_setup_code')
     const parsed = setupRequestSchema.safeParse(request.body)
     if (!parsed.success) throw new AppError(400, 'invalid_request')
     const input = parsed.data
     const email = input.email.toLowerCase()
 
-    const authInstance = await getAuth()
+    const authInstance = getAuth()
     const password = await hashPassword(input.password)
     const user = await db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(${setupLockKey})`)
@@ -160,7 +156,7 @@ export function registerAuthRoutes(
         .values({ userId: created.id, accountId: created.id, providerId: 'credential', password })
       await tx
         .update(instanceSettings)
-        .set({ transcriptionEnabled: input.transcriptionEnabled })
+        .set({ transcriptionEnabled: input.transcriptionEnabled, setupCodeHash: null })
         .where(eq(instanceSettings.id, 1))
       return created
     })
@@ -171,16 +167,11 @@ export function registerAuthRoutes(
       asResponse: true,
     })
     if (!signedIn.ok) throw new Error('sign-in after setup failed')
-    copyCookies(reply, signedIn, request.protocol === 'https')
+    setCookies(reply, signedIn.headers.getSetCookie(), request.protocol === 'https')
     return reply.code(201).send(toMe(user))
   })
 
-  app.post(`${authBasePath}/sign-in/email`, publicRoute, async (request, reply) => {
-    if (loginFailures.isBlocked(request.ip)) throw new AppError(429, 'too_many_attempts')
-    const result = await forward(request, reply)
-    if (reply.statusCode === 401) loginFailures.record(request.ip)
-    return result
-  })
+  app.post(`${authBasePath}/sign-in/email`, strictRoute, forward)
 
   app.get(`${authBasePath}/get-session`, forward)
   app.post(`${authBasePath}/sign-out`, forward)

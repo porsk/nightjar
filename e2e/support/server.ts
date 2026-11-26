@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { request as playwrightRequest } from '@playwright/test'
 import { Client } from 'pg'
@@ -13,13 +14,16 @@ export function setupCodeFromLog() {
   return match[1]
 }
 
-/** Back to a fresh install: no accounts, transcription off. */
+/** Back to a fresh install: no accounts, transcription off, the logged setup code valid again. */
 export async function resetDatabase() {
   const client = new Client({ connectionString: readFileSync(e2eServerFiles.databaseUrl, 'utf8') })
   await client.connect()
   try {
     await client.query('truncate users cascade')
-    await client.query('update instance_settings set transcription_enabled = false')
+    await client.query(
+      'update instance_settings set transcription_enabled = false, setup_code_hash = $1',
+      [createHash('sha256').update(setupCodeFromLog()).digest('hex')],
+    )
   } finally {
     await client.end()
   }
@@ -61,5 +65,6 @@ export async function createAdmin(headers: Record<string, string>, uiLanguage: '
   }
 }
 
+/** One client address per test. The e2e server trusts one proxy hop, so a single entry is the client. */
 export const uniqueIp = () =>
   `10.${String(Math.floor(Math.random() * 250))}.${String(Math.floor(Math.random() * 250))}.${String(1 + Math.floor(Math.random() * 250))}`

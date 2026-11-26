@@ -69,5 +69,6 @@ export const instanceSettings = pgTable('instance_settings', {
   id: integer('id').primaryKey().default(1),
   transcriptionEnabled: boolean('transcription_enabled').notNull().default(false),
   authSecret: text('auth_secret').notNull(),
+  setupCodeHash: text('setup_code_hash'),
   updatedAt: updatedAt(),
 })
