@@ -13,7 +13,7 @@ import {
 
 const evening = new Date('2026-11-26T20:30:00Z')
 
-test.use({ timezoneId: 'Europe/Budapest' })
+test.use({ timezoneId: 'Europe/Budapest', serviceWorkers: 'block' })
 
 let headers: Record<string, string>
 

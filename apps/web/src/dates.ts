@@ -1,4 +1,6 @@
+import type { Language } from '@nightjar/shared'
 import type { TFunction } from 'i18next'
+import { formatDate } from './format.ts'
 
 const parseDay = (day: string) => new Date(`${day}T00:00:00Z`)
 const formatDay = (date: Date) => date.toISOString().slice(0, 10)
@@ -14,7 +16,7 @@ const format = (day: string, language: string, options: Intl.DateTimeFormatOptio
 
 /** "Thursday, November 26, 2026" */
 export const longDate = (day: string, language: string) =>
-  format(day, language, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+  formatDate(parseDay(day), language as Language, 'UTC')
 
 /** Today and yesterday by name, any other day in full. */
 export function dateLabel(day: string, today: string, language: string, t: TFunction) {
