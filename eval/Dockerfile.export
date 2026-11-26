@@ -7,3 +7,4 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 WORKDIR /eval
 COPY export/export_finetune.py ./export/
 ENTRYPOINT ["python", "export/export_finetune.py"]
+CMD ["sarpba-hu-turbo"]

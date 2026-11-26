@@ -14,8 +14,11 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file
 
 SHERPA_TAG = "v2.0.3"
-REPO_ID = "sarpba/whisper-hu-large-v3-turbo-finetuned"
-OUTPUT_DIR = "/eval/.cache/models/whisper-hu-turbo-ft"
+CACHE_MODELS = "/eval/.cache/models"
+FINETUNES = {
+    "sarpba-hu-turbo": ("sarpba/whisper-hu-large-v3-turbo-finetuned", "turbo", "whisper-hu-turbo-ft"),
+    "buzz-hu-large-v3": ("BuzzASR/hungarian", "large-v3", "whisper-buzz-hu-large-v3"),
+}
 
 RENAMES = [
     ("model.", ""),
@@ -68,16 +71,18 @@ def convert_to_openai_checkpoint(snapshot_dir, checkpoint_path):
     torch.save({"dims": dims, "model_state_dict": state}, checkpoint_path)
 
 
-def keep_only_int8_files():
+def keep_only_int8_files(base_model):
     for name in os.listdir("."):
-        if not (name.endswith(".int8.onnx") or name == "turbo-tokens.txt"):
+        if not (name.endswith(".int8.onnx") or name == f"{base_model}-tokens.txt"):
             os.remove(name)
 
 
 def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.chdir(OUTPUT_DIR)
-    snapshot_dir = snapshot_download(REPO_ID, allow_patterns=["*.json", "*.safetensors", "*.txt"])
+    repo_id, base_model, output_name = FINETUNES[sys.argv[1] if len(sys.argv) > 1 else "sarpba-hu-turbo"]
+    output_dir = f"{CACHE_MODELS}/{output_name}"
+    os.makedirs(output_dir, exist_ok=True)
+    os.chdir(output_dir)
+    snapshot_dir = snapshot_download(repo_id, allow_patterns=["*.json", "*.safetensors", "*.txt"])
     convert_to_openai_checkpoint(snapshot_dir, "finetuned.pt")
 
     export_script = "export-onnx.py"
@@ -89,9 +94,9 @@ def main():
 
     original_load_model = whisper.load_model
     whisper.load_model = lambda name, *args, **kwargs: original_load_model("finetuned.pt", *args, **kwargs)
-    sys.argv = [export_script, "--model", "turbo"]
+    sys.argv = [export_script, "--model", base_model]
     runpy.run_path(export_script, run_name="__main__")
-    keep_only_int8_files()
+    keep_only_int8_files(base_model)
 
 
 if __name__ == "__main__":
