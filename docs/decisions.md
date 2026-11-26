@@ -79,6 +79,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-26 | 11-26 | Owner runs Nightjar behind a reverse proxy on an own (sub)domain with https. The iPhone test (WP6) uses that setup | Owner |
 | D-27 | 11-26 | M1 mockups approved (`design/alkony/m1.html`): upload button on Home and entry, log out in Settings > Fiók, plain Markdown textarea (rendered when reading, no toolbar), 3-step wizard with download progress in Settings, mobile primary button at the bottom | Owner |
 | D-28 | 11-26 | iPhone recording test moves to a later phase (owner has no iPhone; a friend may test when the app is close to ready) | Owner |
+| D-29 | 11-26 | CI upgrade test, added right after the first release: start the previous release, save sample data, start the new image on the same database, check migrations ran and the data is intact | Owner: pulling a new version must just work |
 
 ## Proposed (approved together with the plan)
 

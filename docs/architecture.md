@@ -63,8 +63,9 @@ Two small interfaces, because each has several real implementations **and** a fa
 ```ts
 interface Transcriber {
   transcribe(wavPath: string, language: 'hu' | 'en' | 'auto'): Promise<Transcript> // text, language
+  dispose(): void // frees the model; created when jobs start, disposed when the queue is empty
 }
-// M1: sherpa-onnx (model picked by the eval) + Fake.
+// M1: sherpa-onnx (Whisper large-v3-turbo int8 by default, D-20) + Fake.
 
 interface AiProvider {
   enrichEntry(text: string, language: 'hu' | 'en'): Promise<EntrySuggestions> // summary, tags, people, places. Zod-validated
@@ -94,6 +95,37 @@ suggestions    id, entry_id, provider, model, payload (jsonb), status, created_a
 - `entry_date` + `time_zone` drive look-backs, so "on this day" is right regardless of server time zone.
 - `suggestions.provider` doubles as the record of "this entry was sent to Claude" - no separate audit table.
 - Delete is a real delete (with confirmation), including files.
+- Every table that holds user data also has a `user_id` (see "Ready for many users"). The sketch above is the
+  long-term shape; M1 builds only the subset below.
+
+### M1 data model
+
+The one place the M1 specs (`docs/specs/001` to `007`) take their tables from. Later milestones add columns and
+tables with forward-only migrations.
+
+```
+users ─< entries ─< recordings ─── transcripts (0 or 1)
+instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
+```
+
+| Table | Key columns | Notes |
+|---|---|---|
+| `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`), `entry_language` (`hu`/`en`/`auto`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
+| `instance_settings` | id (always 1), `transcription_enabled` (default false), updated_at | The only instance-wide table, so no `user_id` |
+| `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
+| `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
+| `transcripts` | id (uuid), user_id, recording_id (unique), `model`, `language` (`hu`/`en`, detected), `text`, `is_user_edited`, created_at, updated_at | One per recording. User edits are never overwritten |
+
+- Indexes: `entries (user_id, entry_date desc, created_at desc, id)`, GIN on `entries.search_vector`,
+  `recordings (entry_id)`, `recordings (status)`.
+- Every query filters by the signed-in user's `user_id`. Another user's row answers 404, never 403, so ids don't leak.
+- `entries.search_vector` is rebuilt in the same transaction whenever the body or a transcript of the entry changes.
+- Files: `/data/media/<user_id>/recordings/<recording_id>.<ext>` (original upload, as is) and
+  `/data/models/<model_id>/`. Only the storage module builds these paths.
+- Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
+  admins also get `model.updated { state, downloadedBytes, totalBytes }`.
+- Not in M1: journals, title, mood, favourites, tags, photos, prompts, suggestions, access tokens, `entries.time_zone`
+  (journals and title are open questions in `docs/specs/m1-summary.md`).
 
 ## 5. API
 
