@@ -137,23 +137,34 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 
 ## Docker image
 
-- Multi-stage build: install → build web → `pnpm deploy --prod` (only runtime deps) → runtime stage on
-  `node:26` slim + ffmpeg.
+- Multi-stage build (`docker/Dockerfile`): install and build web → separate `pnpm install --prod` for the server
+  (only runtime deps) → runtime stage on `node:26-trixie-slim` + ffmpeg. The server's `.ts` files are copied in as they are.
+- Not `pnpm deploy`: it copies workspace packages into `node_modules`, and Node refuses to strip types there.
+  A normal prod install keeps `@nightjar/shared` as a symlink, so type stripping works.
+- Fastify serves the built web app when `NIGHTJAR_WEB_DIR` is set (the image sets it).
 - Runs as a non-root user, only `/data` writable, `HEALTHCHECK` on `/healthz`, OCI labels.
 - No models inside the image, they download to `/data/models` on first start.
 - Built for `linux/amd64` and `linux/arm64` (Raspberry Pi 5, ARM NAS boxes). Built with buildx + QEMU in one job.
-- `docker/compose.yaml` for users: `nightjar` + `db`, one `.env` file. 
+- `docker/compose.yaml` for users: `nightjar` + `db` (Postgres 19), one `.env` file (`POSTGRES_PASSWORD`).
+  The app does not use the database yet.
 
 ## CI/CD (GitHub Actions)
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every PR and push to `main` | install (cached) → lint, typecheck, unit + integration tests → build image → e2e against the image. On `main`: push `edge` tag |
-| `release.yml` | release-please PR merged | release-please bumps the version and writes the changelog from conventional commits → build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance → GitHub release |
-| `nightly.yml` | nightly | real-model transcription tests + eval report |
+| `ci.yml` | every PR and push to `main` | install (cached) → `pnpm verify` (needs Docker for Testcontainers, Playwright browsers cached) → build image (amd64 on PRs). On `main`: build amd64 + arm64 and push `edge`. Reports upload on failure |
+| `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
+| `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
+| `nightly.yml` | nightly | real-model transcription tests + eval report. Not written yet, there are no real-model tests |
+
+- PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
+  the release PR (or switch to a PAT) if the checks do not show up.
+- The repo setting "Allow GitHub Actions to create and approve pull requests" must be on for release-please (it is on now).
+- PR titles are checked against the conventional commit format (`pr-title` job in `ci.yml`), since squash merge uses the title.
+- E2E still runs against `vite preview`. Switching it to the built image is a follow-up.
 
 - Images go to **Docker Hub** only: `porsk/nightjar`. Secrets needed: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
-- Dependabot for npm, Docker and Actions, weekly, grouped. CodeQL default setup (one click in repo settings).
+- Dependabot for npm, Docker and Actions, weekly, grouped. CodeQL runs from `codeql.yml` (do not also enable default setup).
 - Versioning: SemVer, `0.x` until 1.0. Database migrations only move forward and run on startup.
 
 ## Git workflow
@@ -167,7 +178,21 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 1. **Transcription eval**: 20 or so own clips (Hungarian and English, quiet and noisy, short and long) with
    hand-written reference text. Script measures word error rate and speed for Parakeet v3 and Whisper turbo
    (incl. a Hungarian fine-tune). Reports results to the owner, who picks the default model.
-2. **sherpa-onnx in Docker**: native addon loads on Node 26, slim image, amd64 and arm64.
+2. **sherpa-onnx in Docker**: done (2026-11-26). `sherpa-onnx-node` 2.0.3 on `node:26-trixie-slim`, Whisper tiny.en int8
+   (model downloaded at run time, 3 test clips).
+
+   | | amd64 (native) | arm64 (QEMU on an amd64 PC) |
+   |---|---|---|
+   | Native addon loads, transcribes correctly | yes | yes |
+   | Module load | 15 ms | 137 ms |
+   | Real-time factor (tiny.en, 2 threads) | 0.04 to 0.05 | 4.0 to 4.7 (emulated, not meaningful) |
+
+   Gotchas: no build tools needed (prebuilt per-platform packages, 33 MB on amd64). No `LD_LIBRARY_PATH` needed. The
+   arm64 RTF only shows that it runs; real numbers need an actual ARM box (Pi 5). Image size with ffmpeg and the app:
+   see the Docker image note below.
+   Image size (Docker Desktop, uncompressed): 1.02 GB for the app image. Debian's ffmpeg pulls in many libraries
+   (about 450 MB in `/usr/lib`); a smaller ffmpeg is a possible later optimisation.
 3. **TypeScript**: done. TS 7 is blocked by typescript-eslint, so we use TS 6.0 (D-14). Revisit when typescript-eslint supports 7.
-4. **Node type stripping**: server runs from `.ts` files in dev and in the image, including the shared package.
+4. **Node type stripping**: done. The server runs from `.ts` files in dev and in the image (amd64 and arm64), including
+   the shared package, as long as workspace packages stay symlinked (no `pnpm deploy`).
 5. **iPhone recording**: PWA recording on a real iPhone, what happens when the screen locks.

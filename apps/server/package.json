@@ -9,6 +9,7 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
+    "@fastify/static": "^10.1.12",
     "@nightjar/shared": "workspace:*",
     "fastify": "^5.12.8"
   },

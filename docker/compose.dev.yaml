@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:19
+    environment:
+      POSTGRES_USER: nightjar
+      POSTGRES_PASSWORD: nightjar
+      POSTGRES_DB: nightjar
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - nightjar-dev-db:/var/lib/postgresql
+
+volumes:
+  nightjar-dev-db:

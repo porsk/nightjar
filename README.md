@@ -7,11 +7,25 @@ turns recordings into searchable text, fully offline. Prompts, look-backs, mood,
 (Claude or a local model) to suggest summaries, tags, people and places, and an MCP server so your AI assistant can read your journal
 when you allow it.
 
-> Status: planning. Nothing to install yet.
+> Status: early development. The app only shows a hello page so far.
 
 Plan: [docs/plan-summary.md](docs/plan-summary.md)
 
 License: AGPL-3.0
+
+## Install
+
+You need Docker. Releases are published to Docker Hub as `porsk/nightjar` (`edge` is the latest main build).
+
+```
+cd docker
+cp .env.example .env     # set POSTGRES_PASSWORD
+docker compose up -d
+```
+
+Until the first release exists there is no `latest` tag. Until then, change the image in `docker/compose.yaml` to `porsk/nightjar:edge`.
+
+Then open http://localhost:3000. Data lives in the `nightjar-data` and `nightjar-db` volumes.
 
 ## Development
 

@@ -14,8 +14,9 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] Repo setup: git, LICENSE, README, CONTRIBUTING, pnpm workspace, lint/format
 - [x] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
-- [ ] Docker image + compose files
-- [ ] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
+- [x] Docker image + compose files
+- [~] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`). Written, `edge` publishes on first merge to main
+- [ ] Follow-up: run e2e against the Docker image instead of `vite preview`; nightly workflow once real-model tests exist
 - [ ] Design direction + M1 mockups approved
 - [ ] M1 specs approved
 
@@ -30,7 +31,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 |---|---|---|---|---|---|
 | 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
-| 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
+| 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | done, PR #28 waits on owner merge |
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 done; own clips + Soniox next |
 | 5 | #5 | Design directions | - | Approve desktop views | Alkony picked; desktop views running |
 | 6 | #6 | iPhone recording test page | WP3 | Open it on your iPhone | todo |

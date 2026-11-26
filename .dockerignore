@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+.git
+.github
+.claude
+docs
+eval
+e2e
+scripts
+design
+docker
+coverage
+test-results
+playwright-report
+*.md
+.env
+.env.*
