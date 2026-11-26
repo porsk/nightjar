@@ -6,8 +6,7 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 
 | # | Question | Options |
 |---|---|---|
-| O-5 | Speech recognition approach | Open. M0 eval compares options on accuracy (HU + EN), speed, hardware needs and cost. Free and local preferred. Owner decides from the report |
-| O-6 | TypeScript 7 | Spike in M0. If it doesn't work with lint/test tools, bring it back to the owner |
+| O-5 | Speech recognition approach | Open. M0 eval compares options on accuracy (HU + EN), speed, hardware needs and cost. Free and local preferred. Owner decides from the report. Public round (FLEURS, 30 clips/lang, 4 CPU): Whisper turbo HU 20.5% / EN 4.2% WER, Parakeet v3 HU 31.3% / EN 5.9% but 3x faster. See `eval/reports/public-2026-11-26.md`. Owner clips next |
 
 ## Requirements the owner asked for
 
@@ -61,6 +60,9 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-10 | 11-26 | Images published to Docker Hub as `porsk/nightjar` only | Owner's Docker Hub account. GHCR not asked for |
 | D-11 | 11-26 | Short backup guide (docs only) in M1. Export zip stays in backlog | Owner picked option A |
 | D-12 | 11-26 | High-level plan approved. Speech recognition stays open until the eval | Owner |
+| D-13 | 11-26 | Task tracking in GitHub: milestones M0 to M4, issues per WP / spec, labels. Docs keep decisions, requirements, specs | Owner asked for GitHub tracking |
+| D-14 | 11-26 | TypeScript 6 (latest 6.x) everywhere for now. Move to TS 7 once typescript-eslint supports it | typescript-eslint refuses TS 7. Owner picked A |
+| D-15 | 11-26 | Build for one user now, but architect for many: every row and file belongs to a user, every query scoped to the signed-in user, auth via Better Auth so OAuth providers can be added by config, no single-user shortcuts. Hosted (SaaS) version may come later, same code. Nothing of this is built before it is planned | Owner: family accounts on a homelab, OAuth and a hosted paid version later |
 
 ## Proposed (approved together with the plan)
 

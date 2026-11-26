@@ -176,3 +176,18 @@ No extra services. Everything is in the app process.
 | iOS PWA recording stops when the screen locks | Test on a real iPhone, report to the owner |
 | TypeScript 7 (native compiler) vs lint/test tooling | Try it, report to the owner |
 | CPU-only transcription speed | Measure in eval (real-time factor per model) |
+
+## Ready for many users (not built yet)
+
+The first version serves one person, but nothing should assume that. Later: family accounts on a homelab, OAuth
+sign-in, maybe a hosted version.
+
+| Rule | Why |
+|---|---|
+| Every table row (entries, audio, photos, tags, journals, jobs) has a `user_id`; every query filters by the signed-in user | Adding accounts later is a feature, not a rewrite |
+| API tests check that one user can never read or change another user's data | Cheap now, critical later |
+| Files live under per-user folders and are only touched through one storage module | Per-user quotas, backup or object storage later without hunting paths |
+| Auth through Better Auth only; no hand-rolled sessions | OAuth providers are config + plugin, not new code |
+| First account made in the setup wizard is the admin | Natural place for "invite people" later |
+| Settings are per user (language, time zone); only server things (AI keys, models) are instance-wide | Each person keeps their own setup |
+| Jobs carry the `user_id` and only need Postgres | Workers can move to their own process when a hosted version needs to scale |

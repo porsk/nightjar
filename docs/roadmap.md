@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 running. WP1 repo skeleton, WP4 speech eval, WP5 round 2 (owner likes Alkony most, Erdő too; Tinta dropped; 3 new options coming), GitHub milestones + issues being created.
+**Now:** M0 running. WP1 pushed, TS 6 switch + WP2 + WP3 running. WP4 public eval done, waiting on owner clips. WP5 waiting on owner's pick.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -24,15 +24,17 @@ Tests: a sample test per layer (unit, API, e2e with fake mic, screenshot, axe) p
 
 ### M0 work packages
 
-| WP | What | Who | Depends on | Needs from owner |
-|---|---|---|---|---|
-| 1 | Repo skeleton: git, workspace, TS strict, lint/format, LICENSE/README. TS 7 + Node type stripping spikes | Sonnet agent | - | - |
-| 2 | Test harness: Vitest, Testcontainers, Playwright (fake mic, screenshots, traces, axe), `pnpm verify`, AC check | Sonnet agent | WP1 | - |
-| 3 | Docker image + compose, CI workflow, sherpa-onnx in Docker (amd64 + arm64) spike | Sonnet agent | WP1 | GitHub remote + `DOCKERHUB_TOKEN` (only for the publish step) |
-| 4 | Speech eval: script + public HU/EN clips, local free engines, report (accuracy, speed, RAM, cost) | Sonnet agent | - | ~20 own clips later (round 2) |
-| 5 | Design: 2 or 3 visual directions as HTML mockups | Sonnet agent | - | Pick a direction |
-| 6 | iPhone recording spike: tiny test page | Sonnet agent | WP3 | Open it on your iPhone |
-| 7 | M1 specs with test plans | Main session (Opus) | WP5 | Approve specs |
+Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/GitHub CLI/gh.exe"`). This table is the summary.
+
+| WP | Issue | What | Depends on | Needs from owner | Status |
+|---|---|---|---|---|---|
+| 1 | #1 | Repo skeleton + TS 7 / type stripping spikes | - | - | pushed; switching to TS 6 (D-14) |
+| 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | running |
+| 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
+| 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | public round done (`eval/reports/public-2026-11-26.md`) |
+| 5 | #5 | Design directions | - | Pick a direction | round 2 ready (5 directions) |
+| 6 | #6 | iPhone recording test page | WP3 | Open it on your iPhone | todo |
+| 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | todo |
 
 Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 
