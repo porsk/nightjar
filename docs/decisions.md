@@ -71,6 +71,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-19 | 11-26 | CI checks PR titles are conventional commits. CodeQL runs as a workflow file, not the one-click setup | Owner OK |
 | D-20 | 11-26 | Default speech model: Whisper large-v3-turbo (int8, sherpa-onnx). Final pick after owner clips + Soniox yardstick | Best speed/accuracy trade-off. Owner homelab: old 4-core i5, no GPU, 8 GB RAM shared with other services |
 | D-21 | 11-26 | Hardware target = owner homelab (4 cores, 8 GB shared). Transcribe one job at a time; load the model only while jobs run | Turbo peaks ~2.5 GB RAM; must not starve other services |
+| D-22 | 11-26 | Desktop: the sidebar record button is hidden on Home (big button is there) and while recording | Owner |
 
 ## Proposed (approved together with the plan)
 
