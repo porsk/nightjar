@@ -1,3 +1,4 @@
+import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
 import { healthResponseSchema, readyResponseSchema } from '@nightjar/shared'
@@ -53,6 +54,7 @@ export function buildApp({
     return undefined
   })
 
+  app.register(rateLimit, { max: 300, timeWindow: '1 minute' })
   registerAuthRoutes(app, { database, setupCode })
 
   app.addHook('onResponse', async (request, reply) => {
