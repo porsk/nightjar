@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -56,23 +56,24 @@ describe('002-text-entries: writer', () => {
       ...signedIn(),
       'POST /api/v1/entries': () => json(entry({ bodyMd: 'hello world' }), 201),
     })
-    const user = setup()
     renderApp('/write')
-    await user.type(await screen.findByLabelText('Entry text'), 'hello')
-    await advance(600)
-    await user.type(screen.getByLabelText('Entry text'), ' world')
-    await advance(800)
-    expect(calls.filter((call) => call.key === 'POST /api/v1/entries')).toHaveLength(0)
-    await vi.waitFor(
-      () => {
-        expect(calls.filter((call) => call.key === 'POST /api/v1/entries')).toHaveLength(1)
-      },
-      { timeout: 1500 },
-    )
-    const posts = calls.filter((call) => call.key === 'POST /api/v1/entries')
-    expect(posts).toHaveLength(1)
-    expect(posts[0]?.body).toEqual({ bodyMd: 'hello world', entryDate: '2026-11-26' })
-    expect(await screen.findByText('Saved 21:30')).toBeInTheDocument()
+    const textarea = await screen.findByLabelText('Entry text')
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    vi.setSystemTime(new Date('2026-11-26T20:30:00Z'))
+    const posts = () => calls.filter((call) => call.key === 'POST /api/v1/entries')
+    const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
+    fireEvent.change(textarea, { target: { value: 'hello' } })
+    await wait(600)
+    fireEvent.change(textarea, { target: { value: 'hello world' } })
+    await wait(999)
+    expect(posts()).toHaveLength(0)
+    await wait(1)
+    expect(posts()).toHaveLength(1)
+    expect(posts()[0]?.body).toEqual({ bodyMd: 'hello world', entryDate: '2026-11-26' })
+    await wait(5000)
+    expect(posts()).toHaveLength(1)
+    await wait(0)
+    expect(screen.getByText('Saved 21:30')).toBeInTheDocument()
   })
 
   it('AC-2: while the text is empty nothing is created', async () => {

@@ -116,14 +116,20 @@ export function registerEntryRoutes(
   app.delete(`${entriesPath}/:id`, async (request, reply) => {
     const user = me(request)
     const id = entryId(request.params)
-    const [row] = await db.select({ id: entries.id }).from(entries).where(ownedBy(user.id, id))
-    if (!row) throw new AppError(404, 'entry_not_found')
-    const files = await db
-      .select({ key: recordings.filePath })
-      .from(recordings)
-      .where(and(eq(recordings.entryId, id), eq(recordings.userId, user.id)))
-    for (const { key } of files) await storage.remove(key)
-    await db.delete(entries).where(ownedBy(user.id, id))
+    await db.transaction(async (tx) => {
+      const [row] = await tx
+        .select({ id: entries.id })
+        .from(entries)
+        .where(ownedBy(user.id, id))
+        .for('update')
+      if (!row) throw new AppError(404, 'entry_not_found')
+      const files = await tx
+        .select({ key: recordings.filePath })
+        .from(recordings)
+        .where(and(eq(recordings.entryId, id), eq(recordings.userId, user.id)))
+      for (const { key } of files) await storage.remove(key)
+      await tx.delete(entries).where(ownedBy(user.id, id))
+    })
     return reply.code(204).send()
   })
 }

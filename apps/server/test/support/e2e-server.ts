@@ -1,4 +1,4 @@
-import { appendFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Writable } from 'node:stream'
 import { e2eServerFiles } from '../../../../e2e/support/server-files.ts'
@@ -6,6 +6,11 @@ import { loadConfig } from '../../src/config.ts'
 import { createLogger } from '../../src/logger.ts'
 import { start } from '../../src/start.ts'
 import { startPostgres } from './postgres.ts'
+
+const webDir = process.env['NIGHTJAR_WEB_DIR']
+while (webDir && !existsSync(join(webDir, 'index.html'))) {
+  await new Promise((resolve) => setTimeout(resolve, 500))
+}
 
 const postgres = await startPostgres()
 const config = loadConfig({

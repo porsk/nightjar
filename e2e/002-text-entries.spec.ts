@@ -162,7 +162,7 @@ test.describe('002-text-entries: write, edit, date and delete', () => {
 
     await page.getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
-    await expect(page).toHaveURL(/\/timeline$/)
+    await expect(page).toHaveURL(new RegExp('/$'))
     expect(await readEntries()).toHaveLength(0)
     expect(await countRecordings()).toBe(0)
     for (const key of keys) expect(fileExists(key)).toBe(false)
@@ -177,7 +177,7 @@ test.describe('002-text-entries: write, edit, date and delete', () => {
     await page.goto(`/entries/${entryId}/edit`)
     await page.getByRole('button', { name: 'Delete entry' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
-    await expect(page).toHaveURL(/\/timeline$/)
+    await expect(page).toHaveURL(new RegExp('/$'))
     expect(await readEntries()).toHaveLength(0)
     for (const key of keys) expect(fileExists(key)).toBe(false)
   })
@@ -201,6 +201,33 @@ test.describe('002-text-entries: write, edit, date and delete', () => {
   test('AC-11: another entry id shows "Entry not found."', async ({ page }) => {
     await page.goto('/entries/6f1c5c0e-7f0c-4a53-8f3a-0d6c1f0a9b11')
     await expect(page.getByText('Entry not found.')).toBeVisible()
+  })
+
+  test('AC-4: a Markdown image from another site is never requested, and the page still works', async ({
+    page,
+  }) => {
+    const { entryId } = await seedEntry({
+      bodyMd: 'before ![tracker](https://images.example.test/pixel.png) after',
+      entryDate: '2026-11-26',
+    })
+    const requested: string[] = []
+    page.on('response', (response) => requested.push(response.url()))
+    const violations: string[] = []
+    page.on('console', (message) => {
+      if (message.text().includes('Content Security Policy')) violations.push(message.text())
+    })
+
+    await page.goto(
+      `http://localhost:${process.env['NIGHTJAR_E2E_SERVER_PORT'] ?? ''}/entries/${entryId}`,
+    )
+    await expect(page.getByTestId('entry-body')).toContainText('before')
+    await page.getByRole('button', { name: 'Change date' }).click()
+    await expect(page.getByRole('button', { name: '1', exact: true })).toBeVisible()
+    await page.waitForTimeout(500)
+
+    expect(requested.some((url) => url.includes('images.example.test'))).toBe(false)
+    expect(violations.some((text) => text.includes('images.example.test'))).toBe(true)
+    expect(violations.filter((text) => !text.includes('images.example.test'))).toEqual([])
   })
 })
 

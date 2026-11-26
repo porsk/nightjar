@@ -43,7 +43,7 @@ export function EntryPage() {
   const remove = async () => {
     await deleteEntry(id)
     queryClient.removeQueries({ queryKey: entryQuery(id).queryKey })
-    await navigate('/timeline', { replace: true })
+    await navigate('/', { replace: true })
   }
 
   return (

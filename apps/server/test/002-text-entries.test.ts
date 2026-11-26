@@ -94,6 +94,27 @@ describe('002-text-entries: entries API against a real Postgres', () => {
     expect(row).toMatchObject({ userId: alice.id, bodyMd: 'first words and more' })
   })
 
+  it('AC-4: every response carries a Content-Security-Policy that blocks remote images', async () => {
+    const { call } = await launch()
+    const response = await call(null, 'GET', '/healthz')
+    const policy = String(response.headers['content-security-policy'])
+    expect(policy).toContain("default-src 'self'")
+    expect(policy).toContain("img-src 'self' data: blob:")
+    expect(policy).toContain("frame-ancestors 'none'")
+    expect(policy).not.toContain('unsafe-inline')
+  })
+
+  it('AC-9: deleting an entry that is already gone answers 404 and removes nothing else', async () => {
+    const { alice, bob, call } = await launch()
+    const theirs = (await call(bob, 'POST', '/api/v1/entries', { bodyMd: 'theirs' })).json<{
+      id: string
+    }>()
+    const files = await seedRecordings(bob.id, theirs.id, ['kept'])
+    const response = await call(alice, 'DELETE', `/api/v1/entries/${theirs.id}`)
+    expect(response.statusCode).toBe(404)
+    expect(existsSync(join(dataDir, files[0] ?? ''))).toBe(true)
+  })
+
   it('AC-8: GET returns the text and date of an entry', async () => {
     const { alice, call } = await launch()
     const created = await call(alice, 'POST', '/api/v1/entries', {

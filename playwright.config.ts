@@ -50,6 +50,7 @@ export default defineConfig({
         PORT: serverPort,
         NIGHTJAR_METRICS_PORT: metricsPort,
         NIGHTJAR_DATA_DIR: path.join(e2eDir, 'data'),
+        NIGHTJAR_WEB_DIR: path.join(import.meta.dirname, 'apps/web/dist'),
       },
       reuseExistingServer: false,
       timeout: 120_000,

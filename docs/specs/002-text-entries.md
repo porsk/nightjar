@@ -30,7 +30,7 @@ Out (not now): title, mood, tags, photos, journals, favourites, Markdown toolbar
 - **AC-6** Given the clock at 2026-11-26 23:30 UTC and the user's time zone Europe/Budapest, when a new entry is created, then its `entry_date` is 2026-11-27.
 - **AC-7** Given an `entryDate` after today in the user's time zone, or not a valid date, or a body over 100 000 characters, when the API is called, then it answers 400 with a stable error code and nothing changes.
 - **AC-8** Given an existing entry, when the user presses "Szerkesztés", then the writer opens titled "Bejegyzés szerkesztése" with the current text and date, and edits autosave as in AC-2.
-- **AC-9** Given an entry with text and recordings, when the user presses delete (entry page or "Bejegyzés törlése") and confirms, then the entry, its recordings, transcripts and audio files are gone (files removed from disk) and the timeline opens; "Mégse" in the dialog keeps everything.
+- **AC-9** Given an entry with text and recordings, when the user presses delete (entry page or "Bejegyzés törlése") and confirms, then the entry, its recordings, transcripts and audio files are gone (files removed from disk) and Home opens; "Mégse" in the dialog keeps everything.
 - **AC-10** Given a failed autosave (network error or 500), then the writer shows "Nem sikerült menteni" with a retry, the text stays in the textarea, and the next successful save clears the message.
 - **AC-11** Given user A's entry, when user B calls `GET`, `PATCH` or `DELETE /api/v1/entries/:id` on it, then B gets 404 and A's entry is unchanged.
 - **AC-12** Given the writer (new and edit), the date dialog, the delete dialog and the entry page, then axe reports no violations on mobile and desktop, light and dark.
@@ -79,7 +79,7 @@ New keys, in both `hu` and `en`.
 | `error.entry_not_found` / `.invalid_entry_date` / `.body_too_long` | A bejegyzés nem található. / Érvénytelen dátum. / A szöveg túl hosszú. | Entry not found. / Invalid date. / The text is too long. |
 
 ## Privacy & data
-- Stored: `entries` row (body, date, timestamps, search vector). Delete removes rows and files for real.
+- Stored: `entries` row (body, date, timestamps). Delete removes rows and files for real.
 - Entry text is never logged (spec 007). Nothing leaves the server.
 
 ## Open questions
