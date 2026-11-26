@@ -22,6 +22,12 @@
 - **Transcribed offline on your server.** Whisper speech to text runs in your own container. No cloud needed.
 - **Your data stays yours.** Self-hosted, private by design, no telemetry. AI is opt-in and off by default.
 
+## Why Nightjar?
+
+The nightjar is a bird that wakes up at dusk and sings through the night, the hour when many of us finally think back
+over the day. A jar is where you keep good things safe, like your own words. *Verba volant, scripta manent*: what you
+say flies away, what you write stays. Nightjar keeps it, on your own server.
+
 > **Status: early development.** Nothing is usable yet. The app only shows a hello page so far. The screenshot above
 > is the approved design, not the running app. Follow the [roadmap](docs/roadmap.md).
 
@@ -56,7 +62,7 @@ docker compose up -d
 
 Until the first release exists there is no `latest` tag. Until then, change the image in `docker/compose.yaml` to `porsk/nightjar:edge`.
 
-Then open http://localhost:3000. Data lives in the `nightjar-data` and `nightjar-db` volumes.
+Then open http://localhost:3000. Putting it on a domain behind Traefik and Cloudflare? See the [self-hosting guide](docs/self-hosting.md). Data lives in the `nightjar-data` and `nightjar-db` volumes.
 
 ## Docs
 

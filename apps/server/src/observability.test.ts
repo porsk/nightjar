@@ -45,6 +45,36 @@ describe('007-observability: logs, health, metrics', () => {
     expect(requestLine?.['reqId']).toBeTypeOf('string')
   })
 
+  it('AC-1: every response carries a fresh UUID x-request-id and incoming ids are ignored', async () => {
+    const { app, readiness } = await buildTestApp()
+    addTestRoutes(app)
+    readiness.markMigrated()
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    const ok = await app.inject({
+      method: 'GET',
+      url: '/healthz',
+      headers: { 'x-request-id': 'attacker-chosen' },
+    })
+    const missing = await app.inject({ method: 'GET', url: '/api/v1/nope' })
+    const crashed = await app.inject({ method: 'GET', url: '/api/v1/test-crash?q=x' })
+    for (const response of [ok, missing, crashed]) {
+      expect(response.headers['x-request-id']).toMatch(uuid)
+    }
+    expect(crashed.statusCode).toBe(500)
+    expect(ok.headers['x-request-id']).not.toBe('attacker-chosen')
+  })
+
+  it('AC-1: all log lines of one request share its request id, including errors', async () => {
+    const { app, capture, readiness } = await buildTestApp()
+    addTestRoutes(app)
+    readiness.markMigrated()
+    const response = await app.inject({ method: 'GET', url: '/api/v1/test-crash?q=x' })
+    const id = response.headers['x-request-id']
+    const lines = capture.lines()
+    expect(lines.length).toBeGreaterThanOrEqual(2)
+    for (const line of lines) expect(line['reqId']).toBe(id)
+  })
+
   it('AC-1: hides info lines when the level is warn', async () => {
     const { app, capture } = await buildTestApp({ level: 'warn' })
     await app.inject({ method: 'GET', url: '/healthz' })
