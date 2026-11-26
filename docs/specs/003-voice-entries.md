@@ -1,6 +1,6 @@
 # 003 Voice entries
 
-Status: building
+Status: done
 Milestone: M1
 
 ## Why

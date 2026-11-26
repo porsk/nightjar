@@ -224,6 +224,7 @@ export function RecorderPage() {
   const active = phase === 'recording' || phase === 'paused'
   return (
     <div className="rec-screen">
+      <h1 className="visually-hidden">{t('nav.newRecording')}</h1>
       <div className="rec-head">
         <span className="state">
           {phase === 'recording' ? <b aria-hidden="true" /> : null}

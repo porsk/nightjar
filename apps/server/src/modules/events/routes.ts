@@ -28,7 +28,7 @@ export function registerEventRoutes(app: App, { events }: { events: Events }) {
     const unsubscribe = events.subscribe({
       userId,
       isAdmin,
-      send: (event) => response.write(`data: ${JSON.stringify(event)}\n\n`),
+      send: (event) => response.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`),
     })
     const heartbeat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)
     request.raw.once('close', () => {

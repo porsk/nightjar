@@ -124,6 +124,14 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
   `/data/models/<model_id>/`. Only the storage module builds these paths.
 - Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
   admins also get `model.updated { state, downloadedBytes, totalBytes }`.
+- Jobs: pg-boss queue `transcribe` (policy `short`, key = recording id, 2 retries), taken one at a time by `worker.ts`.
+  The handler only works on recordings still `pending` or `transcribing`, so a duplicate job is a no-op, and a
+  transcript the user edited is never overwritten. Job log lines carry `jobId` and the `requestId` that queued it.
+- Live events are SSE frames named after the event (`event: recording.updated`, `event: model.updated`) fed by
+  Postgres `NOTIFY` on channel `nightjar_events`; every web process `LISTEN`s and forwards to its own browsers.
+- Data folder: `media/<user_id>/recordings/<id>.<ext>` (original), `models/<model_id>/` (model files),
+  `models/<model_id>.<n>.part` (download in progress), `tmp/` (uploads and WAVs while a job runs, emptied after).
+- The model download state (running, failed, progress) lives in the memory of the process that runs the worker.
 - Not in M1: journals, title, mood, favourites, tags, photos, prompts, suggestions, access tokens, `entries.time_zone`
   (journals and title are open questions in `docs/specs/m1-summary.md`).
 

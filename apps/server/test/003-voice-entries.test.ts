@@ -277,8 +277,8 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
             if (!next || next.done) return
             buffer += decoder.decode(next.value, { stream: true })
             for (const block of buffer.split('\n\n').slice(0, -1)) {
-              if (block.startsWith('data: '))
-                seen.push(liveEventSchema.parse(JSON.parse(block.slice(6))))
+              const data = block.split('\n').find((line) => line.startsWith('data: '))
+              if (data) seen.push(liveEventSchema.parse(JSON.parse(data.slice(6))))
             }
             buffer = buffer.slice(buffer.lastIndexOf('\n\n') + 2)
           }
@@ -1120,7 +1120,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         .find((line) => line['msg'] === 'transcription job started')
       expect(started).toMatchObject({
         jobId: expect.any(String) as string,
-        requestId: expect.stringMatching(/^req-/) as string,
+        requestId: expect.stringMatching(/^[0-9a-f-]{36}$/) as string,
       })
     })
   })
