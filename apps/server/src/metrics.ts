@@ -28,7 +28,10 @@ export async function startMetricsServer(metrics: Metrics, port: number) {
       () => response.writeHead(500).end(),
     )
   })
-  await new Promise<void>((resolve) => server.listen(port, '0.0.0.0', resolve))
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(port, '0.0.0.0', resolve)
+  })
   return {
     port: (server.address() as AddressInfo).port,
     close: () =>

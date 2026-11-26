@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --watch src/main.ts",
     "typecheck": "tsc",
-    "test:api": "vitest run --config vitest.api.config.ts",
+    "test:api": "vitest run --config vitest.api.config.ts --coverage",
     "test": "vitest run --coverage",
     "db:generate": "drizzle-kit generate"
   },

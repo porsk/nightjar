@@ -1,4 +1,5 @@
 import { pino, type DestinationStream, type Logger } from 'pino'
+import { describeError } from './process-handlers.ts'
 
 const redactedPaths = [
   'password',
@@ -15,6 +16,9 @@ const redactedPaths = [
 
 export type { Logger }
 
+/** Message and stack included. Only for errors that cannot carry user data, like failed migrations. */
+export const serializeFullError = pino.stdSerializers.err
+
 export function createLogger(options: { level: string; stream?: DestinationStream }): Logger {
   return pino(
     {
@@ -22,8 +26,9 @@ export function createLogger(options: { level: string; stream?: DestinationStrea
       base: {},
       timestamp: pino.stdTimeFunctions.isoTime,
       formatters: { level: (label) => ({ level: label }) },
+      serializers: { err: describeError },
       redact: { paths: redactedPaths, censor: '[Redacted]' },
     },
-    options.stream ?? pino.destination(1),
+    options.stream ?? pino.destination({ fd: 1, sync: true }),
   )
 }

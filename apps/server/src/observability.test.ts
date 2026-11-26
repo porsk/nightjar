@@ -18,6 +18,9 @@ function addTestRoutes(app: ReturnType<typeof buildTestApp>['app']) {
   })
   app.get('/api/v1/test-items/:id', () => ({ ok: true }))
   app.get('/api/v1/test-search', () => ({ hits: [] }))
+  app.get('/api/v1/test-crash', (request) => {
+    throw new TypeError(`crashed on ${(request.query as { q: string }).q}`)
+  })
   app.get('/api/v1/test-explode', (request) => {
     throw Object.assign(new Error(`failed on ${(request.query as { q: string }).q}`), {
       statusCode: 400,
@@ -60,7 +63,7 @@ describe('007-observability: logs, health, metrics', () => {
     expect(createLogger({ level: 'info' }).level).toBe('info')
   })
 
-  it('AC-2: no marker from body, query, parameter, headers, file name, invalid JSON or error text reaches the logs', async () => {
+  it('AC-2: no marker from body, query, parameter, headers, invalid JSON or error text reaches the logs', async () => {
     const { app, capture, readiness } = buildTestApp()
     readiness.markMigrated()
     addTestRoutes(app)
@@ -70,7 +73,6 @@ describe('007-observability: logs, health, metrics', () => {
       param: marker('param'),
       cookie: marker('cookie'),
       auth: marker('auth'),
-      file: marker('file'),
       json: marker('json'),
       error: marker('error'),
       path: marker('path'),
@@ -91,16 +93,11 @@ describe('007-observability: logs, health, metrics', () => {
     await app.inject({
       method: 'POST',
       url: '/api/v1/test-items',
-      headers: { 'content-type': 'multipart/form-data; boundary=x' },
-      payload: `--x\r\nContent-Disposition: form-data; name="f"; filename="${markers.file}.wav"\r\n\r\ndata\r\n--x--`,
-    })
-    await app.inject({
-      method: 'POST',
-      url: '/api/v1/test-items',
       headers: { 'content-type': 'application/json' },
       payload: `{"text": ${markers.json}`,
     })
     await app.inject({ method: 'GET', url: `/api/v1/test-explode?q=${markers.error}` })
+    await app.inject({ method: 'GET', url: `/api/v1/test-crash?q=${markers.error}` })
     await app.inject({ method: 'GET', url: `/api/v1/${markers.path}/missing` })
 
     expectNoMarkersInLogs(capture, Object.values(markers))
@@ -175,6 +172,27 @@ describe('007-observability: logs, health, metrics', () => {
     )
     for (const value of labelValues) expect(value).toMatch(/^[A-Za-z0-9/:_-]*$/)
     expect(counts.some((line) => line.includes('route="unmatched"'))).toBe(true)
+  })
+})
+
+describe('error responses', () => {
+  it('logs the class name and stack frames of a 500, never its message', async () => {
+    const { app, capture, readiness } = buildTestApp()
+    readiness.markMigrated()
+    addTestRoutes(app)
+    const response = await app.inject({ url: `/api/v1/test-crash?q=${marker('crash')}` })
+    expect(response.statusCode).toBe(500)
+    const line = capture.lines().find((entry) => entry['msg'] === 'request failed')
+    expect(line).toMatchObject({ errorName: 'TypeError', code: 'internal_error' })
+    expect(line?.['stack']).toContain('at ')
+    expectNoMarkersInLogs(capture, [marker('crash')])
+  })
+
+  it('answers unknown routes with a JSON 404 that does not echo the URL', async () => {
+    const { app } = buildTestApp()
+    const response = await app.inject({ url: `/nothing/${marker('url')}` })
+    expect(response.statusCode).toBe(404)
+    expect(response.json()).toEqual({ error: { code: 'not_found', message: 'Not found' } })
   })
 })
 

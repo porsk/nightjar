@@ -139,6 +139,21 @@ describe('007-observability: health, migrations and metrics against a real Postg
     expect(second.capture.text()).toContain('migrations done')
   })
 
+  it('AC-6: two parallel starts apply the migration once and both become ready', async () => {
+    const url = await database('ac6_parallel')
+    const folder = writeMigrationsFolder(['create table once_only (id int); select pg_sleep(1);'])
+    const exit = vi.fn()
+    const [first, second] = await Promise.all([
+      launch(url, { migrationsFolder: folder, exit }),
+      launch(url, { migrationsFolder: folder, exit }),
+    ])
+    await Promise.all([first.ready, second.ready])
+    expect(exit).not.toHaveBeenCalled()
+    expect(await query(url, 'select id from drizzle.__drizzle_migrations')).toHaveLength(1)
+    expect((await get(first.appPort, '/readyz')).status).toBe(200)
+    expect((await get(second.appPort, '/readyz')).status).toBe(200)
+  })
+
   it('AC-6: the shipped migrations apply cleanly', async () => {
     const url = await database('ac6_shipped')
     const server = await launch(url)

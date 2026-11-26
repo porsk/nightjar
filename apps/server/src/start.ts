@@ -1,6 +1,6 @@
 import type { Config } from './config.ts'
 import { createDatabase } from './database.ts'
-import type { Logger } from './logger.ts'
+import { serializeFullError, type Logger } from './logger.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
 import { startWeb } from './web.ts'
@@ -26,7 +26,13 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
     { logger, readiness, metrics, webDir: config.NIGHTJAR_WEB_DIR },
     config.PORT,
   )
-  const metricsServer = await startMetricsServer(metrics, config.NIGHTJAR_METRICS_PORT)
+  const metricsServer = await startMetricsServer(metrics, config.NIGHTJAR_METRICS_PORT).catch(
+    async (error: unknown) => {
+      await web.close()
+      await database.close()
+      throw error
+    },
+  )
   logger.info({ port: web.port, metricsPort: metricsServer.port }, 'listening')
 
   let worker: ReturnType<typeof startWorker> | undefined
@@ -37,7 +43,7 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
       worker = startWorker({ logger })
     },
     (error: unknown) => {
-      logger.error({ err: error }, 'migrations failed')
+      logger.error({ migrationError: serializeFullError(error as Error) }, 'migrations failed')
       exit(1)
     },
   )

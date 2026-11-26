@@ -12,6 +12,13 @@ export interface AppDependencies {
   webDir?: string | undefined
 }
 
+/** The stack without its first lines, which hold the error message. */
+const stackFrames = (error: Error) =>
+  (error.stack ?? '')
+    .split(/\r?\n/)
+    .filter((line) => line.trimStart().startsWith('at '))
+    .join('\n')
+
 const apiPrefix = '/api/v1'
 
 export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies) {
@@ -47,10 +54,17 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
     )
   })
 
-  app.setErrorHandler((error: { code?: string; statusCode?: number }, request, reply) => {
+  app.setErrorHandler((error: Error & { code?: string; statusCode?: number }, request, reply) => {
     const statusCode = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500
     const code = statusCode >= 500 ? 'internal_error' : (error.code ?? 'bad_request')
-    request.log[statusCode >= 500 ? 'error' : 'warn']({ code, statusCode }, 'request failed')
+    if (statusCode >= 500) {
+      request.log.error(
+        { code, statusCode, errorName: error.name, stack: stackFrames(error) },
+        'request failed',
+      )
+    } else {
+      request.log.warn({ code, statusCode }, 'request failed')
+    }
     return reply.code(statusCode).send({
       error: {
         code,
@@ -58,6 +72,10 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
       },
     })
   })
+
+  app.setNotFoundHandler((_request, reply) =>
+    reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } }),
+  )
 
   app.get('/healthz', () => healthResponseSchema.parse({ status: 'ok' }))
 
