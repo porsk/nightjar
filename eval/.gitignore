@@ -1,0 +1,8 @@
+.cache/
+clips/own/*
+!clips/own/.gitkeep
+node_modules/
+*.onnx
+*.weights
+*.pt
+*.safetensors

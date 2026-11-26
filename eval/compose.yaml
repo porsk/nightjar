@@ -1,0 +1,17 @@
+services:
+  eval:
+    build: .
+    cpus: 4
+    environment:
+      THREADS: 4
+    volumes:
+      - ./.cache:/eval/.cache
+      - ./clips:/eval/clips
+      - ./reports:/eval/reports
+  export:
+    build:
+      context: .
+      dockerfile: Dockerfile.export
+    profiles: [export]
+    volumes:
+      - ./.cache:/eval/.cache

@@ -10,3 +10,22 @@ playwright-report/
 !.env.example
 .DS_Store
 Thumbs.db
+
+# eval and local tooling
+eval/.cache/
+eval/clips/own/*
+!eval/clips/own/.gitkeep
+.claude/worktrees/
+.venv/
+venv/
+__pycache__/
+*.onnx
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+*.tar.bz2
+*.wav
+!**/fixtures/*.wav
+.artifacts/

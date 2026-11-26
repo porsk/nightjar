@@ -1,0 +1,9 @@
+FROM python:3.12-slim-trixie
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates git \
+ && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir openai-whisper onnx onnxscript onnxruntime huggingface_hub safetensors
+WORKDIR /eval
+COPY export/export_finetune.py ./export/
+ENTRYPOINT ["python", "export/export_finetune.py"]
