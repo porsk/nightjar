@@ -159,6 +159,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 
 - PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
   the release PR (or switch to a PAT) if the checks do not show up.
+- The repo setting "Allow GitHub Actions to create and approve pull requests" must be on for release-please.
 - E2E still runs against `vite preview`. Switching it to the built image is a follow-up.
 
 - Images go to **Docker Hub** only: `porsk/nightjar`. Secrets needed: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.

@@ -23,6 +23,8 @@ cp .env.example .env     # set POSTGRES_PASSWORD
 docker compose up -d
 ```
 
+Until the first release exists there is no `latest` tag. Until then, change the image in `docker/compose.yaml` to `porsk/nightjar:edge`.
+
 Then open http://localhost:3000. Data lives in the `nightjar-data` and `nightjar-db` volumes.
 
 ## Development
