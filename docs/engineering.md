@@ -176,7 +176,21 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 1. **Transcription eval**: 20 or so own clips (Hungarian and English, quiet and noisy, short and long) with
    hand-written reference text. Script measures word error rate and speed for Parakeet v3 and Whisper turbo
    (incl. a Hungarian fine-tune). Reports results to the owner, who picks the default model.
-2. **sherpa-onnx in Docker**: native addon loads on Node 26, slim image, amd64 and arm64.
+2. **sherpa-onnx in Docker**: done (2026-11-26). `sherpa-onnx-node` 2.0.3 on `node:26-trixie-slim`, Whisper tiny.en int8
+   (model downloaded at run time, 3 test clips).
+
+   | | amd64 (native) | arm64 (QEMU on an amd64 PC) |
+   |---|---|---|
+   | Native addon loads, transcribes correctly | yes | yes |
+   | Module load | 15 ms | 137 ms |
+   | Real-time factor (tiny.en, 2 threads) | 0.04 to 0.05 | 4.0 to 4.7 (emulated, not meaningful) |
+
+   Gotchas: no build tools needed (prebuilt per-platform packages, 33 MB on amd64). No `LD_LIBRARY_PATH` needed. The
+   arm64 RTF only shows that it runs; real numbers need an actual ARM box (Pi 5). Image size with ffmpeg and the app:
+   see the Docker image note below.
+   Image size (Docker Desktop, uncompressed): 1.02 GB for the app image. Debian's ffmpeg pulls in many libraries
+   (about 450 MB in `/usr/lib`); a smaller ffmpeg is a possible later optimisation.
 3. **TypeScript**: done. TS 7 is blocked by typescript-eslint, so we use TS 6.0 (D-14). Revisit when typescript-eslint supports 7.
-4. **Node type stripping**: server runs from `.ts` files in dev and in the image, including the shared package.
+4. **Node type stripping**: done. The server runs from `.ts` files in dev and in the image (amd64 and arm64), including
+   the shared package, as long as workspace packages stay symlinked (no `pnpm deploy`).
 5. **iPhone recording**: PWA recording on a real iPhone, what happens when the screen locks.
