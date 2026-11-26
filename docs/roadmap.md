@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 almost done. M1 specs being drafted (WP7), then owner approval.
+**Now:** M0 almost done. M1 specs drafted (`docs/specs/m1-summary.md`), waiting for owner approval.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.

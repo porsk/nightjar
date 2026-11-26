@@ -111,7 +111,7 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 - **Linking tests to a spec:** the spec file is `docs/specs/NNN-name.md`. The test file has a top-level
   `describe('NNN-name: short title', ...)`, and inside it `it('AC-2: ...')` (or `test(...)`).
   `pnpm check:acs` fails if a spec has an `**AC-n**` with no matching test in a file linked to that spec.
-  `_template.md` is skipped.
+  `_template.md` is skipped, and so is any spec with `Status: draft` (the check starts once the owner approves it).
 
 Definition of done for any task: `pnpm verify` green locally, AC traceability check green, docs updated.
 
