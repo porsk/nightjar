@@ -1,6 +1,6 @@
 # 003 Voice entries
 
-Status: approved
+Status: building
 Milestone: M1
 
 ## Why

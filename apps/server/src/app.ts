@@ -5,6 +5,7 @@ import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
 import { healthResponseSchema, readyResponseSchema } from '@nightjar/shared'
 import type { Database } from './database.ts'
+import type { Events } from './events.ts'
 import { AppError } from './errors.ts'
 import type { Logger } from './logger.ts'
 import type { Metrics } from './metrics.ts'
@@ -12,6 +13,10 @@ import type { Auth } from './modules/auth/auth.ts'
 import { registerAuthRoutes } from './modules/auth/routes.ts'
 import { registerSettingsRoutes } from './modules/settings/routes.ts'
 import { registerEntryRoutes } from './modules/entries/routes.ts'
+import { registerEventRoutes } from './modules/events/routes.ts'
+import { registerRecordingRoutes } from './modules/recordings/routes.ts'
+import { registerTranscriptionRoutes } from './modules/transcription/routes.ts'
+import type { TranscriptionService } from './modules/transcription/service.ts'
 import type { Readiness } from './readiness.ts'
 import type { Storage } from './storage.ts'
 
@@ -21,6 +26,10 @@ export interface AppDependencies {
   metrics: Metrics
   database: Database
   storage: Storage
+  events: Events
+  transcription: TranscriptionService
+  /** Largest accepted audio upload in bytes. */
+  maxUploadBytes?: number | undefined
   /** The current time. Tests pass a fixed clock. */
   now?: (() => Date) | undefined
   /** Returns the auth instance, which exists once migrations are done. */
@@ -46,6 +55,9 @@ export async function buildApp({
   metrics,
   database,
   storage,
+  events,
+  transcription,
+  maxUploadBytes,
   now,
   getAuth,
   trustProxy,
@@ -100,9 +112,20 @@ export async function buildApp({
     allowList: (request) => !request.url.startsWith('/api/'),
     errorResponseBuilder: () => new AppError(429, 'too_many_attempts'),
   })
-  registerAuthRoutes(app, { database, getAuth })
+  registerAuthRoutes(app, { database, getAuth, transcription })
   registerSettingsRoutes(app, { database })
-  registerEntryRoutes(app, { database, storage, now: now ?? (() => new Date()) })
+  const clock = now ?? (() => new Date())
+  registerEntryRoutes(app, { database, storage, now: clock })
+  registerRecordingRoutes(app, {
+    database,
+    storage,
+    events,
+    transcription,
+    now: clock,
+    maxUploadBytes,
+  })
+  registerTranscriptionRoutes(app, { transcription })
+  registerEventRoutes(app, { events })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'

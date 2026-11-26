@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import { sql } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDatabase, type Database } from '../src/database.ts'
 import { accounts, instanceSettings, sessions, users } from '../src/db/schema.ts'
 import { createLogger } from '../src/logger.ts'
@@ -9,7 +9,8 @@ import { createAuth } from '../src/modules/auth/auth.ts'
 import { issueSetupCode } from '../src/modules/auth/setup-code.ts'
 import { expectNoMarkersInLogs } from './support/log-capture.ts'
 import { startPostgres } from './support/postgres.ts'
-import { buildTestApp } from './support/test-app.ts'
+import type { TranscriptionService } from '../src/modules/transcription/service.ts'
+import { buildTestApp, inertTranscription } from './support/test-app.ts'
 
 const host = 'nightjar.test'
 const password = 'correct horse battery'
@@ -42,7 +43,13 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     await database.db.update(instanceSettings).set({ transcriptionEnabled: false })
   })
 
-  async function launch(options: { trustProxy?: number; rateLimitMax?: number } = {}) {
+  async function launch(
+    options: {
+      trustProxy?: number
+      rateLimitMax?: number
+      transcription?: TranscriptionService
+    } = {},
+  ) {
     const auth = await createAuth(database)
     const test = await buildTestApp({ database, auth, ...options })
     test.readiness.markMigrated()
@@ -113,11 +120,20 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     expect((await request('GET', '/api/v1/setup')).json()).toEqual({ needed: false })
   })
 
-  it('AC-5: choosing transcription stores the flag (the download itself arrives with spec 003)', async () => {
-    const { setup } = await launch()
+  it('AC-5: choosing transcription stores the flag and starts the model download', async () => {
+    const resume = vi.fn(() => Promise.resolve())
+    const { setup } = await launch({ transcription: { ...inertTranscription, resume } })
     expect((await setup({ transcriptionEnabled: true })).statusCode).toBe(201)
     const [settings] = await database.db.select().from(instanceSettings)
     expect(settings?.transcriptionEnabled).toBe(true)
+    expect(resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('AC-5: choosing "not now" starts no download', async () => {
+    const resume = vi.fn(() => Promise.resolve())
+    const { setup } = await launch({ transcription: { ...inertTranscription, resume } })
+    expect((await setup({ transcriptionEnabled: false })).statusCode).toBe(201)
+    expect(resume).not.toHaveBeenCalled()
   })
 
   it('AC-6: setup answers 409 setup_done once an account exists and creates nothing', async () => {

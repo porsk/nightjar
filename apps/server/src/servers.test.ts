@@ -5,8 +5,7 @@ import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
 import { createStorage } from './storage.ts'
 import { startWeb } from './web.ts'
-import { startWorker } from './worker.ts'
-import { captureLogs } from '../test/support/log-capture.ts'
+import { inertEvents, inertTranscription } from '../test/support/test-app.ts'
 
 describe('metrics server', () => {
   it('serves Prometheus text on /metrics only', async () => {
@@ -21,8 +20,8 @@ describe('metrics server', () => {
   })
 })
 
-describe('web and worker entry points', () => {
-  it('the web entry point listens and closes', async () => {
+describe('web entry point', () => {
+  it('it listens and closes', async () => {
     const logger = createLogger({ level: 'silent' })
     const web = await startWeb(
       {
@@ -31,6 +30,8 @@ describe('web and worker entry points', () => {
         metrics: createMetrics(),
         database: createDatabase('postgres://localhost:1/unused', logger),
         storage: createStorage('/unused'),
+        events: inertEvents,
+        transcription: inertTranscription,
         getAuth: () => {
           throw new Error('no auth')
         },
@@ -40,12 +41,5 @@ describe('web and worker entry points', () => {
     expect((await fetch(`http://127.0.0.1:${String(web.port)}/healthz`)).status).toBe(200)
     expect((await fetch(`http://127.0.0.1:${String(web.port)}/metrics`)).status).toBe(404)
     await web.close()
-  })
-
-  it('the worker entry point starts and stops', async () => {
-    const capture = captureLogs()
-    const worker = startWorker({ logger: createLogger({ level: 'info', stream: capture.stream }) })
-    await worker.stop()
-    expect(capture.lines()[0]).toMatchObject({ msg: 'worker started' })
   })
 })
