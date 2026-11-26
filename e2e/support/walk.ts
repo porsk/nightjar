@@ -62,7 +62,7 @@ export async function walkScreens(
   await label(t.field.password).fill(password)
   await page.getByRole('button', { name: t.login.submit }).click()
 
-  await expect(page.getByRole('heading', { name: t.nav.today })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await check('home')
   await page.getByRole('link', { name: t.nav.settings }).first().click()
   await expect(page.getByRole('heading', { name: t.settings.title })).toBeVisible()

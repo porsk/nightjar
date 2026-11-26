@@ -1,6 +1,8 @@
 import {
   createEntrySchema,
   entryResponseSchema,
+  timelinePageSchema,
+  timelineQuerySchema,
   todayIn,
   updateEntrySchema,
   type Entry,
@@ -14,6 +16,8 @@ import { entries, recordings } from '../../db/schema.ts'
 import { AppError } from '../../errors.ts'
 import type { Logger } from '../../logger.ts'
 import type { Storage } from '../../storage.ts'
+import { decodeCursor } from './timeline.ts'
+import { listEntries } from './timeline-query.ts'
 
 type App = FastifyInstance<Server, IncomingMessage, ServerResponse, Logger>
 
@@ -82,6 +86,21 @@ export function registerEntryRoutes(
       .returning()
     if (!row) throw new Error('entry was not created')
     return reply.code(201).send(toEntry(row))
+  })
+
+  app.get(entriesPath, async (request) => {
+    const user = me(request)
+    const parsed = timelineQuerySchema.safeParse(request.query)
+    if (!parsed.success) throw new AppError(400, 'invalid_request')
+    const before = parsed.data.before === undefined ? undefined : decodeCursor(parsed.data.before)
+    if (before === null) throw new AppError(400, 'invalid_cursor')
+    return timelinePageSchema.parse(
+      await listEntries(database, user.id, {
+        before,
+        date: parsed.data.date,
+        limit: parsed.data.limit,
+      }),
+    )
   })
 
   app.get(`${entriesPath}/:id`, async (request) => {

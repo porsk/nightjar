@@ -1,6 +1,6 @@
 # 004 Timeline
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why
@@ -36,6 +36,8 @@ Out (not now): calendar, filters, mood, favourites, look-backs, stats.
 - **AC-12** Given Home, the timeline (with all badges and the loading state), the empty states and the desktop split view, then axe reports no violations on mobile and desktop, light and dark.
 
 ## Test plan
+
+Note: AC-4's live-update e2e lands with spec 003 (the SSE endpoint is 003's); here it is covered by a component test.
 
 | AC | Unit | Component / UI | API (integration) | E2E | Notes (fixtures, fakes, edge cases) |
 |---|---|---|---|---|---|

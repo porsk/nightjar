@@ -11,7 +11,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**'],
-      exclude: ['**/*.test.{ts,tsx}', '**/main.tsx', '**/test-setup.ts', '**/test-utils.tsx'],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/main.tsx',
+        '**/test-setup.ts',
+        '**/test-fakes.ts',
+        '**/test-utils.tsx',
+      ],
       reporter: ['text', 'html'],
       thresholds: { lines: 80 },
     },

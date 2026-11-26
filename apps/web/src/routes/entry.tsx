@@ -2,13 +2,15 @@ import { todayIn } from '@nightjar/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { ApiError, deleteEntry, entryQuery, meQuery, updateEntry } from '../api.ts'
 import { DateDialog } from '../components/date-dialog.tsx'
 import { DeleteDialog } from '../components/delete-dialog.tsx'
 import { Icon } from '../components/icon.tsx'
+import { TimelineList } from '../components/timeline-list.tsx'
 import { longDate } from '../dates.ts'
 import { renderMarkdown } from '../markdown.ts'
+import { useMediaQuery } from '../use-media-query.ts'
 
 export function EntryError({ error }: { error: unknown }) {
   const { t } = useTranslation()
@@ -16,10 +18,10 @@ export function EntryError({ error }: { error: unknown }) {
   return <p role="alert">{t(notFound ? 'error.entry_not_found' : 'error.generic')}</p>
 }
 
-export function EntryPage() {
+function EntryView({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
-  const { id = '' } = useParams()
   const navigate = useNavigate()
+  const cameFromApp = useLocation().key !== 'default'
   const queryClient = useQueryClient()
   const timeZone = useQuery(meQuery).data?.timeZone ?? 'UTC'
   const entry = useQuery(entryQuery(id))
@@ -35,6 +37,7 @@ export function EntryPage() {
     setDateFailed(false)
     try {
       queryClient.setQueryData(entryQuery(id).queryKey, await updateEntry(id, { entryDate: day }))
+      await queryClient.invalidateQueries({ queryKey: ['timeline'] })
     } catch {
       setDateFailed(true)
     }
@@ -43,13 +46,23 @@ export function EntryPage() {
   const remove = async () => {
     await deleteEntry(id)
     queryClient.removeQueries({ queryKey: entryQuery(id).queryKey })
+    await queryClient.invalidateQueries({ queryKey: ['timeline'] })
     await navigate('/', { replace: true })
   }
 
   return (
     <>
       <div className="topbar entry-top">
-        <Link to="/" className="back">
+        <Link
+          to="/timeline"
+          state={{ restoreScroll: true }}
+          className="back"
+          onClick={(event) => {
+            if (!cameFromApp) return
+            event.preventDefault()
+            void navigate(-1)
+          }}
+        >
           <Icon name="back" />
           {t('common.back')}
         </Link>
@@ -110,5 +123,21 @@ export function EntryPage() {
         />
       ) : null}
     </>
+  )
+}
+
+export function EntryPage() {
+  const { id = '' } = useParams()
+  const sideBySide = useMediaQuery('(min-width: 1024px)')
+  if (!sideBySide) return <EntryView id={id} />
+  return (
+    <div className="split">
+      <TimelineList variant="row" currentId={id} />
+      <article className="read">
+        <div className="read-in">
+          <EntryView id={id} />
+        </div>
+      </article>
+    </div>
   )
 }

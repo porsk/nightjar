@@ -104,7 +104,7 @@ describe('001-setup-login: setup wizard', () => {
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(screen.getByRole('button', { name: 'Finish' }))
 
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /What's on your mind/ })).toBeInTheDocument()
     expect(calls.find((call) => call.key === 'POST /api/v1/setup')?.body).toMatchObject({
       setupCode: 'ABCD2345',
       email: 'owner@example.test',
@@ -127,7 +127,7 @@ describe('001-setup-login: setup wizard', () => {
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(screen.getByRole('radio', { name: /Turn on transcription/ }))
     await user.click(screen.getByRole('button', { name: 'Finish and start download' }))
-    await screen.findByRole('heading', { name: 'Today' })
+    await screen.findByRole('heading', { name: /What's on your mind/ })
     expect(calls.find((call) => call.key === 'POST /api/v1/setup')?.body).toMatchObject({
       transcriptionEnabled: true,
     })

@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M1 round 1 merged (007, 001, 006, 002). Paused on usage limit: the smoke test + side-by-side review + layout checks task (branch `test/visual-review`, worktree under .claude/worktrees) was stopped mid-way; restart or resume it.
+**Now:** M1 round 1 merged (007, 001, 006, 002). Paused on usage limit: the smoke test + side-by-side review + layout checks task (branch `test/visual-review`, worktree under .claude/worktrees) was stopped mid-way; restart or resume it. 004 timeline is built (PR open), 003 runs in parallel.
 **Next:** finish that task, owner reviews design/review/m1-round1.html, owner OK to release 0.1.0 (PR #29) after the smoke test passes, then 003 ∥ 004, then 005 ∥ 008 (D-35).
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -43,7 +43,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [x] 001 Setup wizard + login
 - [x] 002 Text entries (write, edit, delete, entry date)
 - [ ] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
-- [ ] 004 Timeline
+- [x] 004 Timeline
 - [ ] 005 Search (Hungarian + English aware)
 - [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
 - [x] 007 Logs, health, metrics

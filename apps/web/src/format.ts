@@ -10,6 +10,23 @@ export const formatDate = (date: Date, language: Language, timeZone: string) =>
     timeZone,
   }).format(date)
 
+/** "1:48" for a length in milliseconds. */
+export function formatDuration(milliseconds: number) {
+  const totalSeconds = Math.floor(milliseconds / 1000)
+  return `${String(Math.floor(totalSeconds / 60))}:${String(totalSeconds % 60).padStart(2, '0')}`
+}
+
+export type GreetingPeriod = 'morning' | 'afternoon' | 'evening'
+
+export const greetingPeriod = (hour: number): GreetingPeriod =>
+  hour >= 5 && hour < 10 ? 'morning' : hour >= 10 && hour < 18 ? 'afternoon' : 'evening'
+
+/** The hour of the day, 0 to 23, in the given time zone. */
+export const hourIn = (date: Date, timeZone: string) =>
+  Number(
+    new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone }).format(date),
+  )
+
 /** "9:30 PM" or "21:30". */
 export const formatTime = (date: Date, language: Language, timeZone: string) =>
   new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit', timeZone }).format(date)

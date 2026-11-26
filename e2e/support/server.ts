@@ -108,6 +108,68 @@ export async function seedEntry(options: {
   })
 }
 
+export interface SeededRecording {
+  status: 'pending' | 'transcribing' | 'done' | 'failed' | 'skipped'
+  durationMs: number
+  transcript?: string
+}
+
+/** An entry of the first user with a fixed creation time and recording rows, for timeline screens. */
+export async function seedTimelineEntry(options: {
+  bodyMd: string
+  entryDate: string
+  createdAt: string
+  recordings?: SeededRecording[]
+}) {
+  return withDatabase(async (client) => {
+    const user = await client.query<{ id: string }>('select id from users limit 1')
+    const userId = user.rows[0]?.id
+    if (!userId) throw new Error('no user to seed an entry for')
+    const entry = await client.query<{ id: string }>(
+      'insert into entries (user_id, entry_date, body_md, created_at) values ($1, $2, $3, $4) returning id',
+      [userId, options.entryDate, options.bodyMd, options.createdAt],
+    )
+    const entryId = entry.rows[0]?.id
+    if (!entryId) throw new Error('entry was not created')
+    for (const recording of options.recordings ?? []) {
+      const row = await client.query<{ id: string }>(
+        `insert into recordings (user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status)
+         values ($1, $2, $3, 'audio/webm', 5, $4, 'en', $5) returning id`,
+        [
+          userId,
+          entryId,
+          `media/${userId}/recordings/${crypto.randomUUID()}.webm`,
+          recording.durationMs,
+          recording.status,
+        ],
+      )
+      if (recording.transcript !== undefined) {
+        await client.query(
+          `insert into transcripts (user_id, recording_id, model, language, text) values ($1, $2, 'fake', 'en', $3)`,
+          [userId, row.rows[0]?.id, recording.transcript],
+        )
+      }
+    }
+    return entryId
+  })
+}
+
+/** Many text entries for the first user, one per minute counting back from `latest`, numbered from 1 (oldest). */
+export async function seedBulkEntries(count: number, latest: string) {
+  return withDatabase(async (client) => {
+    const user = await client.query<{ id: string }>('select id from users limit 1')
+    const userId = user.rows[0]?.id
+    if (!userId) throw new Error('no user to seed entries for')
+    await client.query(
+      `insert into entries (user_id, entry_date, body_md, created_at)
+       select $1, ($2::timestamptz - n * interval '1 hour')::date, 'Bulk entry ' || (${String(count)} - n),
+              $2::timestamptz - n * interval '1 hour'
+       from generate_series(0, $3 - 1) as n`,
+      [userId, latest, count],
+    )
+  })
+}
+
 export async function readEntries() {
   return withDatabase(async (client) => {
     const result = await client.query<{ id: string; entry_date: string; body_md: string }>(

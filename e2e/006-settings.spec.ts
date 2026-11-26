@@ -97,7 +97,7 @@ test.describe('006-settings: language, time zone and account', () => {
     const other = await browser.newContext({ extraHTTPHeaders: headers, locale: 'en-US' })
     const otherPage = await other.newPage()
     await signIn(otherPage)
-    await expect(otherPage.getByRole('heading', { name: 'Ma' })).toBeVisible()
+    await expect(otherPage.getByRole('heading', { name: /Mi járt a fejedben/ })).toBeVisible()
     await other.close()
 
     await choose(uiLanguageGroup(page), 'English')

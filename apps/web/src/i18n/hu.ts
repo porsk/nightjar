@@ -68,6 +68,31 @@ export const hu = {
   },
   home: {
     write: 'Inkább írok',
+    record: 'Felvétel indítása',
+    upload: 'Hangfájl feltöltése',
+    todayEntries: 'Mai bejegyzések',
+    todayEmpty: 'Ma még nincs bejegyzés.',
+    greeting: {
+      morning: 'Jó reggelt. Mi járt a fejedben?',
+      afternoon: 'Jó napot. Mi járt a fejedben?',
+      evening: 'Jó estét. Mi járt a fejedben?',
+    },
+  },
+  timeline: {
+    title: 'Idővonal',
+    loadingMore: 'További bejegyzések betöltése…',
+    empty: 'Még nincs bejegyzésed. A Ma oldalon felvehetsz vagy írhatsz egyet.',
+  },
+  badge: {
+    working: 'Átírás folyamatban',
+    off: 'Nincs átírva',
+    failed: 'Nem sikerült',
+  },
+  a11y: {
+    icon: {
+      voice: 'Hangfelvétel',
+      text: 'Szöveges bejegyzés',
+    },
   },
   date: {
     today: 'Ma, {{date}}',
@@ -87,6 +112,7 @@ export const hu = {
     edit: 'Szerkesztés',
     delete: 'Törlés',
     deleteEntry: 'Bejegyzés törlése',
+    noText: 'Hangfelvétel, szöveg nélkül',
   },
   dateDialog: {
     title: 'Melyik napról szól?',
@@ -101,6 +127,9 @@ export const hu = {
   nav: {
     main: 'Fő navigáció',
     today: 'Ma',
+    timeline: 'Idővonal',
+    search: 'Keresés',
+    newRecording: 'Új felvétel',
     settings: 'Beállítások',
   },
   settings: {

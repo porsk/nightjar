@@ -9,6 +9,7 @@ import { HomePage } from './routes/home.tsx'
 import { LoginPage } from './routes/login.tsx'
 import { SettingsPage } from './routes/settings.tsx'
 import { SetupPage } from './routes/setup.tsx'
+import { TimelinePage } from './routes/timeline.tsx'
 import { WriterPage } from './routes/writer.tsx'
 
 function RequireAuth() {
@@ -50,6 +51,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route index element={<HomePage />} />
+        <Route path="timeline" element={<TimelinePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="write" element={<WriterPage />} />
         <Route path="entries/:id" element={<EntryPage />} />
