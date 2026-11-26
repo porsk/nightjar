@@ -77,6 +77,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-24 | 11-26 | AI is off by default. When it comes (M3), the admin sets the provider and API key in the Settings screen (stored encrypted); each user opts in for their own entries. Not planned before M3 | Owner: settings are easier; leave Claude out for now |
 | D-25 | 11-26 | No keyboard shortcuts in M1; S-19 stays a suggestion | Owner OK |
 | D-26 | 11-26 | Owner runs Nightjar behind a reverse proxy on an own (sub)domain with https. The iPhone test (WP6) uses that setup | Owner |
+| D-27 | 11-26 | M1 mockups approved (`design/alkony/m1.html`): upload button on Home and entry, log out in Settings > Fiók, plain Markdown textarea (rendered when reading, no toolbar), 3-step wizard with download progress in Settings, mobile primary button at the bottom | Owner |
+| D-28 | 11-26 | iPhone recording test moves to a later phase (owner has no iPhone; a friend may test when the app is close to ready) | Owner |
 
 ## Proposed (approved together with the plan)
 

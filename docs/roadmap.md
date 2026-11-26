@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 running. WP1-WP3 done, `edge` (amd64 + arm64) on Docker Hub. WP4 round 2 done. M1 mockups running.
+**Now:** M0 almost done. M1 specs being drafted (WP7), then owner approval.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -10,14 +10,14 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] Plan drafted (`plan-summary.md` + detailed docs)
 - [x] High-level plan approved by owner
 - [ ] Spikes, results go to the owner: transcription eval on the owner's own clips, sherpa-onnx in Docker (amd64 + arm64),
-      Node type stripping, iPhone PWA recording
+      Node type stripping (iPhone PWA recording moved to M4, D-28)
 - [x] Repo setup: git, LICENSE, README, CONTRIBUTING, pnpm workspace, lint/format
 - [x] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
 - [x] Docker image + compose files
 - [x] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
 - [ ] Follow-up: run e2e against the Docker image instead of `vite preview`; nightly workflow once real-model tests exist
-- [ ] Design direction + M1 mockups approved
+- [x] Design direction + M1 mockups approved
 - [ ] M1 specs approved
 
 Done when: `docker compose up` shows a bilingual hello page, `edge` is on Docker Hub, the spikes are reported and M1 specs are approved.
@@ -33,9 +33,9 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
 | 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | done (PR #28) |
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 done; own clips + Soniox next |
-| 5 | #5 | Design directions | - | Approve M1 mockups | Alkony + desktop approved; M1 mockups running |
-| 6 | #6 | iPhone recording test page | WP3 | Deploy `edge` behind your proxy (D-26), open on iPhone | todo |
-| 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | todo |
+| 5 | #5 | Design directions | - | - | done: Alkony + M1 mockups approved (D-27) |
+| 6 | #6 | iPhone recording test page | WP3 | A friend with an iPhone | moved to M4 (D-28) |
+| 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | running |
 
 Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 
@@ -72,6 +72,7 @@ Done when: an entry gets suggestions the owner can accept, and Claude can search
 Tests: fake AI provider in normal tests, real providers in nightly. API tests for token scopes (read vs write). MCP client test against the running server.
 
 ## M4 Offline capture, then 1.0
+- [ ] iPhone recording check on a real device (D-28)
 - [ ] Offline recording queue
 - [ ] Hardening
 - [ ] 1.0 release
