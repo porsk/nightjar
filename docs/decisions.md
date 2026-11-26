@@ -1,3 +1,4 @@
+| D-38 | 11-26 | Visual checks: a side-by-side page (mockup vs real app, phone + desktop, dark + light, with a list of differences) for the owner after each round of screens; once the owner approves the real screens, Playwright reference screenshots (toHaveScreenshot) guard them against unintended changes | Owner |
 # Decisions
 
 Newest at the bottom. To change a decision, add a new entry that replaces the old one.
