@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 done. M1 build: 007 and 001 done (001 PR open), next 006.
+**Now:** M0 done. M1 build: 007, 001 and 006 done (006 PR open), next 002.
 **Next:** M1 build order is in `docs/specs/m1-summary.md`. Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -45,7 +45,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [ ] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
 - [ ] 004 Timeline
 - [ ] 005 Search (Hungarian + English aware)
-- [ ] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
+- [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
 - [x] 007 Logs, health, metrics
 - [ ] 008 Backup guide (docs only: `pg_dump` + `/data` volume)
 - [ ] CI upgrade test: previous release to new image on the same database (right after the first release, D-29)

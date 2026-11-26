@@ -17,6 +17,7 @@ export default defineConfig({
         'src/modules/auth/auth.ts',
         'src/modules/auth/routes.ts',
         'src/modules/auth/setup-code.ts',
+        'src/modules/settings/routes.ts',
       ],
       reporter: ['text', 'html'],
       thresholds: { lines: 90 },

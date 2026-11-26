@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router'
 import { ApiError, createAccount } from '../api.ts'
 import { BareLayout } from '../components/bare-layout.tsx'
 import { Icon } from '../components/icon.tsx'
+import { Segmented } from '../components/segmented.tsx'
 import { TextField } from '../components/text-field.tsx'
 import { timeZoneOptions } from '../time-zones.ts'
 
@@ -202,23 +203,15 @@ export function SetupPage() {
             <div className="fl" id="ui-language-label">
               {t('setup.lang.uiLanguage')}
             </div>
-            <div className="seg" role="radiogroup" aria-labelledby="ui-language-label">
-              {languages.map(({ value, label }) => (
-                <label key={value}>
-                  <input
-                    className="visually-hidden"
-                    type="radio"
-                    name="uiLanguage"
-                    value={value}
-                    checked={values.uiLanguage === value}
-                    onChange={() => {
-                      set('uiLanguage', value)
-                    }}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
+            <Segmented
+              name="uiLanguage"
+              labelledBy="ui-language-label"
+              options={languages}
+              value={values.uiLanguage}
+              onChange={(value) => {
+                set('uiLanguage', value)
+              }}
+            />
           </div>
           <div className="field">
             <label htmlFor="timeZone">{t('setup.lang.timeZone')}</label>

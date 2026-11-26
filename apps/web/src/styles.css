@@ -539,6 +539,17 @@ svg.icon {
 
 .srow {
   padding: 14px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.srow:last-child {
+  border-bottom: 0;
+}
+
+.srow > .fl {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .acct {

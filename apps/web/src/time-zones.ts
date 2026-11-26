@@ -6,10 +6,11 @@ const offsetLabel = (timeZone: string, at: Date) => {
   return offset === 'UTC' ? 'UTC+00:00' : offset
 }
 
-/** All IANA zones the browser knows, plus the browser's own zone, labelled with today's UTC offset. */
-export function timeZoneOptions(at = new Date()) {
+/** All IANA zones the browser knows, plus the browser's own and the saved zone, labelled with their UTC offset. */
+export function timeZoneOptions(at = new Date(), saved?: string) {
   const zones = new Set(Intl.supportedValuesOf('timeZone'))
   zones.add(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  if (saved) zones.add(saved)
   return [...zones]
     .sort((a, b) => a.localeCompare(b))
     .map((zone) => ({ value: zone, label: `${zone} (${offsetLabel(zone, at)})` }))
