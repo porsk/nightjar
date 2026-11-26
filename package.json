@@ -10,17 +10,26 @@
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck && tsc",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "pnpm -r test",
+    "test:api": "pnpm --filter @nightjar/server test:api",
+    "test:e2e": "playwright test",
+    "check:acs": "node scripts/check-acs.ts",
+    "verify": "node scripts/verify.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.65.1",
     "@types/node": "^26.6.10",
+    "@vitest/coverage-v8": "5.1.2",
     "eslint": "^10.15.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.10.1",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.74.0"
+    "typescript-eslint": "^8.74.0",
+    "vitest": "5.1.2"
   }
 }

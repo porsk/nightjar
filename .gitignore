@@ -28,4 +28,3 @@ __pycache__/
 *.tar.bz2
 *.wav
 !**/fixtures/*.wav
-.artifacts/
