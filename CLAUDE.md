@@ -53,7 +53,7 @@ Self-hosted, open source voice + text journal. Hungarian and English (recordings
 pnpm install        # install everything
 pnpm dev            # server (node --watch, :3000) + web (Vite, :5173)
 pnpm build          # build the web app
-pnpm lint           # ESLint (blocked on TS 7, see M0 spike)
+pnpm lint           # ESLint
 pnpm typecheck      # tsc --noEmit in every workspace
 pnpm format         # Prettier, write
 pnpm format:check   # Prettier, check only

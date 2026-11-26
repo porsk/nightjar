@@ -174,7 +174,6 @@ No extra services. Everything is in the app process.
 | Hungarian accuracy on the owner's voice | Eval harness, own clips |
 | sherpa-onnx native addon on Node 26 / arm64 / slim image | Build the Docker image on both architectures |
 | iOS PWA recording stops when the screen locks | Test on a real iPhone, report to the owner |
-| TypeScript 7 (native compiler) vs lint/test tooling | Try it, report to the owner |
 | CPU-only transcription speed | Measure in eval (real-time factor per model) |
 
 ## Ready for many users (not built yet)

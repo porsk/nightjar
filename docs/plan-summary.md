@@ -65,7 +65,6 @@ M0 ─► M1 ─► M2 ─► M3 ─► M4 (1.0)
 | Hungarian accuracy on your voice | Record ~20 clips, measure both models |
 | Speech engine in Docker on ARM | Build and run the image on both architectures |
 | iPhone stops recording when the screen locks | Test on a real iPhone |
-| TypeScript 7 with lint/test tools | Try it |
 | Node runs `.ts` directly | Try it in dev and in the image |
 
 ## How we build

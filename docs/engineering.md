@@ -11,7 +11,7 @@ don't go from memory. Dependabot keeps us current after that.
 |---|---|
 | Node | 26.13 LTS (managed with nvm, pinned in `.nvmrc`) |
 | pnpm | 12.23 (pinned with `packageManager` in `package.json`) |
-| TypeScript | 7.0 (the new native compiler), checked in the M0 spike |
+| TypeScript | 6.0 (latest 6.x; typescript-eslint does not support 7 yet, see D-14) |
 | Postgres | 19 (`postgres:19` image) |
 | Docker base image | `node:26` slim, Debian trixie |
 | Server | Fastify 5.12, Zod 4.6, Drizzle ORM 0.45 + drizzle-kit 0.31, pg-boss 12.40, Better Auth 1.7, pino 10, prom-client 15.1 |
@@ -152,6 +152,6 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
    hand-written reference text. Script measures word error rate and speed for Parakeet v3 and Whisper turbo
    (incl. a Hungarian fine-tune). Reports results to the owner, who picks the default model.
 2. **sherpa-onnx in Docker**: native addon loads on Node 26, slim image, amd64 and arm64.
-3. **TypeScript 7**: check that typescript-eslint type-aware linting and Vitest work with it. If not, the owner decides.
+3. **TypeScript**: done. TS 7 is blocked by typescript-eslint, so we use TS 6.0 (D-14). Revisit when typescript-eslint supports 7.
 4. **Node type stripping**: server runs from `.ts` files in dev and in the image, including the shared package.
 5. **iPhone recording**: PWA recording on a real iPhone, what happens when the screen locks.

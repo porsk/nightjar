@@ -10,7 +10,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] Plan drafted (`plan-summary.md` + detailed docs)
 - [x] High-level plan approved by owner
 - [ ] Spikes, results go to the owner: transcription eval on the owner's own clips, sherpa-onnx in Docker (amd64 + arm64),
-      TypeScript 7 with lint/test tools, Node type stripping, iPhone PWA recording
+      Node type stripping, iPhone PWA recording
 - [ ] Repo setup: git, LICENSE, README, CONTRIBUTING, pnpm workspace, lint/format
 - [ ] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
@@ -28,7 +28,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 
 | WP | Issue | What | Depends on | Needs from owner | Status |
 |---|---|---|---|---|---|
-| 1 | #1 | Repo skeleton + TS 7 / type stripping spikes | - | - | pushed; switching to TS 6 (D-14) |
+| 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | running |
 | 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | public round done (`eval/reports/public-2026-11-26.md`) |
