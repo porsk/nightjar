@@ -1,6 +1,6 @@
 # 004 Timeline
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

@@ -100,6 +100,38 @@ export const entryResponseSchema = z.object({
 })
 export type Entry = z.infer<typeof entryResponseSchema>
 
+export const timelineBadgeSchema = z.enum(['working', 'off', 'failed'])
+export type TimelineBadge = z.infer<typeof timelineBadgeSchema>
+
+export const timelineItemSchema = z.object({
+  id: z.string(),
+  entryDate: entryDateSchema,
+  createdAt: z.string(),
+  excerpt: z.string().nullable(),
+  hasRecordings: z.boolean(),
+  totalDurationMs: z.number().int().nonnegative(),
+  badge: timelineBadgeSchema.nullable(),
+})
+export type TimelineItem = z.infer<typeof timelineItemSchema>
+
+export const timelinePageSchema = z.object({
+  items: z.array(timelineItemSchema),
+  nextCursor: z.string().nullable(),
+})
+export type TimelinePage = z.infer<typeof timelinePageSchema>
+
+export const timelinePageSize = 30
+
+/** Either one page of the timeline (`before`, `limit`) or every entry of one day (`date`). */
+export const timelineQuerySchema = z
+  .strictObject({
+    before: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(timelinePageSize),
+    date: entryDateSchema.optional(),
+  })
+  .refine((query) => query.before === undefined || query.date === undefined)
+export type TimelineQuery = z.infer<typeof timelineQuerySchema>
+
 /** The calendar day it is right now in the given time zone. */
 export function todayIn(timeZone: string, now: Date): string {
   const parts = new Intl.DateTimeFormat('en-US', {

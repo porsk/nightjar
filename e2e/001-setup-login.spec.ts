@@ -45,10 +45,10 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await fillAccount(page)
     await page.getByRole('button', { name: 'Next' }).click()
     await page.getByRole('button', { name: 'Finish', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
     await expect(page).toHaveURL(/\/$/)
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
     expect(await readTranscriptionFlag()).toBe(false)
   })
 
@@ -59,7 +59,7 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await expect(page.getByRole('heading', { name: 'Nyelv és időzóna' })).toBeVisible()
     await page.getByRole('button', { name: 'Tovább' }).click()
     await page.getByRole('button', { name: 'Befejezés', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Ma' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Mi járt a fejedben/ })).toBeVisible()
   })
 
   test('AC-5: choosing transcription finishes setup and stores the flag', async ({ page }) => {
@@ -68,7 +68,7 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await page.getByRole('button', { name: 'Next' }).click()
     await page.getByRole('radio', { name: /Turn on transcription/ }).check({ force: true })
     await page.getByRole('button', { name: 'Finish and start download' }).click()
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
     expect(await readTranscriptionFlag()).toBe(true)
   })
 
@@ -85,7 +85,7 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await page.getByRole('button', { name: 'Next' }).click()
     await page.getByRole('button', { name: 'Next' }).click()
     await page.getByRole('button', { name: 'Finish', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
   })
 
   test('AC-6: /setup shows the login screen once an account exists', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await createAdmin(headers)
     await page.goto('/login')
     await login(page)
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
   })
 
   test('AC-10: a wrong password shows the alert', async ({ page }) => {
@@ -135,7 +135,7 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await createAdmin(headers)
     await page.goto('/login')
     await login(page)
-    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
     await page.goto('/settings')
     const cookie = (await context.cookies()).map(({ name, value }) => `${name}=${value}`).join('; ')
     expect((await request.get('/api/v1/me', { headers: { ...headers, cookie } })).status()).toBe(

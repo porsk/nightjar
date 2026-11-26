@@ -70,6 +70,31 @@ export const en: typeof hu = {
   },
   home: {
     write: "I'd rather write",
+    record: 'Start recording',
+    upload: 'Upload an audio file',
+    todayEntries: "Today's entries",
+    todayEmpty: 'No entries today yet.',
+    greeting: {
+      morning: "Good morning. What's on your mind?",
+      afternoon: "Good afternoon. What's on your mind?",
+      evening: "Good evening. What's on your mind?",
+    },
+  },
+  timeline: {
+    title: 'Timeline',
+    loadingMore: 'Loading more entries…',
+    empty: 'No entries yet. Record or write one on the Today page.',
+  },
+  badge: {
+    working: 'Transcribing',
+    off: 'Not transcribed',
+    failed: 'Failed',
+  },
+  a11y: {
+    icon: {
+      voice: 'Voice entry',
+      text: 'Text entry',
+    },
   },
   date: {
     today: 'Today, {{date}}',
@@ -89,6 +114,7 @@ export const en: typeof hu = {
     edit: 'Edit',
     delete: 'Delete',
     deleteEntry: 'Delete entry',
+    noText: 'Recording, no text',
   },
   dateDialog: {
     title: 'Which day is it about?',
@@ -103,6 +129,9 @@ export const en: typeof hu = {
   nav: {
     main: 'Main navigation',
     today: 'Today',
+    timeline: 'Timeline',
+    search: 'Search',
+    newRecording: 'New recording',
     settings: 'Settings',
   },
   settings: {

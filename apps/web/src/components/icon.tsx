@@ -11,6 +11,10 @@ const paths = {
   next: 'M9 5l7 7-7 7',
   cal: 'M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM4 10h16M9 3v4M15 3v4',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  mic: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+  list: 'M5 7h14M5 12h14M5 17h9',
+  search: 'M11 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM20 20l-4-4',
+  upload: 'M12 16V4M7 9l5-5 5 5M5 20h14',
 } as const
 
 export type IconName = keyof typeof paths

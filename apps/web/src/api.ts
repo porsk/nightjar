@@ -3,6 +3,8 @@ import {
   errorResponseSchema,
   meResponseSchema,
   setupStatusSchema,
+  timelinePageSchema,
+  timelinePageSize,
   type CreateEntry,
   type Entry,
   type Me,
@@ -10,7 +12,7 @@ import {
   type SetupRequest,
   type UpdateEntry,
 } from '@nightjar/shared'
-import { queryOptions } from '@tanstack/react-query'
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
 export class ApiError extends Error {
   readonly status: number
@@ -78,6 +80,27 @@ export const entryQuery = (id: string) =>
     queryFn: async (): Promise<Entry> =>
       parse(entryResponseSchema, await request('GET', entryPath(id))),
     staleTime: 5000,
+  })
+
+export const timelineQuery = infiniteQueryOptions({
+  queryKey: ['timeline', 'pages'],
+  queryFn: async ({ pageParam }) =>
+    parse(
+      timelinePageSchema,
+      await request(
+        'GET',
+        `/api/v1/entries?limit=${String(timelinePageSize)}${pageParam ? `&before=${encodeURIComponent(pageParam)}` : ''}`,
+      ),
+    ),
+  initialPageParam: '',
+  getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+})
+
+export const dayEntriesQuery = (day: string) =>
+  queryOptions({
+    queryKey: ['timeline', 'day', day],
+    queryFn: async () =>
+      parse(timelinePageSchema, await request('GET', `/api/v1/entries?date=${day}`)),
   })
 
 export const createEntry = async (input: CreateEntry): Promise<Entry> =>

@@ -59,7 +59,7 @@ describe('001-setup-login: login', () => {
     })
     renderApp('/login')
     await submitLogin(userEvent.setup())
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /What's on your mind/ })).toBeInTheDocument()
   })
 
   it('AC-13: without a session an app page shows login, and signing in returns to that page', async () => {
@@ -99,6 +99,6 @@ describe('001-setup-login: login', () => {
       'GET /api/v1/me': () => json({ ...me, uiLanguage: 'hu' }),
     })
     renderApp('/')
-    expect(await screen.findByRole('heading', { name: 'Ma' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Mi járt a fejedben/ })).toBeInTheDocument()
   })
 })

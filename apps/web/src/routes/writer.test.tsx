@@ -127,7 +127,7 @@ describe('002-text-entries: writer', () => {
     const calls = stubApi(signedIn())
     renderApp('/write')
     await setup().click(await screen.findByRole('button', { name: 'Done' }))
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /What's on your mind/ })).toBeInTheDocument()
     expect(calls.some((call) => call.key.startsWith('POST'))).toBe(false)
   })
 

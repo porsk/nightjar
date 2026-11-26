@@ -112,7 +112,8 @@ function Writer({ initial }: { initial: Entry | undefined }) {
       queryClient.removeQueries({ queryKey: entryQuery(id).queryKey })
     }
     deleted.current = true
-    await navigate('/', { replace: true })
+    await queryClient.invalidateQueries({ queryKey: ['timeline'] })
+    await navigate('/timeline', { replace: true })
   }
 
   return (
