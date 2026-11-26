@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { Client, Pool } from 'pg'
+import * as schema from './db/schema.ts'
 import type { Logger } from './logger.ts'
 
 const migrationLockKey = 7_281_977
@@ -28,7 +29,10 @@ export function createDatabase(url: string, logger: Logger) {
     }
   }
 
+  const db = drizzle(pool, { schema })
+
   return {
+    db,
     ping: async () => {
       await pool.query('select 1')
     },

@@ -8,7 +8,8 @@ export default defineConfig({
     testTimeout: 60_000,
     coverage: {
       provider: 'v8',
-      include: ['src/start.ts', 'src/database.ts'],
+      include: ['src/start.ts', 'src/database.ts', 'src/modules/auth/*.ts'],
+      exclude: ['**/*.test.ts'],
       reportsDirectory: 'coverage-api',
       reporter: ['text', 'html'],
       thresholds: { lines: 90 },

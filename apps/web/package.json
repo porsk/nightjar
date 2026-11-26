@@ -9,11 +9,15 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
+    "@fontsource-variable/figtree": "5.3.0",
+    "@fontsource-variable/fraunces": "5.3.0",
     "@nightjar/shared": "workspace:*",
+    "@tanstack/react-query": "5.108.4",
     "i18next": "^27.2.9",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^18.0.3"
+    "react-i18next": "^18.0.3",
+    "react-router": "8.5.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "8.0.0",

@@ -15,6 +15,8 @@ const once = <T>(run: () => Promise<T>) => {
   return () => (pending ??= run())
 }
 
+const usersTable =
+  'create table users (id uuid); create table instance_settings (id int primary key, transcription_enabled boolean not null default false, auth_secret text not null, setup_code_hash text, updated_at timestamptz not null default now());'
 const shippedMigrations = join(import.meta.dirname, '../migrations')
 
 describe('007-observability: health, migrations and metrics against a real Postgres', () => {
@@ -114,7 +116,7 @@ describe('007-observability: health, migrations and metrics against a real Postg
 
   it('AC-5: /readyz answers 503 starting and /api/v1 answers 503 while migrations run', async () => {
     const url = await database('ac5_starting')
-    const slow = writeMigrationsFolder(['select pg_sleep(3);'])
+    const slow = writeMigrationsFolder([`select pg_sleep(3); ${usersTable}`])
     const server = await launch(url, { migrationsFolder: slow })
     const readyz = await get(server.appPort, '/readyz')
     expect(readyz.status).toBe(503)
@@ -126,7 +128,7 @@ describe('007-observability: health, migrations and metrics against a real Postg
 
   it('AC-6: applies migrations on an empty database, and a second start applies nothing', async () => {
     const url = await database('ac6')
-    const folder = writeMigrationsFolder(['create table first_table (id int);'])
+    const folder = writeMigrationsFolder([`create table first_table (id int); ${usersTable}`])
     const first = await launch(url, { migrationsFolder: folder })
     await first.ready
     const applied = () => query<{ id: number }>(url, 'select id from drizzle.__drizzle_migrations')
@@ -141,7 +143,9 @@ describe('007-observability: health, migrations and metrics against a real Postg
 
   it('AC-6: two parallel starts apply the migration once and both become ready', async () => {
     const url = await database('ac6_parallel')
-    const folder = writeMigrationsFolder(['create table once_only (id int); select pg_sleep(1);'])
+    const folder = writeMigrationsFolder([
+      `create table once_only (id int); ${usersTable} select pg_sleep(1);`,
+    ])
     const exit = vi.fn()
     const [first, second] = await Promise.all([
       launch(url, { migrationsFolder: folder, exit }),

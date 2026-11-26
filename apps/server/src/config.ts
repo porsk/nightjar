@@ -5,6 +5,7 @@ const configSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   NIGHTJAR_METRICS_PORT: z.coerce.number().int().min(0).max(65535).default(9464),
   NIGHTJAR_WEB_DIR: z.string().min(1).optional(),
+  NIGHTJAR_TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })
 

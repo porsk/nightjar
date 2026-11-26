@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 done. M1 build: 007 done (PR open), next 001.
+**Now:** M0 done. M1 build: 007 and 001 done (001 PR open), next 006.
 **Next:** M1 build order is in `docs/specs/m1-summary.md`. Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -40,7 +40,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 
 ## M1 Speak and keep
-- [ ] 001 Setup wizard + login
+- [x] 001 Setup wizard + login
 - [ ] 002 Text entries (write, edit, delete, entry date)
 - [ ] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
 - [ ] 004 Timeline

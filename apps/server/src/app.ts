@@ -1,14 +1,25 @@
+import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
 import { healthResponseSchema, readyResponseSchema } from '@nightjar/shared'
+import type { Database } from './database.ts'
+import { AppError } from './errors.ts'
 import type { Logger } from './logger.ts'
 import type { Metrics } from './metrics.ts'
+import type { Auth } from './modules/auth/auth.ts'
+import { registerAuthRoutes } from './modules/auth/routes.ts'
 import type { Readiness } from './readiness.ts'
 
 export interface AppDependencies {
   logger: Logger
   readiness: Readiness
   metrics: Metrics
+  database: Database
+  /** Returns the auth instance, which exists once migrations are done. */
+  getAuth: () => Auth
+  /** Number of reverse proxies in front of the server. 0 trusts no forwarded headers. */
+  trustProxy?: number | undefined
+  rateLimitMax?: number | undefined
   webDir?: string | undefined
 }
 
@@ -21,9 +32,19 @@ const stackFrames = (error: Error) =>
 
 const apiPrefix = '/api/v1'
 
-export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies) {
+export async function buildApp({
+  logger,
+  readiness,
+  metrics,
+  database,
+  getAuth,
+  trustProxy,
+  rateLimitMax,
+  webDir,
+}: AppDependencies) {
   const app = Fastify({
     loggerInstance: logger,
+    trustProxy: (_address: string, hop: number) => hop < (trustProxy ?? 0),
     logController: new LogController({ disableRequestLogging: true }),
   })
 
@@ -37,6 +58,13 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
     }
     return undefined
   })
+
+  await app.register(rateLimit, {
+    max: rateLimitMax ?? 300,
+    timeWindow: '1 minute',
+    errorResponseBuilder: () => new AppError(429, 'too_many_attempts'),
+  })
+  registerAuthRoutes(app, { database, getAuth })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'
@@ -73,9 +101,11 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
     })
   })
 
-  app.setNotFoundHandler((_request, reply) =>
-    reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } }),
-  )
+  app.setNotFoundHandler((request, reply) => {
+    const isApi = request.url.split('?')[0]?.startsWith(`${apiPrefix}/`)
+    if (webDir && request.method === 'GET' && !isApi) return reply.sendFile('index.html')
+    return reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } })
+  })
 
   app.get('/healthz', () => healthResponseSchema.parse({ status: 'ok' }))
 

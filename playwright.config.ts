@@ -5,6 +5,7 @@ export default defineConfig({
   outputDir: 'test-results',
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   fullyParallel: true,
+  workers: 1,
   forbidOnly: Boolean(process.env['CI']),
   retries: 0,
   use: {

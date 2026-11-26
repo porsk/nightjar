@@ -10,18 +10,20 @@ import { createLogger } from './logger.ts'
 
 const marker = (name: string) => `ZQX-PRIVATE-${name}-7781`
 
-function addTestRoutes(app: ReturnType<typeof buildTestApp>['app']) {
+const publicRoute = { config: { public: true } }
+
+function addTestRoutes(app: Awaited<ReturnType<typeof buildTestApp>>['app']) {
   const bodySchema = z.object({ text: z.string().max(5) })
-  app.post('/api/v1/test-items', (request) => {
+  app.post('/api/v1/test-items', publicRoute, (request) => {
     bodySchema.parse(request.body)
     return { ok: true }
   })
-  app.get('/api/v1/test-items/:id', () => ({ ok: true }))
-  app.get('/api/v1/test-search', () => ({ hits: [] }))
-  app.get('/api/v1/test-crash', (request) => {
+  app.get('/api/v1/test-items/:id', publicRoute, () => ({ ok: true }))
+  app.get('/api/v1/test-search', publicRoute, () => ({ hits: [] }))
+  app.get('/api/v1/test-crash', publicRoute, (request) => {
     throw new TypeError(`crashed on ${(request.query as { q: string }).q}`)
   })
-  app.get('/api/v1/test-explode', (request) => {
+  app.get('/api/v1/test-explode', publicRoute, (request) => {
     throw Object.assign(new Error(`failed on ${(request.query as { q: string }).q}`), {
       statusCode: 400,
     })
@@ -30,7 +32,7 @@ function addTestRoutes(app: ReturnType<typeof buildTestApp>['app']) {
 
 describe('007-observability: logs, health, metrics', () => {
   it('AC-1: writes one JSON object per line with level, time, msg and reqId for request lines', async () => {
-    const { app, capture } = buildTestApp()
+    const { app, capture } = await buildTestApp()
     await app.inject({ method: 'GET', url: '/healthz' })
     const lines = capture.lines()
     expect(lines.length).toBeGreaterThan(0)
@@ -44,13 +46,13 @@ describe('007-observability: logs, health, metrics', () => {
   })
 
   it('AC-1: hides info lines when the level is warn', async () => {
-    const { app, capture } = buildTestApp({ level: 'warn' })
+    const { app, capture } = await buildTestApp({ level: 'warn' })
     await app.inject({ method: 'GET', url: '/healthz' })
     expect(capture.text()).toBe('')
   })
 
-  it('AC-1: redacts sensitive fields if someone logs them by mistake', () => {
-    const { app, capture } = buildTestApp()
+  it('AC-1: redacts sensitive fields if someone logs them by mistake', async () => {
+    const { app, capture } = await buildTestApp()
     app.log.info(
       {
         password: 'ZQX-pw',
@@ -64,7 +66,7 @@ describe('007-observability: logs, health, metrics', () => {
   })
 
   it('AC-2: no marker from body, query, parameter, headers, invalid JSON or error text reaches the logs', async () => {
-    const { app, capture, readiness } = buildTestApp()
+    const { app, capture, readiness } = await buildTestApp()
     readiness.markMigrated()
     addTestRoutes(app)
     const markers = {
@@ -104,7 +106,7 @@ describe('007-observability: logs, health, metrics', () => {
   })
 
   it('AC-3: logs method, route template, status and duration, and nothing else about the request', async () => {
-    const { app, capture, readiness } = buildTestApp()
+    const { app, capture, readiness } = await buildTestApp()
     readiness.markMigrated()
     addTestRoutes(app)
     const id = randomUUID()
@@ -124,7 +126,7 @@ describe('007-observability: logs, health, metrics', () => {
 
   it('AC-5: reports ok, starting and db_down from the readiness state', async () => {
     let databaseUp = true
-    const { app, readiness } = buildTestApp({
+    const { app, readiness } = await buildTestApp({
       checkDatabase: () => (databaseUp ? Promise.resolve() : Promise.reject(new Error('down'))),
     })
     expect((await app.inject({ url: '/readyz' })).json()).toEqual({ status: 'starting' })
@@ -139,7 +141,7 @@ describe('007-observability: logs, health, metrics', () => {
   })
 
   it('AC-6: answers /api/v1 with 503 until migrations are done', async () => {
-    const { app, readiness } = buildTestApp()
+    const { app, readiness } = await buildTestApp()
     addTestRoutes(app)
     const before = await app.inject({ url: '/api/v1/test-search' })
     expect(before.statusCode).toBe(503)
@@ -149,7 +151,7 @@ describe('007-observability: logs, health, metrics', () => {
   })
 
   it('AC-8: 50 different ids make one series for the route and no label holds an id', async () => {
-    const { app, metrics, readiness } = buildTestApp()
+    const { app, metrics, readiness } = await buildTestApp()
     readiness.markMigrated()
     addTestRoutes(app)
     const ids = Array.from({ length: 50 }, () => randomUUID())
@@ -177,7 +179,7 @@ describe('007-observability: logs, health, metrics', () => {
 
 describe('error responses', () => {
   it('logs the class name and stack frames of a 500, never its message', async () => {
-    const { app, capture, readiness } = buildTestApp()
+    const { app, capture, readiness } = await buildTestApp()
     readiness.markMigrated()
     addTestRoutes(app)
     const response = await app.inject({ url: `/api/v1/test-crash?q=${marker('crash')}` })
@@ -189,7 +191,7 @@ describe('error responses', () => {
   })
 
   it('answers unknown routes with a JSON 404 that does not echo the URL', async () => {
-    const { app } = buildTestApp()
+    const { app } = await buildTestApp()
     const response = await app.inject({ url: `/nothing/${marker('url')}` })
     expect(response.statusCode).toBe(404)
     expect(response.json()).toEqual({ error: { code: 'not_found', message: 'Not found' } })
@@ -200,13 +202,13 @@ describe('serving the web app', () => {
   it('serves files from the web directory when one is given', async () => {
     const webDir = mkdtempSync(join(tmpdir(), 'nightjar-web-'))
     writeFileSync(join(webDir, 'index.html'), '<h1>hello</h1>')
-    const response = await buildTestApp({ webDir }).app.inject({ method: 'GET', url: '/' })
+    const response = await (await buildTestApp({ webDir })).app.inject({ method: 'GET', url: '/' })
     expect(response.statusCode).toBe(200)
     expect(response.body).toBe('<h1>hello</h1>')
   })
 
   it('does not serve the web app without a web directory', async () => {
-    const response = await buildTestApp().app.inject({ method: 'GET', url: '/' })
+    const response = await (await buildTestApp()).app.inject({ method: 'GET', url: '/' })
     expect(response.statusCode).toBe(404)
   })
 })

@@ -14,7 +14,7 @@ don't go from memory. Dependabot keeps us current after that.
 | TypeScript | 6.0 (latest 6.x; typescript-eslint does not support 7 yet, see D-14) |
 | Postgres | 19 (`postgres:19` image) |
 | Docker base image | `node:26` slim, Debian trixie |
-| Server | Fastify 5.12, Zod 4.6, Drizzle ORM 0.45 + drizzle-kit 0.31, pg-boss 12.40, Better Auth 1.7, pino 10, prom-client 15.1 |
+| Server | Fastify 5.12, Zod 4.6, Drizzle ORM 0.45 + drizzle-kit 0.31, pg-boss 12.40, Better Auth 1.7 (+ @node-rs/argon2 2.2 for Argon2id), pino 10, prom-client 15.1 |
 | Server plugins | @fastify/helmet 13, @fastify/rate-limit 11, @fastify/multipart 10, @fastify/static 10 |
 | Media / speech | sherpa-onnx-node 2.0, sharp 0.35, ffmpeg (Debian package) |
 | AI / MCP | @anthropic-ai/sdk 1.14, @modelcontextprotocol/sdk 1.32 |
@@ -163,6 +163,7 @@ variable and never prints its value.
 | `NIGHTJAR_METRICS_PORT` | `9464` | Internal metrics port |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
 | `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
+| `NIGHTJAR_TRUST_PROXY` | `0` | Number of reverse proxies in front of the server (`1` behind one). 0 ignores `X-Forwarded-*`. With 1 the client IP (login rate limit) and https (Secure cookie) come from what that proxy added; a client-set leftmost `X-Forwarded-For` is never trusted. The proxy must keep the original `Host` header |
 
 Code layout: `apps/server/src/web.ts` (HTTP) and `worker.ts` (background jobs) are separate entry points that one
 process starts together (`start.ts`). SQL migrations live in `apps/server/migrations` (made with

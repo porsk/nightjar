@@ -8,7 +8,16 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**'],
       // main.ts, start.ts and database.ts need a real Postgres and are covered by the API tests
-      exclude: ['**/*.test.ts', '**/main.ts', '**/start.ts', '**/database.ts'],
+      exclude: [
+        '**/*.test.ts',
+        '**/main.ts',
+        '**/start.ts',
+        '**/database.ts',
+        'src/db/**',
+        'src/modules/auth/auth.ts',
+        'src/modules/auth/routes.ts',
+        'src/modules/auth/setup-code.ts',
+      ],
       reporter: ['text', 'html'],
       thresholds: { lines: 90 },
     },
