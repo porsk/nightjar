@@ -3,21 +3,22 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { FakeEventSource, FakeIntersectionObserver } from './test-fakes.ts'
 
+// Plain assignments, so tests that call vi.unstubAllGlobals() keep them.
+Object.assign(globalThis, {
+  EventSource: FakeEventSource,
+  IntersectionObserver: FakeIntersectionObserver,
+  matchMedia: (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }) as unknown as MediaQueryList,
+})
+
 beforeEach(() => {
   FakeEventSource.instances = []
   FakeIntersectionObserver.instances = []
-  vi.stubGlobal('EventSource', FakeEventSource)
-  vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver)
-  vi.stubGlobal(
-    'matchMedia',
-    (query: string) =>
-      ({
-        matches: false,
-        media: query,
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-      }) as unknown as MediaQueryList,
-  )
   window.scrollTo = vi.fn()
 })
 
