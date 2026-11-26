@@ -6,7 +6,7 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 
 | # | Question | Options |
 |---|---|---|
-| O-5 | Speech recognition approach | Open. M0 eval compares options on accuracy (HU + EN), speed, hardware needs and cost. Free and local preferred. Owner decides from the report. Public round (FLEURS, 30 clips/lang, 4 CPU): Whisper turbo HU 20.5% / EN 4.2% WER, Parakeet v3 HU 31.3% / EN 5.9% but 3x faster. See `eval/reports/public-2026-11-26.md`. Owner clips next |
+| O-5 | Speech recognition approach | Open. M0 eval compares options on accuracy (HU + EN), speed, hardware needs and cost. Free and local preferred. Owner decides from the report. Public round (FLEURS, 30 clips/lang, 4 CPU): Whisper turbo HU 20.5% / EN 4.2% WER, Parakeet v3 HU 31.3% / EN 5.9% but 3x faster. See `eval/reports/public-2026-11-26.md`. More options in `docs/research/speech-options.md`. Round 2 proposed: bigger sample + fixed scoring, Whisper large-v3, BuzzASR HU fine-tune, Canary-1B-v2, optional cloud reference, owner clips |
 
 ## Requirements the owner asked for
 
