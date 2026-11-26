@@ -1,7 +1,10 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const target = { target: 'http://localhost:3000', changeOrigin: false }
+const target = {
+  target: `http://localhost:${process.env['NIGHTJAR_API_PORT'] ?? '3000'}`,
+  changeOrigin: false,
+}
 const proxy = { '/healthz': target, '/api': target }
 
 export default defineConfig({
