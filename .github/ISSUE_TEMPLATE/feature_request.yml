@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Check `docs/decisions.md` first. It lists what is in scope and what is on the backlog.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem do you want to solve
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: Keep it small. What is the simplest thing that would help?
+    validations:
+      required: true

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar logo options</title>
+<style>
+  body { margin: 0; font: 14px system-ui, sans-serif; color: #231f45; background: #fff; }
+  h1 { margin: 0; padding: 16px 24px; font-size: 18px; }
+  .row { display: grid; grid-template-columns: 90px auto auto; align-items: stretch; width: max-content; }
+  .label { padding: 24px 16px; font-weight: 600; }
+  .panel { display: flex; align-items: flex-end; gap: 28px; padding: 24px; }
+  .dark { background: #14122b; color: #f0ecfa; }
+  .light { background: #f7f2fb; color: #231f45; }
+  .head { display: grid; grid-template-columns: 90px 1fr 1fr; font-size: 12px; opacity: .7; padding: 0 0 4px; }
+  .head span { padding: 0 24px; }
+  figure { margin: 0; text-align: center; font-size: 11px; }
+  figure img { display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<h1>Nightjar logo options</h1>
+<script>
+  const logos = [['a', 'a-mockup-bird.svg'], ['b', 'b-mockup-bird-glow.svg'], ['c', 'c-dusk-bird.svg']];
+  const sizes = [512, 128, 32];
+  for (const [n, file] of logos) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div class="label">${n}</div>` + ['dark', 'light'].map(theme =>
+      `<div class="panel ${theme}">` + sizes.map(s =>
+        `<figure><img src="${file}" width="${s}" height="${s}" alt="">${s}px</figure>`).join('') + '</div>').join('');
+    document.body.appendChild(row);
+  }
+</script>
+</body>
+</html>

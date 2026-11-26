@@ -1,0 +1,34 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not paste journal content, transcripts, file names or logs that contain personal data.
+        Redact them first. Security problems: use the security policy instead of this form.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or image tag
+      placeholder: edge, 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: Safari on iPhone, Firefox on Linux
