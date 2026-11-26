@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 running. WP1 and WP2 done (TS 6, test harness). WP3 running. WP4 public eval done, waiting on owner clips. WP5 waiting on owner's pick.
+**Now:** M0 running. WP1-WP3 done (PR #28 waits on owner merge). Speech eval round 2 and Alkony desktop mockups running.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -31,8 +31,8 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 | 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
 | 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
-| 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | public round done (`eval/reports/public-2026-11-26.md`) |
-| 5 | #5 | Design directions | - | Pick a direction | round 2 ready (5 directions) |
+| 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 running (public clips); own clips later; Soniox after |
+| 5 | #5 | Design directions | - | Approve desktop views | Alkony picked; desktop views running |
 | 6 | #6 | iPhone recording test page | WP3 | Open it on your iPhone | todo |
 | 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | todo |
 

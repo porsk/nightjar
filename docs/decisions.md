@@ -63,6 +63,10 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-13 | 11-26 | Task tracking in GitHub: milestones M0 to M4, issues per WP / spec, labels. Docs keep decisions, requirements, specs | Owner asked for GitHub tracking |
 | D-14 | 11-26 | TypeScript 6 (latest 6.x) everywhere for now. Move to TS 7 once typescript-eslint supports it | typescript-eslint refuses TS 7. Owner picked A |
 | D-15 | 11-26 | Build for one user now, but architect for many: every row and file belongs to a user, every query scoped to the signed-in user, auth via Better Auth so OAuth providers can be added by config, no single-user shortcuts. Hosted (SaaS) version may come later, same code. Nothing of this is built before it is planned | Owner: family accounts on a homelab, OAuth and a hosted paid version later |
+| D-16 | 11-26 | Design direction: **1 Alkony** (dusk: indigo night, amber glow, round amber record button). Desktop views next | Owner pick |
+| D-17 | 11-26 | Speech eval round 2: fairer scoring, bigger sample, Whisper turbo vs large-v3 vs BuzzASR HU fine-tune vs Canary-1B-v2. Owner clips later | Owner: 20% WER not good enough |
+| D-18 | 11-26 | Fast follow after round 2: Soniox as a cloud yardstick in the eval, piloted once the owner has an account | Owner |
+| D-19 | 11-26 | CI checks PR titles are conventional commits. CodeQL runs as a workflow file, not the one-click setup | Owner OK |
 
 ## Proposed (approved together with the plan)
 
