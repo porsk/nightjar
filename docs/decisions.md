@@ -46,6 +46,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-19 | Keyboard shortcuts (desktop): R record, N new, / search, Ctrl+Enter save, Esc, J/K, ? | suggested, not M1 |
 | S-20 | Plugins to extend the app (like Wealthfolio) | backlog, later milestone. Keep `Transcriber` / `AiProvider` as clean seams |
 | S-21 | Public demo instance: log in and try it, sample data, reset on a schedule | backlog. Keep sample data as a seed script and allow a demo flag later |
+| S-22 | Ready-made Grafana dashboard file in the repo | backlog (owner: good for later) |
+| S-23 | Admin "System" page: queue length, transcription speed, recent errors | backlog (owner: good for later) |
 
 ## Decided
 
