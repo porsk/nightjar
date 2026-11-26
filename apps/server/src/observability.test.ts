@@ -12,8 +12,11 @@ const marker = (name: string) => `ZQX-PRIVATE-${name}-7781`
 
 function addTestRoutes(app: ReturnType<typeof buildTestApp>['app']) {
   const bodySchema = z.object({ text: z.string().max(5) })
-  app.post('/api/v1/test-items', (request) => bodySchema.parse(request.body))
-  app.get('/api/v1/test-items/:id', (request) => ({ id: (request.params as { id: string }).id }))
+  app.post('/api/v1/test-items', (request) => {
+    bodySchema.parse(request.body)
+    return { ok: true }
+  })
+  app.get('/api/v1/test-items/:id', () => ({ ok: true }))
   app.get('/api/v1/test-search', () => ({ hits: [] }))
   app.get('/api/v1/test-explode', (request) => {
     throw Object.assign(new Error(`failed on ${(request.query as { q: string }).q}`), {
