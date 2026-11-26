@@ -9,7 +9,7 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 | # | Question | Options |
 |---|---|---|
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
-| O-6 | 003 nightly check: spec says word error rate under 30% on each fixture clip | Measured with the real model (turbo int8, greedy): `en-sample.wav` 0%, `hu-sample.wav` 35.7% (5 of 14 words: the foreign name and two single letters). Options: A keep 30% (the Hungarian check fails every night), B 40% for Hungarian only, C add more Hungarian clips and judge the average. Lean: C |
+| O-6 | 003 nightly check: spec says word error rate under 30% on each fixture clip | Measured with the real model (turbo int8, greedy): `en-sample.wav` 0%, `hu-sample.wav` 38.5% (the foreign name and a few single letters). Options: A keep 30% (the Hungarian check fails every night), B 40% for Hungarian only, C add more Hungarian clips and judge the average. Lean: C |
 
 ## Requirements the owner asked for
 
