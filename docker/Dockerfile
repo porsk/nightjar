@@ -35,6 +35,7 @@ COPY --from=prod-deps /app/node_modules node_modules
 COPY --from=prod-deps /app/apps/server/node_modules apps/server/node_modules
 COPY apps/server/package.json apps/server/
 COPY apps/server/src apps/server/src
+COPY apps/server/migrations apps/server/migrations
 COPY packages/shared/package.json packages/shared/
 COPY packages/shared/src packages/shared/src
 COPY --from=prod-deps /app/packages/shared/node_modules packages/shared/node_modules

@@ -20,9 +20,10 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm --filter @nightjar/server exec node src/main.ts',
-      url: 'http://localhost:3000/healthz',
+      command: 'pnpm --filter @nightjar/server exec node test/support/e2e-server.ts',
+      url: 'http://localhost:3000/readyz',
       reuseExistingServer: false,
+      timeout: 120_000,
     },
     {
       command:

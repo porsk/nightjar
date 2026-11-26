@@ -5,6 +5,7 @@ allowBuilds:
   cpu-features: false
   protobufjs: false
   ssh2: false
+  esbuild: false
 minimumReleaseAgeExclude:
   - '@vitest/coverage-v8@5.1.2'
   - '@vitest/mocker@5.1.2'

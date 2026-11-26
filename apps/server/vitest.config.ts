@@ -7,7 +7,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**'],
-      exclude: ['**/*.test.ts', '**/main.ts'],
+      // main.ts, start.ts and database.ts need a real Postgres and are covered by the API tests
+      exclude: ['**/*.test.ts', '**/main.ts', '**/start.ts', '**/database.ts'],
       reporter: ['text', 'html'],
       thresholds: { lines: 90 },
     },
