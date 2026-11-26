@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 done. M1 build: 007, 001 and 006 done (006 PR open), next 002.
+**Now:** M0 done. M1 build: 007, 001, 006 and 002 done (002 PR open), next 004 and 003.
 **Next:** M1 build order is in `docs/specs/m1-summary.md`. Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -41,7 +41,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 
 ## M1 Speak and keep
 - [x] 001 Setup wizard + login
-- [ ] 002 Text entries (write, edit, delete, entry date)
+- [x] 002 Text entries (write, edit, delete, entry date)
 - [ ] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
 - [ ] 004 Timeline
 - [ ] 005 Search (Hungarian + English aware)

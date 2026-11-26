@@ -1,10 +1,14 @@
 import {
+  entryResponseSchema,
   errorResponseSchema,
   meResponseSchema,
   setupStatusSchema,
+  type CreateEntry,
+  type Entry,
   type Me,
   type SettingsPatch,
   type SetupRequest,
+  type UpdateEntry,
 } from '@nightjar/shared'
 import { queryOptions } from '@tanstack/react-query'
 
@@ -19,7 +23,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method: 'GET' | 'POST' | 'PATCH', path: string, body?: object) {
+async function request(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: object) {
   const response = await fetch(path, {
     method,
     credentials: 'same-origin',
@@ -64,4 +68,24 @@ export const signIn = async (credentials: { email: string; password: string }) =
 
 export const signOut = async () => {
   await request('POST', '/api/v1/auth/sign-out')
+}
+
+const entryPath = (id: string) => `/api/v1/entries/${id}`
+
+export const entryQuery = (id: string) =>
+  queryOptions({
+    queryKey: ['entries', id],
+    queryFn: async (): Promise<Entry> =>
+      parse(entryResponseSchema, await request('GET', entryPath(id))),
+    staleTime: 5000,
+  })
+
+export const createEntry = async (input: CreateEntry): Promise<Entry> =>
+  parse(entryResponseSchema, await request('POST', '/api/v1/entries', input))
+
+export const updateEntry = async (id: string, input: UpdateEntry): Promise<Entry> =>
+  parse(entryResponseSchema, await request('PATCH', entryPath(id), input))
+
+export const deleteEntry = async (id: string) => {
+  await request('DELETE', entryPath(id))
 }

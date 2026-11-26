@@ -5,6 +5,7 @@ import { createAuth, type Auth } from './modules/auth/auth.ts'
 import { issueSetupCode } from './modules/auth/setup-code.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
+import { createStorage } from './storage.ts'
 import { startWeb } from './web.ts'
 import { startWorker } from './worker.ts'
 
@@ -35,6 +36,7 @@ export async function start({ config, logger, migrationsFolder, exit }: StartOpt
       readiness,
       metrics,
       database,
+      storage: createStorage(config.NIGHTJAR_DATA_DIR),
       getAuth,
       trustProxy: config.NIGHTJAR_TRUST_PROXY,
       webDir: config.NIGHTJAR_WEB_DIR,

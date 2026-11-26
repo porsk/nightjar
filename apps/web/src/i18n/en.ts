@@ -5,6 +5,8 @@ export const en: typeof hu = {
     next: 'Next',
     back: 'Back',
     privacyNote: 'Your voice stays on your own server.',
+    cancel: 'Cancel',
+    retry: 'Try again',
   },
   field: {
     email: 'Email',
@@ -21,6 +23,9 @@ export const en: typeof hu = {
     notFound: 'Page not found.',
     invalid_setup_code: 'Wrong setup code.',
     invalid_time_zone: 'Unknown time zone.',
+    entry_not_found: 'Entry not found.',
+    invalid_entry_date: 'Invalid date.',
+    body_too_long: 'The text is too long.',
   },
   setup: {
     step: 'Step {{n}} of 3',
@@ -62,6 +67,38 @@ export const en: typeof hu = {
   },
   auth: {
     logout: 'Sign out',
+  },
+  home: {
+    write: "I'd rather write",
+  },
+  date: {
+    today: 'Today, {{date}}',
+    yesterday: 'Yesterday, {{date}}',
+  },
+  writer: {
+    newTitle: 'New entry',
+    editTitle: 'Edit entry',
+    textLabel: 'Entry text',
+    savedAt: 'Saved {{time}}',
+    saveFailed: "Couldn't save.",
+    markdownHint: 'Markdown works here',
+    done: 'Done',
+  },
+  entry: {
+    changeDate: 'Change date',
+    edit: 'Edit',
+    delete: 'Delete',
+    deleteEntry: 'Delete entry',
+  },
+  dateDialog: {
+    title: 'Which day is it about?',
+    text: 'The entry shows under that day in the timeline.',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+  },
+  deleteDialog: {
+    title: 'Delete this entry?',
+    text: "The text and its recordings are deleted for good. This can't be undone.",
   },
   nav: {
     main: 'Main navigation',

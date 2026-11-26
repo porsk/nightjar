@@ -9,13 +9,18 @@ import type { Metrics } from './metrics.ts'
 import type { Auth } from './modules/auth/auth.ts'
 import { registerAuthRoutes } from './modules/auth/routes.ts'
 import { registerSettingsRoutes } from './modules/settings/routes.ts'
+import { registerEntryRoutes } from './modules/entries/routes.ts'
 import type { Readiness } from './readiness.ts'
+import type { Storage } from './storage.ts'
 
 export interface AppDependencies {
   logger: Logger
   readiness: Readiness
   metrics: Metrics
   database: Database
+  storage: Storage
+  /** The current time. Tests pass a fixed clock. */
+  now?: (() => Date) | undefined
   /** Returns the auth instance, which exists once migrations are done. */
   getAuth: () => Auth
   /** Number of reverse proxies in front of the server. 0 trusts no forwarded headers. */
@@ -38,6 +43,8 @@ export async function buildApp({
   readiness,
   metrics,
   database,
+  storage,
+  now,
   getAuth,
   trustProxy,
   rateLimitMax,
@@ -67,6 +74,7 @@ export async function buildApp({
   })
   registerAuthRoutes(app, { database, getAuth })
   registerSettingsRoutes(app, { database })
+  registerEntryRoutes(app, { database, storage, now: now ?? (() => new Date()) })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'

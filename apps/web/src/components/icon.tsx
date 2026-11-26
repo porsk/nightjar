@@ -5,6 +5,12 @@ const paths = {
   home: 'M4 11l8-7 8 7v9H4z',
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1',
   out: 'M10 4H5v16h5M15 8l4 4-4 4M19 12H9',
+  pen: 'M4 20l1-4L16 5l3 3L8 19z',
+  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  back: 'M15 5l-7 7 7 7',
+  next: 'M9 5l7 7-7 7',
+  cal: 'M7 5h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3zM4 10h16M9 3v4M15 3v4',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
 } as const
 
 export type IconName = keyof typeof paths

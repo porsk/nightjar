@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, date, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 const updatedAt = () =>
@@ -70,5 +70,71 @@ export const instanceSettings = pgTable('instance_settings', {
   transcriptionEnabled: boolean('transcription_enabled').notNull().default(false),
   authSecret: text('auth_secret').notNull(),
   setupCodeHash: text('setup_code_hash'),
+  updatedAt: updatedAt(),
+})
+
+export const entries = pgTable(
+  'entries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    entryDate: date('entry_date', { mode: 'string' }).notNull(),
+    bodyMd: text('body_md').notNull().default(''),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index('entries_user_date_idx').on(
+      table.userId,
+      table.entryDate.desc(),
+      table.createdAt.desc(),
+      table.id,
+    ),
+  ],
+)
+
+export const recordings = pgTable(
+  'recordings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    entryId: uuid('entry_id')
+      .notNull()
+      .references(() => entries.id, { onDelete: 'cascade' }),
+    filePath: text('file_path').notNull(),
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    durationMs: integer('duration_ms').notNull(),
+    language: text('language', { enum: ['hu', 'en', 'auto'] }).notNull(),
+    status: text('status', {
+      enum: ['pending', 'transcribing', 'done', 'failed', 'skipped'],
+    }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index('recordings_entry_idx').on(table.entryId),
+    index('recordings_status_idx').on(table.status),
+  ],
+)
+
+export const transcripts = pgTable('transcripts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  recordingId: uuid('recording_id')
+    .notNull()
+    .unique()
+    .references(() => recordings.id, { onDelete: 'cascade' }),
+  model: text('model').notNull(),
+  language: text('language', { enum: ['hu', 'en'] }).notNull(),
+  text: text('text').notNull(),
+  isUserEdited: boolean('is_user_edited').notNull().default(false),
+  createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

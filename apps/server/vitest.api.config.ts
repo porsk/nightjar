@@ -13,6 +13,7 @@ export default defineConfig({
         'src/database.ts',
         'src/modules/auth/*.ts',
         'src/modules/settings/*.ts',
+        'src/modules/entries/*.ts',
       ],
       exclude: ['**/*.test.ts'],
       reportsDirectory: 'coverage-api',

@@ -1,0 +1,39 @@
+import type { Database } from '../../src/database.ts'
+import { accounts, users } from '../../src/db/schema.ts'
+import type { Auth } from '../../src/modules/auth/auth.ts'
+import { hashPassword } from '../../src/modules/auth/password.ts'
+
+const password = 'correct horse battery'
+
+/** Makes a user straight in the database and signs it in, so tests can have several users. */
+export async function createUserWithSession(
+  database: Database,
+  auth: Auth,
+  options: { email: string; timeZone?: string; isAdmin?: boolean },
+) {
+  const [user] = await database.db
+    .insert(users)
+    .values({
+      name: options.email,
+      email: options.email,
+      isAdmin: options.isAdmin ?? false,
+      timeZone: options.timeZone ?? 'UTC',
+    })
+    .returning()
+  if (!user) throw new Error('user was not created')
+  await database.db.insert(accounts).values({
+    userId: user.id,
+    accountId: user.id,
+    providerId: 'credential',
+    password: await hashPassword(password),
+  })
+  const response = await auth.api.signInEmail({
+    body: { email: options.email, password },
+    asResponse: true,
+  })
+  const cookie = response.headers
+    .getSetCookie()
+    .map((line) => line.split(';')[0])
+    .join('; ')
+  return { id: user.id, cookie }
+}

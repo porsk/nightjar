@@ -163,6 +163,7 @@ variable and never prints its value.
 | `NIGHTJAR_METRICS_PORT` | `9464` | Internal metrics port |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
 | `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
+| `NIGHTJAR_DATA_DIR` | `/data` | Folder for files (recordings, later models). The image has it as a volume |
 | `NIGHTJAR_TRUST_PROXY` | `0` | Number of reverse proxies in front of the server (`1` behind one). 0 ignores `X-Forwarded-*`. With 1 the client IP (login rate limit) and https (Secure cookie) come from what that proxy added; a client-set leftmost `X-Forwarded-For` is never trusted. The proxy must keep the original `Host` header |
 
 Code layout: `apps/server/src/web.ts` (HTTP) and `worker.ts` (background jobs) are separate entry points that one

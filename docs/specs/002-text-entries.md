@@ -1,6 +1,6 @@
 # 002 Text entries
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

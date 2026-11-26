@@ -13,7 +13,9 @@ async function freePort() {
 }
 
 // Workers load this file again, so values chosen by the main process are kept from the environment.
-process.env['NIGHTJAR_E2E_DIR'] ??= mkdtempSync(path.join(tmpdir(), 'nightjar-e2e-'))
+const e2eDir = (process.env['NIGHTJAR_E2E_DIR'] ??= mkdtempSync(
+  path.join(tmpdir(), 'nightjar-e2e-'),
+))
 process.env['NIGHTJAR_E2E_SERVER_PORT'] ??= await freePort()
 process.env['NIGHTJAR_E2E_WEB_PORT'] ??= await freePort()
 process.env['NIGHTJAR_E2E_METRICS_PORT'] ??= await freePort()
@@ -44,7 +46,11 @@ export default defineConfig({
     {
       command: 'pnpm --filter @nightjar/server exec node test/support/e2e-server.ts',
       url: `http://localhost:${serverPort}/readyz`,
-      env: { PORT: serverPort, NIGHTJAR_METRICS_PORT: metricsPort },
+      env: {
+        PORT: serverPort,
+        NIGHTJAR_METRICS_PORT: metricsPort,
+        NIGHTJAR_DATA_DIR: path.join(e2eDir, 'data'),
+      },
       reuseExistingServer: false,
       timeout: 120_000,
     },
