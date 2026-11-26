@@ -1,4 +1,5 @@
 | D-38 | 11-26 | Visual checks: a side-by-side page (mockup vs real app, phone + desktop, dark + light, with a list of differences) for the owner after each round of screens; once the owner approves the real screens, Playwright reference screenshots (toHaveScreenshot) guard them against unintended changes | Owner |
+| D-39 | 11-26 | Replaces the reference-screenshot part of D-38: no pixel reference images (too much churn while the UI grows). Instead, e2e has automatic layout checks (no sideways scroll, nothing clipped or overlapping) at phone and desktop width, and the owner reviews the side-by-side page after each round of screens | Owner |
 # Decisions
 
 Newest at the bottom. To change a decision, add a new entry that replaces the old one.
