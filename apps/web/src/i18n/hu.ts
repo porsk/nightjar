@@ -1,8 +1,72 @@
 export const hu = {
-  hello: 'Szia, Nightjar!',
-  health: {
-    checking: 'A szerver ellenőrzése...',
-    ok: 'A szerver működik.',
-    failed: 'A szerver nem elérhető.',
+  common: {
+    next: 'Tovább',
+    back: 'Vissza',
+    privacyNote: 'A hang a saját szervereden marad.',
+  },
+  field: {
+    email: 'E-mail cím',
+    password: 'Jelszó',
+    error: {
+      email: 'Adj meg egy érvényes e-mail címet.',
+      passwordShort: 'Legalább 8 karakter legyen.',
+      passwordMismatch: 'A két jelszó nem egyezik.',
+      code: 'Add meg a telepítési kódot.',
+    },
+  },
+  error: {
+    generic: 'Valami hiba történt. Próbáld újra.',
+    notFound: 'Nincs ilyen oldal.',
+    invalid_setup_code: 'Hibás telepítési kód.',
+  },
+  setup: {
+    step: '{{n}}. lépés a 3-ból',
+    account: {
+      title: 'Üdv a Nightjarban',
+      lead: 'Hozd létre az első fiókot. Ezzel a fiókkal kezeled majd a szervert is.',
+      passwordAgain: 'Jelszó újra',
+      code: 'Telepítési kód',
+      codeHint: 'A kódot a szerver naplójában találod: <code>docker compose logs nightjar</code>',
+    },
+    lang: {
+      title: 'Nyelv és időzóna',
+      lead: 'Ezeket később a Beállításokban bármikor átállíthatod.',
+      uiLanguage: 'A felület nyelve',
+      timeZone: 'Időzóna',
+      tzHint: 'A böngésződ alapján választottuk ki. A bejegyzések napjai ez szerint számolódnak.',
+    },
+    transcription: {
+      title: 'Szöveggé alakítsuk a felvételeket?',
+      lead: 'Az átírás a saját szervereden fut, nem megy ki semmi az internetre.',
+      later: 'Most nem',
+      laterHint:
+        'A felvételeket meghallgathatod, de nem lesz hozzájuk szöveg. Bármikor bekapcsolhatod a Beállításokban.',
+      on: 'Átírás bekapcsolása',
+      onHint:
+        'A magyar és angol felvételekből szöveg lesz. Egyszeri, kb. {{size}} letöltés kell hozzá, ez a belépés után indul el.',
+    },
+    finish: 'Befejezés',
+    finishAndDownload: 'Befejezés és letöltés indítása',
+  },
+  login: {
+    title: 'Üdv újra.',
+    lead: 'Jelentkezz be a naplódba.',
+    submit: 'Belépés',
+    error: {
+      invalid: 'Hibás e-mail cím vagy jelszó. Ellenőrizd, és próbáld újra.',
+      tooMany: 'Túl sok próbálkozás. Várj egy percet, és próbáld újra.',
+    },
+  },
+  auth: {
+    logout: 'Kijelentkezés',
+  },
+  nav: {
+    main: 'Fő navigáció',
+    today: 'Ma',
+    settings: 'Beállítások',
+  },
+  settings: {
+    title: 'Beállítások',
+    account: 'Fiók',
   },
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { createDatabase } from './database.ts'
 import { createLogger } from './logger.ts'
+import { createSetupCode } from './modules/auth/setup-code.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
 import { startWeb } from './web.ts'
@@ -23,7 +25,13 @@ describe('web and worker entry points', () => {
   it('the web entry point listens and closes', async () => {
     const logger = createLogger({ level: 'silent' })
     const web = await startWeb(
-      { logger, readiness: createReadiness(() => Promise.resolve()), metrics: createMetrics() },
+      {
+        logger,
+        readiness: createReadiness(() => Promise.resolve()),
+        metrics: createMetrics(),
+        database: createDatabase('postgres://localhost:1/unused', logger),
+        setupCode: createSetupCode(),
+      },
       0,
     )
     expect((await fetch(`http://127.0.0.1:${String(web.port)}/healthz`)).status).toBe(200)

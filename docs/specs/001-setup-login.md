@@ -1,6 +1,6 @@
 # 001 Setup wizard + login
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

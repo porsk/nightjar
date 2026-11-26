@@ -9,7 +9,12 @@ describe('loadConfig', () => {
       PORT: 3000,
       NIGHTJAR_METRICS_PORT: 9464,
       LOG_LEVEL: 'info',
+      NIGHTJAR_TRUST_PROXY: false,
     })
+  })
+
+  it('reads NIGHTJAR_TRUST_PROXY as a boolean', () => {
+    expect(loadConfig({ ...valid, NIGHTJAR_TRUST_PROXY: 'true' }).NIGHTJAR_TRUST_PROXY).toBe(true)
   })
 
   it('reads overrides', () => {

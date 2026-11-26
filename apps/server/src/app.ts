@@ -1,14 +1,20 @@
 import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
 import { healthResponseSchema, readyResponseSchema } from '@nightjar/shared'
+import type { Database } from './database.ts'
 import type { Logger } from './logger.ts'
 import type { Metrics } from './metrics.ts'
+import { registerAuthRoutes } from './modules/auth/routes.ts'
+import type { SetupCode } from './modules/auth/setup-code.ts'
 import type { Readiness } from './readiness.ts'
 
 export interface AppDependencies {
   logger: Logger
   readiness: Readiness
   metrics: Metrics
+  database: Database
+  setupCode: SetupCode
+  trustProxy?: boolean | undefined
   webDir?: string | undefined
 }
 
@@ -21,9 +27,18 @@ const stackFrames = (error: Error) =>
 
 const apiPrefix = '/api/v1'
 
-export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies) {
+export function buildApp({
+  logger,
+  readiness,
+  metrics,
+  database,
+  setupCode,
+  trustProxy,
+  webDir,
+}: AppDependencies) {
   const app = Fastify({
     loggerInstance: logger,
+    trustProxy: trustProxy ?? false,
     logController: new LogController({ disableRequestLogging: true }),
   })
 
@@ -37,6 +52,8 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
     }
     return undefined
   })
+
+  registerAuthRoutes(app, { database, setupCode })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'
@@ -73,9 +90,11 @@ export function buildApp({ logger, readiness, metrics, webDir }: AppDependencies
     })
   })
 
-  app.setNotFoundHandler((_request, reply) =>
-    reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } }),
-  )
+  app.setNotFoundHandler((request, reply) => {
+    const isApi = request.url.split('?')[0]?.startsWith(`${apiPrefix}/`)
+    if (webDir && request.method === 'GET' && !isApi) return reply.sendFile('index.html')
+    return reply.code(404).send({ error: { code: 'not_found', message: 'Not found' } })
+  })
 
   app.get('/healthz', () => healthResponseSchema.parse({ status: 'ok' }))
 

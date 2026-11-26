@@ -10,18 +10,20 @@ import { createLogger } from './logger.ts'
 
 const marker = (name: string) => `ZQX-PRIVATE-${name}-7781`
 
+const publicRoute = { config: { public: true } }
+
 function addTestRoutes(app: ReturnType<typeof buildTestApp>['app']) {
   const bodySchema = z.object({ text: z.string().max(5) })
-  app.post('/api/v1/test-items', (request) => {
+  app.post('/api/v1/test-items', publicRoute, (request) => {
     bodySchema.parse(request.body)
     return { ok: true }
   })
-  app.get('/api/v1/test-items/:id', () => ({ ok: true }))
-  app.get('/api/v1/test-search', () => ({ hits: [] }))
-  app.get('/api/v1/test-crash', (request) => {
+  app.get('/api/v1/test-items/:id', publicRoute, () => ({ ok: true }))
+  app.get('/api/v1/test-search', publicRoute, () => ({ hits: [] }))
+  app.get('/api/v1/test-crash', publicRoute, (request) => {
     throw new TypeError(`crashed on ${(request.query as { q: string }).q}`)
   })
-  app.get('/api/v1/test-explode', (request) => {
+  app.get('/api/v1/test-explode', publicRoute, (request) => {
     throw Object.assign(new Error(`failed on ${(request.query as { q: string }).q}`), {
       statusCode: 400,
     })
