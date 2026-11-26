@@ -2,7 +2,7 @@ import { todayIn } from '@nightjar/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { ApiError, deleteEntry, entryQuery, meQuery, updateEntry } from '../api.ts'
 import { DateDialog } from '../components/date-dialog.tsx'
 import { DeleteDialog } from '../components/delete-dialog.tsx'
@@ -21,6 +21,7 @@ export function EntryError({ error }: { error: unknown }) {
 function EntryView({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const cameFromApp = useLocation().key !== 'default'
   const queryClient = useQueryClient()
   const timeZone = useQuery(meQuery).data?.timeZone ?? 'UTC'
   const entry = useQuery(entryQuery(id))
@@ -46,13 +47,22 @@ function EntryView({ id }: { id: string }) {
     await deleteEntry(id)
     queryClient.removeQueries({ queryKey: entryQuery(id).queryKey })
     await queryClient.invalidateQueries({ queryKey: ['timeline'] })
-    await navigate('/timeline', { replace: true })
+    await navigate('/', { replace: true })
   }
 
   return (
     <>
       <div className="topbar entry-top">
-        <Link to="/timeline" state={{ restoreScroll: true }} className="back">
+        <Link
+          to="/timeline"
+          state={{ restoreScroll: true }}
+          className="back"
+          onClick={(event) => {
+            if (!cameFromApp) return
+            event.preventDefault()
+            void navigate(-1)
+          }}
+        >
           <Icon name="back" />
           {t('common.back')}
         </Link>

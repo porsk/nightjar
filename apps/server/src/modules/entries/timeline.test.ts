@@ -10,6 +10,10 @@ describe('004-timeline: excerpt, badge and cursor helpers', () => {
     )
   })
 
+  it('AC-3: raw HTML is left out of the excerpt', () => {
+    expect(buildExcerpt('hello <b>x</b>\n\n<div>gone</div>\n\nworld', null)).toBe('hello x world')
+  })
+
   it('AC-3: with no body text the excerpt is the first finished transcript', () => {
     expect(buildExcerpt('  \n ', 'First   words\nof the day')).toBe('First words of the day')
   })

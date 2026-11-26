@@ -6,9 +6,11 @@ export function useLiveUpdates() {
   const queryClient = useQueryClient()
   useEffect(() => {
     const source = new EventSource('/api/v1/events')
-    source.addEventListener('recording.updated', () => {
+    const refresh = () => {
       void queryClient.invalidateQueries({ queryKey: ['timeline'] })
-    })
+    }
+    source.addEventListener('recording.updated', refresh)
+    source.addEventListener('open', refresh)
     return () => {
       source.close()
     }

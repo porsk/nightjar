@@ -37,6 +37,8 @@ Out (not now): calendar, filters, mood, favourites, look-backs, stats.
 
 ## Test plan
 
+Note: AC-4's live-update e2e lands with spec 003 (the SSE endpoint is 003's); here it is covered by a component test.
+
 | AC | Unit | Component / UI | API (integration) | E2E | Notes (fixtures, fakes, edge cases) |
 |---|---|---|---|---|---|
 | AC-1 | | | order of a seeded mix | | seed script with fixed timestamps |

@@ -242,7 +242,7 @@ describe('004-timeline: timeline screen', () => {
   })
 
   it.each(['/entries/e1', '/entries/e1/edit'])(
-    'AC-7: deleting the entry from %s leaves the timeline without it',
+    'AC-7: deleting the entry from %s opens Home and the timeline no longer has it',
     async (path) => {
       let deleted = false
       stubApi({
@@ -269,7 +269,10 @@ describe('004-timeline: timeline screen', () => {
       await user.click(
         within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
       )
-      expect(await screen.findByRole('heading', { name: 'Timeline', level: 1 })).toBeInTheDocument()
+      expect(
+        await screen.findByRole('heading', { name: /What's on your mind/ }),
+      ).toBeInTheDocument()
+      await user.click(screen.getAllByRole('link', { name: 'Timeline' })[0] as HTMLElement)
       expect(
         await screen.findByText('No entries yet. Record or write one on the Today page.'),
       ).toBeInTheDocument()

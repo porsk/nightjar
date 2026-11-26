@@ -29,7 +29,7 @@ async function signIn(page: Page) {
   await page.getByLabel('Email').fill(adminEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('heading', { name: /What's on your mind/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
 }
 
 test.describe('002-text-entries: write, edit, date and delete', () => {
@@ -162,7 +162,7 @@ test.describe('002-text-entries: write, edit, date and delete', () => {
 
     await page.getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
-    await expect(page).toHaveURL(/\/timeline$/)
+    await expect(page).toHaveURL(new RegExp('/$'))
     expect(await readEntries()).toHaveLength(0)
     expect(await countRecordings()).toBe(0)
     for (const key of keys) expect(fileExists(key)).toBe(false)
@@ -177,7 +177,7 @@ test.describe('002-text-entries: write, edit, date and delete', () => {
     await page.goto(`/entries/${entryId}/edit`)
     await page.getByRole('button', { name: 'Delete entry' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
-    await expect(page).toHaveURL(/\/timeline$/)
+    await expect(page).toHaveURL(new RegExp('/$'))
     expect(await readEntries()).toHaveLength(0)
     for (const key of keys) expect(fileExists(key)).toBe(false)
   })

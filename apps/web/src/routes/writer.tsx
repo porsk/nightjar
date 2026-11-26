@@ -113,7 +113,7 @@ function Writer({ initial }: { initial: Entry | undefined }) {
     }
     deleted.current = true
     await queryClient.invalidateQueries({ queryKey: ['timeline'] })
-    await navigate('/timeline', { replace: true })
+    await navigate('/', { replace: true })
   }
 
   return (

@@ -275,7 +275,7 @@ test.describe('004-timeline: timeline and Home', () => {
     await expectNoSidewaysScroll(page)
   })
 
-  test('AC-7: deleting an entry from its page lands on the timeline without it', async ({
+  test('AC-7: deleting an entry from its page opens Home and the timeline no longer has it', async ({
     page,
   }) => {
     await seedTimelineEntry({
@@ -293,7 +293,8 @@ test.describe('004-timeline: timeline and Home', () => {
     await expect(page.getByTestId('entry-body')).toHaveText('to be deleted')
     await page.getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
-    await expect(page).toHaveURL(/\/timeline$/)
+    await expect(page).toHaveURL(/\/$/)
+    await openTimeline(page)
     await expect(cards(page)).toHaveCount(1)
     await expect(cards(page)).toContainText('to be kept')
   })

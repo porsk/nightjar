@@ -1,11 +1,12 @@
 import type { TimelineItem, TimelinePage } from '@nightjar/shared'
-import { and, asc, desc, eq, gt, inArray, lt, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, lt, lte, or, sql, type SQL } from 'drizzle-orm'
 import type { Database } from '../../database.ts'
 import { entries, recordings, transcripts } from '../../db/schema.ts'
 import { badgeFor, buildExcerpt, encodeCursor, type TimelinePosition } from './timeline.ts'
 
 const transcriptPreviewLength = 400
 const maxEntriesPerDay = 1000
+const bodyPreviewLength = 2000
 
 type Db = Database['db']
 
@@ -48,13 +49,16 @@ async function recordingsOf(db: Db, userId: string, entryIds: string[]) {
 const newestFirst = [desc(entries.entryDate), desc(entries.createdAt), asc(entries.id)]
 
 const after = ({ entryDate, createdAt, id }: TimelinePosition): SQL | undefined =>
-  or(
-    lt(entries.entryDate, entryDate),
-    and(
-      eq(entries.entryDate, entryDate),
-      or(
-        lt(entries.createdAt, sql`${createdAt}::timestamptz`),
-        and(eq(entries.createdAt, sql`${createdAt}::timestamptz`), gt(entries.id, id)),
+  and(
+    lte(entries.entryDate, entryDate),
+    or(
+      lt(entries.entryDate, entryDate),
+      and(
+        eq(entries.entryDate, entryDate),
+        or(
+          lt(entries.createdAt, sql`${createdAt}::timestamptz`),
+          and(eq(entries.createdAt, sql`${createdAt}::timestamptz`), gt(entries.id, id)),
+        ),
       ),
     ),
   )
@@ -70,7 +74,7 @@ export async function listEntries(
       id: entries.id,
       entryDate: entries.entryDate,
       createdAt: entries.createdAt,
-      bodyMd: entries.bodyMd,
+      bodyMd: sql<string>`left(${entries.bodyMd}, ${bodyPreviewLength})`,
       createdAtText: sql<string>`${entries.createdAt}::text`,
     })
     .from(entries)

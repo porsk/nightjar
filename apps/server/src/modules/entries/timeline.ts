@@ -14,6 +14,7 @@ interface MarkdownNode {
 const blockTypes = new Set(['paragraph', 'heading', 'code', 'listItem', 'thematicBreak', 'break'])
 
 function collectText(node: MarkdownNode, parts: string[]) {
+  if (node.type === 'html') return
   if (node.type === 'image') parts.push(node.alt ?? '')
   else if (node.value !== undefined) parts.push(node.value)
   for (const child of node.children ?? []) collectText(child, parts)
