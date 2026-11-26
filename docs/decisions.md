@@ -80,6 +80,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-27 | 11-26 | M1 mockups approved (`design/alkony/m1.html`): upload button on Home and entry, log out in Settings > Fiók, plain Markdown textarea (rendered when reading, no toolbar), 3-step wizard with download progress in Settings, mobile primary button at the bottom | Owner |
 | D-28 | 11-26 | iPhone recording test moves to a later phase (owner has no iPhone; a friend may test when the app is close to ready) | Owner |
 | D-29 | 11-26 | CI upgrade test, added right after the first release: start the previous release, save sample data, start the new image on the same database, check migrations ran and the data is intact | Owner: pulling a new version must just work |
+| D-30 | 11-26 | M1 specs approved with these answers (m1-summary open questions): 1 B setup code from container log, 2 A, 3 A, 4 A, 5 A, 6 A, 7 B confirm discard, 8 A, 9 A, 10 C /metrics on a separate internal port not exposed by default, 11 A, 12 A installable PWA in M1, 13 A several entries per day | Owner: all looks good |
+| D-31 | 11-26 | English is the default UI language: setup wizard starts in English (Hungarian can be picked), new users default to English. Default recording language follows the UI language picked | Owner: makes more sense for a shared project |
 
 ## Proposed (approved together with the plan)
 
