@@ -45,7 +45,7 @@ export async function readTranscriptionFlag() {
 /** Creates the admin through the API with its own client, so no test client holds the session cookie. */
 export async function createAdmin(headers: Record<string, string>, uiLanguage: 'hu' | 'en' = 'en') {
   const api = await playwrightRequest.newContext({
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${process.env['NIGHTJAR_E2E_WEB_PORT'] ?? ''}`,
     extraHTTPHeaders: headers,
   })
   try {

@@ -104,7 +104,7 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 |---|---|---|
 | Unit | `src/**/*.test.ts(x)` next to the code, in `packages/shared`, `apps/server`, `apps/web` (jsdom + Testing Library) | `pnpm test` (per-workspace coverage gate: 90% / 90% / 80% lines) |
 | API | `apps/server/test/*.test.ts`, Testcontainers starts `postgres:19` (needs Docker and the `docker` CLI on the PATH, some tests stop and start the container) | `pnpm test:api` |
-| E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (`:3000`, with its own Postgres container from Testcontainers) and the built web app via `vite preview` (`:4173`). Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
+| E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (with its own Postgres container from Testcontainers) and the built web app via `vite preview`, on free ports picked per run, so two runs in different worktrees do not clash. Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
 
 - **Fake mic:** each language has its own spec (`e2e/fake-mic.hu.spec.ts`, `e2e/fake-mic.en.spec.ts`) because Chromium
   launch args are per worker. They use `fakeMic('<clip>.wav')` from `e2e/support/fake-mic.ts` and only run in
