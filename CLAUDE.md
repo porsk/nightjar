@@ -46,6 +46,7 @@ Self-hosted, open source voice + text journal. Hungarian and English (recordings
 - No hard-coded user-facing text: everything through i18n, every key in both `hu` and `en`.
 - Privacy: never log journal text, transcripts or file names. AI is opt-in and the UI shows when an entry was sent out.
 - Ships as one Docker image on Docker Hub (`porsk/nightjar`). Conventional commits, DCO sign-off.
+- Commits are authored by `porsk` only: no `Co-Authored-By: Claude` trailer, no "Generated with Claude Code" line in PRs.
 
 ## Commands
 
