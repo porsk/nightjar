@@ -7,9 +7,11 @@ import { Shell } from './components/shell.tsx'
 import { EntryPage } from './routes/entry.tsx'
 import { HomePage } from './routes/home.tsx'
 import { LoginPage } from './routes/login.tsx'
+import { RecorderPage } from './routes/recorder.tsx'
 import { SettingsPage } from './routes/settings.tsx'
 import { SetupPage } from './routes/setup.tsx'
 import { TimelinePage } from './routes/timeline.tsx'
+import { UploadPage } from './routes/upload.tsx'
 import { WriterPage } from './routes/writer.tsx'
 import { ErrorNotice } from './components/error-notice.tsx'
 
@@ -55,6 +57,8 @@ export function App() {
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="write" element={<WriterPage />} />
+        <Route path="record" element={<RecorderPage />} />
+        <Route path="upload" element={<UploadPage />} />
         <Route path="entries/:id" element={<EntryPage />} />
         <Route path="entries/:id/edit" element={<WriterPage />} />
         <Route path="*" element={<h1 className="title">{t('error.notFound')}</h1>} />

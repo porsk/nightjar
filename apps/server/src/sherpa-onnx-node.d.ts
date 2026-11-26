@@ -3,16 +3,14 @@ declare module 'sherpa-onnx-node' {
     acceptWaveform(input: { sampleRate: number; samples: Float32Array }): void
   }
 
-  class OfflineRecognizer {
-    constructor(config: object)
+  interface OfflineRecognizer {
     setConfig(config: object): void
     createStream(): OfflineStream
     decode(stream: OfflineStream): void
     getResult(stream: OfflineStream): { text: string; lang?: string }
   }
 
-  class Vad {
-    constructor(config: object, bufferSizeInSeconds: number)
+  interface Vad {
     acceptWaveform(samples: Float32Array): void
     isEmpty(): boolean
     front(): { samples: Float32Array }
@@ -20,12 +18,10 @@ declare module 'sherpa-onnx-node' {
     flush(): void
   }
 
-  function readWave(path: string): { samples: Float32Array; sampleRate: number }
-
   const sherpa: {
-    OfflineRecognizer: typeof OfflineRecognizer
-    Vad: typeof Vad
-    readWave: typeof readWave
+    OfflineRecognizer: new (config: object) => OfflineRecognizer
+    Vad: new (config: object, bufferSizeInSeconds: number) => Vad
+    readWave: (path: string) => { samples: Float32Array; sampleRate: number }
   }
   export default sherpa
 }

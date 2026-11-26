@@ -248,7 +248,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     const hubEvents = (userId: string, isAdmin = false) => {
       const seen: LiveEvent[] = []
       const stop = events.subscribe({ userId, isAdmin, send: (event) => seen.push(event) })
-      cleanups.push(() => Promise.resolve(stop()))
+      cleanups.push(() => {
+        stop()
+        return Promise.resolve()
+      })
       return seen
     }
 
@@ -322,7 +325,8 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     expect(response.statusCode).toBe(200)
     await waitFor(
       async () =>
-        (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state === 'ready',
+        (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{ state: string }>()
+          .state === 'ready',
       'ready model',
     )
   }
@@ -611,10 +615,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       expect(byRecording.get(en.id)?.language).toBe('en')
       expect(byRecording.get(auto.id)?.language).toBe('hu')
       const list = await app.call(app.alice, 'GET', `/api/v1/entries/${auto.entryId}/recordings`)
-      expect(list.json()).toEqual([
+      expect(list.json<unknown[]>()).toEqual([
         expect.objectContaining({
           language: 'auto',
-          transcript: expect.objectContaining({ language: 'hu' }),
+          transcript: expect.objectContaining({ language: 'hu' }) as unknown,
         }),
       ])
     })
@@ -740,8 +744,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
 
       await waitFor(
         async () =>
-          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state ===
-          'ready',
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'ready',
         'the model to be ready',
       )
       const total = Object.values(modelFiles).reduce((sum, data) => sum + data.length, 0)
@@ -812,8 +817,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', { enabled: true })
       await waitFor(
         async () =>
-          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state ===
-          'ready',
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'ready',
         'the unpacked model',
       )
       await app.transcription.whenIdle()
@@ -843,8 +849,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       expect(response.json()).toMatchObject({ state: 'downloading' })
       await waitFor(
         async () =>
-          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state ===
-          'ready',
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'ready',
         'the model to be repaired',
       )
     })
@@ -855,8 +862,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', { enabled: true })
       await waitFor(
         async () =>
-          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state ===
-          'failed',
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'failed',
         'the download to fail',
       )
       const folder = join(app.dataDir, 'models')
@@ -881,16 +889,18 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', { enabled: true })
       await waitFor(
         async () =>
-          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json().state ===
-          'failed',
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'failed',
         'the download to fail',
       )
       const before = modelServer.requests.length
       const restarted = await launchAgain(app)
       await waitFor(
         async () =>
-          (await restarted.call(restarted.alice, 'GET', '/api/v1/admin/transcription')).json()
-            .state === 'ready',
+          (await restarted.call(restarted.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'ready',
         'the restarted download',
       )
       expect(modelServer.requests.length).toBeGreaterThan(before)
@@ -1109,8 +1119,8 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         .lines()
         .find((line) => line['msg'] === 'transcription job started')
       expect(started).toMatchObject({
-        jobId: expect.any(String),
-        requestId: expect.stringMatching(/^req-/),
+        jobId: expect.any(String) as string,
+        requestId: expect.stringMatching(/^req-/) as string,
       })
     })
   })

@@ -30,3 +30,21 @@ export const hourIn = (date: Date, timeZone: string) =>
 /** "9:30 PM" or "21:30". */
 export const formatTime = (date: Date, language: Language, timeZone: string) =>
   new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit', timeZone }).format(date)
+
+const pad = (value: number) => String(value).padStart(2, '0')
+
+/** "1:48" for a length in milliseconds. */
+export const formatDuration = (milliseconds: number) => {
+  const total = Math.max(0, Math.floor(milliseconds / 1000))
+  return `${String(Math.floor(total / 60))}:${pad(total % 60)}`
+}
+
+/** "02:14" for the recorder timer. */
+export const formatTimer = (milliseconds: number) => {
+  const total = Math.max(0, Math.floor(milliseconds / 1000))
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
+}
+
+/** "3.2 MB" or "3,2 MB". */
+export const formatSize = (bytes: number, language: Language) =>
+  `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(bytes / 1_000_000)} MB`

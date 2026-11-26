@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router'
 import { registerSW } from 'virtual:pwa-register'
 import './i18n/index.ts'
 import './styles.css'
+import './voice.css'
 import { App } from './app.tsx'
 
 const root = document.getElementById('root')

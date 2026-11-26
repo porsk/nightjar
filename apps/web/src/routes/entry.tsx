@@ -3,10 +3,18 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { ApiError, deleteEntry, entryQuery, meQuery, updateEntry } from '../api.ts'
+import {
+  ApiError,
+  deleteEntry,
+  entryQuery,
+  entryRecordingsQuery,
+  meQuery,
+  updateEntry,
+} from '../api.ts'
 import { DateDialog } from '../components/date-dialog.tsx'
 import { DeleteDialog } from '../components/delete-dialog.tsx'
 import { Icon } from '../components/icon.tsx'
+import { RecordingCard } from '../components/recording-card.tsx'
 import { TimelineList } from '../components/timeline-list.tsx'
 import { longDate } from '../dates.ts'
 import { renderMarkdown } from '../markdown.ts'
@@ -26,6 +34,7 @@ function EntryView({ id }: { id: string }) {
   const queryClient = useQueryClient()
   const timeZone = useQuery(meQuery).data?.timeZone ?? 'UTC'
   const entry = useQuery(entryQuery(id))
+  const recordings = useQuery(entryRecordingsQuery(id)).data ?? []
   const [dialog, setDialog] = useState<'date' | 'delete' | null>(null)
   const [dateFailed, setDateFailed] = useState(false)
   const html = useMemo(() => renderMarkdown(entry.data?.bodyMd ?? ''), [entry.data?.bodyMd])
@@ -105,6 +114,24 @@ function EntryView({ id }: { id: string }) {
         data-testid="entry-body"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+      {recordings.length > 0 ? (
+        <>
+          <div className="lab">{t('entry.recordings')}</div>
+          {recordings.map((recording) => (
+            <RecordingCard key={recording.id} recording={recording} />
+          ))}
+        </>
+      ) : null}
+      <div className="addrow">
+        <Link className="add" to={`/record?entry=${id}`}>
+          <Icon name="mic" />
+          {t('entry.recordAnother')}
+        </Link>
+        <Link className="add" to={`/upload?entry=${id}`}>
+          <Icon name="upload" />
+          {t('entry.uploadAnother')}
+        </Link>
+      </div>
       {dialog === 'date' ? (
         <DateDialog
           value={entryDate}

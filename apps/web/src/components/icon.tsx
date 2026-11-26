@@ -15,7 +15,15 @@ const paths = {
   list: 'M5 7h14M5 12h14M5 17h9',
   search: 'M11 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM20 20l-4-4',
   upload: 'M12 16V4M7 9l5-5 5 5M5 20h14',
+  pause: 'M9 5v14M15 5v14',
+  file: 'M6 3h8l5 5v13H6zM14 3v5h5',
+  info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5',
+  retry: 'M4 12a8 8 0 1 0 3-6.2M4 4v5h5',
+  play: 'M8 5v14l11-7z',
+  stop: 'M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z',
 } as const
+
+const filled: IconName[] = ['play', 'stop']
 
 export type IconName = keyof typeof paths
 
@@ -34,7 +42,11 @@ export function Icon({ name }: { name: IconName }) {
   }
   return (
     <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d={paths[name]} />
+      {filled.includes(name) ? (
+        <path d={paths[name]} fill="currentColor" stroke="none" />
+      ) : (
+        <path d={paths[name]} />
+      )}
     </svg>
   )
 }

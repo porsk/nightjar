@@ -4,7 +4,7 @@ import { sniffAudio } from './sniff.ts'
 const bytes = (...values: (number | string)[]) =>
   Uint8Array.from(
     values.flatMap((value) =>
-      typeof value === 'string' ? [...value].map((c) => c.charCodeAt(0)) : [value],
+      typeof value === 'string' ? Array.from(value, (c) => c.charCodeAt(0)) : [value],
     ),
   )
 

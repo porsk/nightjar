@@ -225,7 +225,7 @@ export function registerRecordingRoutes(
 
       await announce(row, status)
       await transcription.schedule(row, request.id)
-      return reply.code(201).send(toRecording(row, null))
+      return await reply.code(201).send(toRecording(row, null))
     } finally {
       await upload.remove()
       if (storedKey) await storage.remove(storedKey)

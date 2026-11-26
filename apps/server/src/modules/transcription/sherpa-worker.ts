@@ -50,7 +50,7 @@ function decode(samples: Float32Array, language: SherpaRequest['language']) {
   const stream = engine.createStream()
   stream.acceptWaveform({ sampleRate, samples })
   engine.decode(stream)
-  const result = engine.getResult(stream) as { text: string; lang?: string }
+  const result = engine.getResult(stream)
   return { text: result.text.trim(), detected: result.lang ?? '' }
 }
 

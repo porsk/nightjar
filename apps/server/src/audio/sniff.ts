@@ -6,7 +6,7 @@ export interface AudioKind {
 export const sniffLength = 16
 
 const ascii = (bytes: Uint8Array, start: number, text: string) =>
-  [...text].every((char, index) => bytes[start + index] === char.charCodeAt(0))
+  Array.from(text).every((char, index) => bytes[start + index] === char.charCodeAt(0))
 
 const startsWith = (bytes: Uint8Array, signature: number[]) =>
   signature.every((byte, index) => bytes[index] === byte)
