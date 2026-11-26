@@ -1,0 +1,13 @@
+{
+  "name": "@nightjar/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@nightjar/shared": "workspace:*",
+    "fastify": "^5.12.8"
+  }
+}
