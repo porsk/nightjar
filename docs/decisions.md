@@ -45,6 +45,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-18 | Also publish images to GHCR | backlog |
 | S-19 | Keyboard shortcuts (desktop): R record, N new, / search, Ctrl+Enter save, Esc, J/K, ? | suggested, not M1 |
 | S-20 | Plugins to extend the app (like Wealthfolio) | backlog, later milestone. Keep `Transcriber` / `AiProvider` as clean seams |
+| S-21 | Public demo instance: log in and try it, sample data, reset on a schedule | backlog. Keep sample data as a seed script and allow a demo flag later |
 
 ## Decided
 
@@ -75,6 +76,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-23 | 11-26 | Transcription is optional, off by default. Admin turns it on in Settings: the model downloads to /data/models with progress (or is used as is if already there), then new recordings are transcribed, with an option to also transcribe recordings that were never transcribed. Off: voice entries keep audio only. Nothing baked into the image | Owner: plug and play, ship without it if not wanted |
 | D-24 | 11-26 | AI is off by default. When it comes (M3), the admin sets the provider and API key in the Settings screen (stored encrypted); each user opts in for their own entries. Not planned before M3 | Owner: settings are easier; leave Claude out for now |
 | D-25 | 11-26 | No keyboard shortcuts in M1; S-19 stays a suggestion | Owner OK |
+| D-26 | 11-26 | Owner runs Nightjar behind a reverse proxy on an own (sub)domain with https. The iPhone test (WP6) uses that setup | Owner |
 
 ## Proposed (approved together with the plan)
 
