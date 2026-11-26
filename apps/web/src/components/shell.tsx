@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { Brand, Icon, type IconName } from './icon.tsx'
 
 const items: { to: string; icon: IconName; label: 'nav.today' | 'nav.settings' }[] = [
@@ -9,8 +9,10 @@ const items: { to: string; icon: IconName; label: 'nav.today' | 'nav.settings' }
 
 export function Shell() {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+  const focused = pathname === '/write' || pathname.startsWith('/entries/')
   return (
-    <div className="app shell">
+    <div className={focused ? 'app shell focused' : 'app shell'}>
       <nav className="side" aria-label={t('nav.main')}>
         <div className="brand">
           <Icon name="bird" />

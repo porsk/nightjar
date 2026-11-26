@@ -4,6 +4,7 @@ import { createLogger } from '../../src/logger.ts'
 import { createMetrics } from '../../src/metrics.ts'
 import type { Auth } from '../../src/modules/auth/auth.ts'
 import { createReadiness } from '../../src/readiness.ts'
+import { createStorage, type Storage } from '../../src/storage.ts'
 import { captureLogs } from './log-capture.ts'
 
 export async function buildTestApp(
@@ -12,6 +13,8 @@ export async function buildTestApp(
     level?: string
     webDir?: string
     database?: Database
+    storage?: Storage
+    now?: () => Date
     auth?: Auth
     trustProxy?: number
     rateLimitMax?: number
@@ -27,6 +30,8 @@ export async function buildTestApp(
     readiness,
     metrics,
     database,
+    storage: options.storage ?? createStorage('/unused'),
+    now: options.now,
     getAuth: () => {
       if (!options.auth) throw new Error('this test app has no auth')
       return options.auth

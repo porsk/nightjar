@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { ApiError, meQuery, setupStatusQuery } from './api.ts'
 import { Shell } from './components/shell.tsx'
+import { EntryPage } from './routes/entry.tsx'
 import { HomePage } from './routes/home.tsx'
 import { LoginPage } from './routes/login.tsx'
 import { SettingsPage } from './routes/settings.tsx'
 import { SetupPage } from './routes/setup.tsx'
+import { WriterPage } from './routes/writer.tsx'
 
 function RequireAuth() {
   const { t, i18n } = useTranslation()
@@ -49,6 +51,9 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route index element={<HomePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="write" element={<WriterPage />} />
+        <Route path="entries/:id" element={<EntryPage />} />
+        <Route path="entries/:id/edit" element={<WriterPage />} />
         <Route path="*" element={<h1 className="title">{t('error.notFound')}</h1>} />
       </Route>
     </Routes>

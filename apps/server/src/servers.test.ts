@@ -3,6 +3,7 @@ import { createDatabase } from './database.ts'
 import { createLogger } from './logger.ts'
 import { createMetrics, startMetricsServer } from './metrics.ts'
 import { createReadiness } from './readiness.ts'
+import { createStorage } from './storage.ts'
 import { startWeb } from './web.ts'
 import { startWorker } from './worker.ts'
 import { captureLogs } from '../test/support/log-capture.ts'
@@ -29,6 +30,7 @@ describe('web and worker entry points', () => {
         readiness: createReadiness(() => Promise.resolve()),
         metrics: createMetrics(),
         database: createDatabase('postgres://localhost:1/unused', logger),
+        storage: createStorage('/unused'),
         getAuth: () => {
           throw new Error('no auth')
         },

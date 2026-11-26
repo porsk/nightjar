@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import { request as playwrightRequest } from '@playwright/test'
 import { Client } from 'pg'
 import { e2eServerFiles } from './server-files.ts'
@@ -64,6 +65,66 @@ export async function createAdmin(headers: Record<string, string>, uiLanguage: '
     await api.dispose()
   }
 }
+
+async function withDatabase<T>(run: (client: Client) => Promise<T>) {
+  const client = new Client({ connectionString: readFileSync(e2eServerFiles.databaseUrl, 'utf8') })
+  await client.connect()
+  try {
+    return await run(client)
+  } finally {
+    await client.end()
+  }
+}
+
+/** An entry of the first user, with audio files on disk and rows for them, like a voice entry. */
+export async function seedEntry(options: {
+  bodyMd: string
+  entryDate: string
+  recordingNames?: string[]
+}) {
+  return withDatabase(async (client) => {
+    const user = await client.query<{ id: string }>('select id from users limit 1')
+    const userId = user.rows[0]?.id
+    if (!userId) throw new Error('no user to seed an entry for')
+    const entry = await client.query<{ id: string }>(
+      'insert into entries (user_id, entry_date, body_md) values ($1, $2, $3) returning id',
+      [userId, options.entryDate, options.bodyMd],
+    )
+    const entryId = entry.rows[0]?.id
+    if (!entryId) throw new Error('entry was not created')
+    const keys: string[] = []
+    for (const name of options.recordingNames ?? []) {
+      const key = `media/${userId}/recordings/${name}.webm`
+      mkdirSync(path.dirname(path.join(e2eServerFiles.dataDir, key)), { recursive: true })
+      writeFileSync(path.join(e2eServerFiles.dataDir, key), 'audio')
+      await client.query(
+        `insert into recordings (user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status)
+         values ($1, $2, $3, 'audio/webm', 5, 1000, 'en', 'done')`,
+        [userId, entryId, key],
+      )
+      keys.push(key)
+    }
+    return { entryId, keys }
+  })
+}
+
+export async function readEntries() {
+  return withDatabase(async (client) => {
+    const result = await client.query<{ id: string; entry_date: string; body_md: string }>(
+      `select id, to_char(entry_date, 'YYYY-MM-DD') as entry_date, body_md from entries order by created_at`,
+    )
+    return result.rows
+  })
+}
+
+export async function countRecordings() {
+  return withDatabase(async (client) => {
+    const result = await client.query<{ total: string }>('select count(*) as total from recordings')
+    return Number(result.rows[0]?.total)
+  })
+}
+
+export const fileExists = (key: string) => existsSync(path.join(e2eServerFiles.dataDir, key))
 
 /** One client address per test. The e2e server trusts one proxy hop, so a single entry is the client. */
 export const uniqueIp = () =>

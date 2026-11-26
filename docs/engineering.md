@@ -163,6 +163,7 @@ variable and never prints its value.
 | `NIGHTJAR_METRICS_PORT` | `9464` | Internal metrics port |
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
 | `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
+| `NIGHTJAR_DATA_DIR` | `/data` | Folder for files (recordings, later models). The image has it as a volume |
 | `NIGHTJAR_TRUST_PROXY` | `0` | Number of reverse proxies in front of the server (`1` behind one). 0 ignores `X-Forwarded-*`. With 1 the client IP (login rate limit) and https (Secure cookie) come from what that proxy added; a client-set leftmost `X-Forwarded-For` is never trusted. The proxy must keep the original `Host` header |
 
 Code layout: `apps/server/src/web.ts` (HTTP) and `worker.ts` (background jobs) are separate entry points that one
@@ -179,6 +180,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 - Not `pnpm deploy`: it copies workspace packages into `node_modules`, and Node refuses to strip types there.
   A normal prod install keeps `@nightjar/shared` as a symlink, so type stripping works.
 - Fastify serves the built web app when `NIGHTJAR_WEB_DIR` is set (the image sets it).
+- Every response carries a strict Content-Security-Policy (`@fastify/helmet`: own origin only, no inline scripts or styles, images from own origin, `data:` and `blob:`), so an image in an entry's Markdown can never call another site.
 - Runs as a non-root user, only `/data` writable, `HEALTHCHECK` on `/healthz`, OCI labels.
 - No models inside the image, they download to `/data/models` on first start.
 - Built for `linux/amd64` and `linux/arm64` (Raspberry Pi 5, ARM NAS boxes). Built with buildx + QEMU in one job.

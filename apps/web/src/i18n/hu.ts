@@ -3,6 +3,8 @@ export const hu = {
     next: 'Tovább',
     back: 'Vissza',
     privacyNote: 'A hang a saját szervereden marad.',
+    cancel: 'Mégse',
+    retry: 'Újrapróbálás',
   },
   field: {
     email: 'E-mail cím',
@@ -19,6 +21,9 @@ export const hu = {
     notFound: 'Nincs ilyen oldal.',
     invalid_setup_code: 'Hibás telepítési kód.',
     invalid_time_zone: 'Ismeretlen időzóna.',
+    entry_not_found: 'A bejegyzés nem található.',
+    invalid_entry_date: 'Érvénytelen dátum.',
+    body_too_long: 'A szöveg túl hosszú.',
   },
   setup: {
     step: '{{n}}. lépés a 3-ból',
@@ -60,6 +65,38 @@ export const hu = {
   },
   auth: {
     logout: 'Kijelentkezés',
+  },
+  home: {
+    write: 'Inkább írok',
+  },
+  date: {
+    today: 'Ma, {{date}}',
+    yesterday: 'Tegnap, {{date}}',
+  },
+  writer: {
+    newTitle: 'Új bejegyzés',
+    editTitle: 'Bejegyzés szerkesztése',
+    textLabel: 'A bejegyzés szövege',
+    savedAt: 'Mentve {{time}}',
+    saveFailed: 'Nem sikerült menteni.',
+    markdownHint: 'Markdown használható',
+    done: 'Kész',
+  },
+  entry: {
+    changeDate: 'Dátum módosítása',
+    edit: 'Szerkesztés',
+    delete: 'Törlés',
+    deleteEntry: 'Bejegyzés törlése',
+  },
+  dateDialog: {
+    title: 'Melyik napról szól?',
+    text: 'A bejegyzés a kiválasztott napnál jelenik meg az idővonalon.',
+    prevMonth: 'Előző hónap',
+    nextMonth: 'Következő hónap',
+  },
+  deleteDialog: {
+    title: 'Törlöd ezt a bejegyzést?',
+    text: 'A szöveg és a hozzá tartozó hangfelvételek végleg törlődnek. Ezt nem lehet visszavonni.',
   },
   nav: {
     main: 'Fő navigáció',

@@ -1,3 +1,4 @@
+import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
 import Fastify, { LogController } from 'fastify'
@@ -9,13 +10,18 @@ import type { Metrics } from './metrics.ts'
 import type { Auth } from './modules/auth/auth.ts'
 import { registerAuthRoutes } from './modules/auth/routes.ts'
 import { registerSettingsRoutes } from './modules/settings/routes.ts'
+import { registerEntryRoutes } from './modules/entries/routes.ts'
 import type { Readiness } from './readiness.ts'
+import type { Storage } from './storage.ts'
 
 export interface AppDependencies {
   logger: Logger
   readiness: Readiness
   metrics: Metrics
   database: Database
+  storage: Storage
+  /** The current time. Tests pass a fixed clock. */
+  now?: (() => Date) | undefined
   /** Returns the auth instance, which exists once migrations are done. */
   getAuth: () => Auth
   /** Number of reverse proxies in front of the server. 0 trusts no forwarded headers. */
@@ -38,6 +44,8 @@ export async function buildApp({
   readiness,
   metrics,
   database,
+  storage,
+  now,
   getAuth,
   trustProxy,
   rateLimitMax,
@@ -60,6 +68,25 @@ export async function buildApp({
     return undefined
   })
 
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        mediaSrc: ["'self'", 'blob:'],
+        styleSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        workerSrc: ["'self'"],
+        manifestSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  })
   await app.register(rateLimit, {
     max: rateLimitMax ?? 300,
     timeWindow: '1 minute',
@@ -67,6 +94,7 @@ export async function buildApp({
   })
   registerAuthRoutes(app, { database, getAuth })
   registerSettingsRoutes(app, { database })
+  registerEntryRoutes(app, { database, storage, now: now ?? (() => new Date()) })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'
