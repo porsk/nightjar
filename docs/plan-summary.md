@@ -36,9 +36,9 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 |---|---|
 | Server | Node 26 (runs `.ts` directly), Fastify, Zod, Drizzle, pg-boss (jobs in Postgres), Better Auth |
 | Web | React 19, Vite, React Router, TanStack Query, i18next, PWA. Follows system light/dark |
-| Speech | Open. M0 eval compares accuracy, speed and cost (free + local preferred). You pick from the report |
+| Speech | Whisper large-v3-turbo (int8, sherpa-onnx), off by default; you turn it on in Settings and the model downloads then. Final pick after your own clips (D-20, D-23) |
 | Search | Postgres full-text, Hungarian + English stemming |
-| AI | Claude (official SDK) or Ollama, set with env vars, off by default |
+| AI | Claude (official SDK) or Ollama, provider and key set in Settings (stored encrypted, M3), off by default |
 | Observability | pino JSON logs, `/healthz`, `/readyz`, Prometheus `/metrics` |
 | Tests | Vitest, Testcontainers, Playwright (fake mic plays real HU/EN audio) |
 | Ship | One Docker image `porsk/nightjar`, amd64 + arm64, Docker Hub, GitHub Actions |

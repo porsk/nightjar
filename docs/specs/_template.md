@@ -1,6 +1,7 @@
 # NNN Feature name
 
-Status: draft | approved | done
+Status: draft | approved | building | done
+<!-- draft: being written. approved: owner OK'd it. building: the spec's PR has its tests (check:acs now enforces it). done: merged. -->
 Milestone: M?
 
 ## Why

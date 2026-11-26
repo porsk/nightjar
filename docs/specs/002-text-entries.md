@@ -1,6 +1,6 @@
 # 002 Text entries
 
-Status: draft
+Status: approved
 Milestone: M1
 
 ## Why
@@ -81,5 +81,4 @@ New keys, in both `hu` and `en`.
 - Entry text is never logged (spec 007). Nothing leaves the server.
 
 ## Open questions
-- Entries have no title in the mockups, but product.md lists an optional title. See m1-summary, question 3.
-- Journals (every entry in a default journal) are M2. See m1-summary, question 2.
+None. No title and no journals in M1 (D-30 Q2, Q3); the M2 migration adds a default journal per user.

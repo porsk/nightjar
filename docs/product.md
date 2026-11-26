@@ -28,7 +28,7 @@ Status: **draft for review** (2026-11-26).
 | Persona | Needs |
 |---|---|
 | **Owner / self-hoster** | One `docker compose up`, sane defaults, upgrades that don't break, runs on a NAS / mini PC / Raspberry Pi 5 |
-| **Journaler** | Phone-first PWA, big record button, Hungarian UI, nothing to configure |
+| **Journaler** | Phone-first PWA, big record button, English or Hungarian UI (English by default), nothing to configure |
 | **AI assistant** (Claude via MCP) | Scoped access to search and read entries when the owner allows it |
 
 ## 3. Core concepts
@@ -36,7 +36,7 @@ Status: **draft for review** (2026-11-26).
 | Concept | Meaning |
 |---|---|
 | **Journal** | A notebook (e.g. "Personal", "Dreams"). Every user gets a default one. More are optional. |
-| **Entry** | One journal entry for a day: optional title, typed text (Markdown), mood, tags, photos, recordings. Has an *entry date* (the day it's about) separate from when it was created. Can be a favourite. |
+| **Entry** | A journal entry for a day (a day can have several): optional title, typed text (Markdown), mood, tags, photos, recordings. Has an *entry date* (the day it's about) separate from when it was created. Can be a favourite. |
 | **Recording** | An audio clip attached to an entry. An entry can have several. |
 | **Transcript** | The text of a recording: editable, tied to its audio, records which model made it. |
 | **Photo** | An image attached to an entry, with thumbnail. |
@@ -68,9 +68,9 @@ audio, and the entry page shows typed text and recordings together. Search and A
 | Feature | Milestone |
 |---|---|
 | Offline transcription on the server, background job, live status in the UI | M1 |
-| Language per entry: Hungarian / English / auto-detect; default from user settings | M1 |
+| Language per recording: Hungarian / English / auto-detect; default from user settings (follows the UI language) | M1 |
 | Editable transcript; user edits are never overwritten | M1 |
-| Model download on first use | M1 |
+| Transcription off by default; the admin turns it on and the model downloads then | M1 |
 
 ### Organise and find
 | Feature | Milestone |
@@ -93,7 +93,7 @@ audio, and the entry page shows typed text and recordings together. Search and A
 ### AI (opt-in)
 | Feature | Milestone |
 |---|---|
-| Provider via env vars: Claude (Anthropic API key), Ollama (local), off (default); status shown in settings | M3 |
+| Provider set by the admin in Settings: Claude (Anthropic API key, stored encrypted), Ollama (local), off (default); status shown in settings | M3 |
 | Enrichment on entry text + transcripts: suggests summary, tags, people, places. Accept or dismiss | M3 |
 
 ### MCP server (opt-in)
@@ -107,7 +107,7 @@ audio, and the entry page shows typed text and recordings together. Search and A
 ### Accounts and settings
 | Feature | Milestone |
 |---|---|
-| First-run setup wizard: owner account, language, transcription model download | M1 |
+| First-run setup wizard: setup code from the server log, owner account, language, transcription now or later | M1 |
 | Login with password | M1 |
 | Settings: UI language, default entry language, time zone | M1 |
 | Edit and delete entries (hard delete with media) | M1 |
@@ -115,8 +115,8 @@ audio, and the entry page shows typed text and recordings together. Search and A
 
 ## 5. Key user flows (M1)
 
-1. **First run.** Owner opens `http://server:port`, setup wizard: create account, pick UI language (HU/EN),
-   transcription model download starts in the background, lands on Home.
+1. **First run.** Owner opens `http://server:port`, setup wizard (English, Hungarian selectable): enter the setup code from the server log, create account, pick UI language (EN/HU),
+   choose transcription now or later (if now, the model download starts in the background), lands on Home.
 2. **Quick voice entry.** Home, big record button, recording screen (timer, level meter, pause), Stop.
    Entry appears with "Transcribing...", transcript shows up when ready (live status), edit if needed.
 3. **Typed entry.** Home, "Write", editor, autosave.

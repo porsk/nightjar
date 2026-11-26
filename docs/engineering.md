@@ -50,11 +50,12 @@ All licenses are MIT / Apache-2.0 / ISC / MPL-2.0 (test-only), which are fine wi
 ## How a feature gets built
 
 1. **Spec.** Write `docs/specs/NNN-name.md` from the template: why, scope, acceptance criteria (`AC-1`…), test
-   plan, i18n keys, privacy notes. The owner approves it.
+   plan, i18n keys, privacy notes. The owner approves it (`Status: approved`).
 2. **Tests first.** One or more failing tests per acceptance criterion, named after it:
    `it('AC-2: shows the transcript when the job finishes', …)`.
-3. **Code** until green, then tidy up.
-4. **PR** links the spec. CI must pass. `pnpm check:acs` checks that every AC in the spec has at least one test.
+   The PR that adds the tests sets `Status: building`.
+3. **Code** until green, then tidy up. Set `Status: done` when the PR is ready to merge.
+4. **PR** links the spec. CI must pass. `pnpm check:acs` checks that every AC in a `building` or `done` spec has at least one test.
 5. Update `roadmap.md` (and `decisions.md` if a decision was made) in the same PR.
 
 Planning and specs are done with the strongest model (Opus). Implementing an approved spec is handed to a
@@ -111,7 +112,8 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 - **Linking tests to a spec:** the spec file is `docs/specs/NNN-name.md`. The test file has a top-level
   `describe('NNN-name: short title', ...)`, and inside it `it('AC-2: ...')` (or `test(...)`).
   `pnpm check:acs` fails if a spec has an `**AC-n**` with no matching test in a file linked to that spec.
-  `_template.md` is skipped, and so is any spec with `Status: draft` (the check starts once the owner approves it).
+  `_template.md` is skipped, and so is any spec that is not `building` or `done` (status flow: `draft` → `approved` →
+  `building` → `done`), so CI stays green until the spec's PR adds its tests.
 
 Definition of done for any task: `pnpm verify` green locally, AC traceability check green, docs updated.
 
@@ -132,6 +134,18 @@ ships or gets tested end-to-end runs in Docker.
 | Logs | pino, JSON to stdout, redaction on (no journal text, transcripts or file names) |
 | Health | `/healthz` (up), `/readyz` (database reachable, migrations done) |
 | Metrics | Prometheus `/metrics` via `prom-client` 15.1 (Apache-2.0): request latency, job duration, transcription speed (real-time factor), queue depth |
+
+`/metrics` is served on its own internal port (`NIGHTJAR_METRICS_PORT`, default 9464), not on the app port, and
+`docker/compose.yaml` does not publish it. To scrape it, run Prometheus on the same compose network and add:
+
+```yaml
+scrape_configs:
+  - job_name: nightjar
+    static_configs:
+      - targets: ['nightjar:9464']
+```
+
+Only publish the port (`ports: ['9464:9464']`) if Prometheus runs elsewhere, and keep it off the internet.
 
 No extra services. Tests cover redaction, both health endpoints and the metrics output.
 

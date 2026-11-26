@@ -93,7 +93,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | P-04 | Postgres full-text search with `hungarian`/`english` + `unaccent` | Hungarian stemming built in, no extra search service |
 | P-05 | Speech recognition: decided after the M0 eval (O-5). Leading candidate: sherpa-onnx in Node (free, offline) | Avoids Python at runtime. Not locked in until the owner picks
 | P-06 | Drizzle ORM, Better Auth | Typed SQL without magic; auth we don't write ourselves |
-| P-07 | AI via env vars: Claude (default `claude-opus-5-5`), Ollama, or off | Standard self-hosted config, no secrets in the DB |
+| P-07 | AI: Claude (default `claude-opus-5-5`), Ollama, or off. The admin sets provider and API key in Settings, the key is stored encrypted (D-24) | Easier than env vars for the owner |
 | P-08 | MCP server built in, token auth, read-only unless allowed | Owner uses Claude; one data path with the REST API |
 | P-09 | Spec first, test first. Vitest, Testcontainers, Playwright | Owner's rule |
 | P-10 | Docker Hub, amd64 + arm64, release-please | Easy install and upgrades, incl. Raspberry Pi |

@@ -1,7 +1,7 @@
 # Roadmap
 
-**Now:** M0 almost done. M1 specs drafted (`docs/specs/m1-summary.md`), waiting for owner approval.
-**Next:** run M0 work packages (see below). Open items in `decisions.md`.
+**Now:** M0 done. M1 build starting with 007.
+**Next:** M1 build order is in `docs/specs/m1-summary.md`. Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
@@ -18,7 +18,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
 - [ ] Follow-up: run e2e against the Docker image instead of `vite preview`; nightly workflow once real-model tests exist
 - [x] Design direction + M1 mockups approved
-- [ ] M1 specs approved
+- [x] M1 specs approved
 
 Done when: `docker compose up` shows a bilingual hello page, `edge` is on Docker Hub, the spikes are reported and M1 specs are approved.
 Tests: a sample test per layer (unit, API, e2e with fake mic, screenshot, axe) passes in `pnpm verify` and in CI.
@@ -35,7 +35,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 done; own clips + Soniox next |
 | 5 | #5 | Design directions | - | - | done: Alkony + M1 mockups approved (D-27) |
 | 6 | #6 | iPhone recording test page | WP3 | A friend with an iPhone | moved to M4 (D-28) |
-| 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | running |
+| 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | done (D-30) |
 
 Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 

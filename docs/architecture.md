@@ -110,7 +110,7 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`), `entry_language` (`hu`/`en`/`auto`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
+| `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
 | `instance_settings` | id (always 1), `transcription_enabled` (default false), updated_at | The only instance-wide table, so no `user_id` |
 | `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
 | `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
@@ -142,8 +142,10 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 3. Job: Silero VAD (built into sherpa-onnx; stops invented text on silence) → model → transcript → saved → temp WAV deleted → SSE event.
 4. If AI is enabled → enrichment job.
 
-Models are downloaded on first start (checksum-verified) into `/data/models` - not baked into the image
-(hundreds of MB). A small JSON list in the repo names the supported models. Default model: chosen by the eval (O-5).
+Transcription is off by default (D-23). When the admin turns it on in Settings, the model downloads
+(checksum-verified, with progress) into `/data/models`, or is used as is if already there. Nothing is baked into the
+image (hundreds of MB). A small JSON list in the repo names the supported models. Default model: Whisper large-v3-turbo
+int8 (D-20); the final pick comes after the owner's own clips.
 
 ## 7. Search
 
@@ -152,9 +154,8 @@ Postgres full-text search: `search_vector` per entry from title + text + transcr
 
 ## 8. AI and MCP (M3, opt-in)
 
-- **Configured by environment variables**, the normal self-hosted way: `ANTHROPIC_API_KEY`, `NIGHTJAR_AI_PROVIDER`
-  (`off` | `anthropic` | `ollama`), `NIGHTJAR_AI_MODEL` (Claude default `claude-opus-5-5`), `OLLAMA_URL`.
-  No API keys stored in the database → no encryption code to maintain.
+- **Configured by the admin in Settings** (D-24): provider (`off` | `anthropic` | `ollama`), model (Claude default
+  `claude-opus-5-5`), API key or Ollama URL. The key is stored encrypted in the database; each user opts in for their own entries.
 - Enrichment sends entry text and transcripts only (never audio or photos), gets Zod-validated structured output of summary, tags, people and places, stores it as a
   suggestion the user accepts or dismisses, in the entry's language. Entries show "processed by …".
 - MCP: official TypeScript SDK, Streamable HTTP at `/mcp`, bearer token (read-only unless `can_write`).
@@ -183,7 +184,7 @@ No extra services. Everything is in the app process.
 |---|---|
 | Logs | pino, JSON to stdout, with redaction (no journal text, transcripts or file names) |
 | Health | `/healthz` (process is up), `/readyz` (database reachable, migrations done) |
-| Metrics | Prometheus `/metrics` using `prom-client`: request latency, job duration, transcription speed (real-time factor), queue depth |
+| Metrics | Prometheus `/metrics` using `prom-client` on a separate internal port (`NIGHTJAR_METRICS_PORT`, not published by default): request latency, job duration, transcription speed (real-time factor), queue depth |
 
 ## 12. Deliberately not doing
 
@@ -194,7 +195,7 @@ No extra services. Everything is in the app process.
 | Turborepo / Nx | 3 workspaces, pnpm scripts suffice |
 | OpenAPI generation | Shared Zod types cover our own client |
 | Storybook | Component tests + Playwright screenshots cover it |
-| Encrypted secrets in DB | Secrets live in env vars |
+| Encrypted secrets in DB before M3 | Only the AI key needs it (D-24), so it arrives with M3 |
 | Soft delete / trash | Confirmation dialog instead |
 | Multiple transcription engines | One sherpa-onnx model |
 | Event bus across processes | Single process → in-memory emitter |

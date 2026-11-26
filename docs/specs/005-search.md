@@ -1,6 +1,6 @@
 # 005 Search
 
-Status: draft
+Status: approved
 Milestone: M1
 
 ## Why
@@ -67,4 +67,4 @@ New keys, in both `hu` and `en`.
 - The query string is journal text: it is never logged (request logs drop query strings, spec 007).
 
 ## Open questions
-- Which language to stem with, since typed text has no language and an entry can mix languages. See m1-summary, question 5.
+None. Every entry is indexed with both Hungarian and English stemming and search uses both (D-30 Q5).

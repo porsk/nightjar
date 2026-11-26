@@ -16,7 +16,7 @@ const missing: string[] = []
 for (const specFile of specFiles) {
   const specId = path.basename(specFile, '.md')
   const spec = readFileSync(path.join(root, specFile), 'utf8')
-  if (/^Status:\s*draft\b/m.test(spec)) continue
+  if (!/^Status:\s*(building|done)\b/m.test(spec)) continue
   const acIds = new Set(spec.match(/\*\*AC-\d+\*\*/g)?.map((m) => m.slice(2, -2)))
   const linkedSources = testSources.filter((source) =>
     new RegExp(String.raw`describe\(\s*['"\`]${specId}[:'"\`]`).test(source),

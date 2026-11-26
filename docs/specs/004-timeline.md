@@ -1,6 +1,6 @@
 # 004 Timeline
 
-Status: draft
+Status: approved
 Milestone: M1
 
 ## Why
@@ -29,7 +29,7 @@ Out (not now): calendar, filters, mood, favourites, look-backs, stats.
 - **AC-5** Given 75 entries, when the user scrolls to the end of the list, then the next 30 load with "További bejegyzések betöltése…" shown meanwhile, until all 75 are shown once each; entries added or deleted between pages cause no duplicates or gaps (cursor on `entry_date`, `created_at`, `id`).
 - **AC-6** Given no entries, then the timeline shows "Még nincs bejegyzésed." with a hint to Home, and Home's "Mai bejegyzések" shows "Ma még nincs bejegyzés.".
 - **AC-7** Given a card, when the user opens it, then on mobile the entry page opens (with "Vissza" back to the same scroll position), and on desktop (1024 px and wider) the entry opens in the reading pane beside the list with that card marked `aria-current`.
-- **AC-8** Given Home, then it shows the greeting (as decided in question 6), the weekday (mobile) or weekday + date (desktop), the record button, "Inkább írok", "Hangfájl feltöltése", and "Mai bejegyzések" listing the entries whose `entry_date` is today in the user's time zone, newest first.
+- **AC-8** Given Home, then it shows the greeting by time of day in the user's time zone (5 to 10 "Jó reggelt" / Good morning, 10 to 18 "Jó napot" / Good afternoon, 18 to 5 "Jó estét" / Good evening, each followed by the question), the weekday (mobile) or weekday + date (desktop), the record button, "Inkább írok", "Hangfájl feltöltése", and "Mai bejegyzések" listing the entries whose `entry_date` is today in the user's time zone, newest first.
 - **AC-9** Given mobile, then the tab bar shows Ma, Idővonal, Keresés, Beállítások with the current one marked `aria-current`, and is hidden on the recorder, writer, upload and entry screens; given desktop, then the sidebar shows the same items plus "Új felvétel" and the privacy note, and the "Új felvétel" button is hidden on Home and on the recorder.
 - **AC-10** Given an entry created at 2026-11-26 23:30 UTC with `entry_date` 2026-11-27 by a user in Europe/Budapest, then it shows under November 27 at 00:30; after the user switches their time zone to UTC, it still shows under November 27, at 23:30.
 - **AC-11** Given entries of user A and user B, then A's timeline and A's today list never contain B's entries, and a cursor taken from B's list returns only A's entries for A.
@@ -66,7 +66,7 @@ New keys, in both `hu` and `en`.
 | `entry.noText` | Hangfelvétel, szöveg nélkül | Recording, no text |
 | `badge.working` / `.off` / `.failed` | Átírás folyamatban / Nincs átírva / Nem sikerült | Transcribing / Not transcribed / Failed |
 | `home.todayEntries` / `.todayEmpty` | Mai bejegyzések / Ma még nincs bejegyzés. | Today's entries / No entries today yet. |
-| `home.greeting.*` | Jó estét. Mi járt a fejedben? (and the other variants, question 6) | Good evening. What's on your mind? (and the other variants) |
+| `home.greeting.*` | Jó estét. Mi járt a fejedben? (and the other variants) | Good evening. What's on your mind? (and the other variants) |
 | `a11y.icon.voice` / `.text` | Hangfelvétel / Szöveges bejegyzés | Voice entry / Text entry |
 
 Day and date formats come from `Intl.DateTimeFormat` with the UI language, no hand-written month names.
@@ -75,4 +75,4 @@ Day and date formats come from `Intl.DateTimeFormat` with the UI language, no ha
 - Reads only. Excerpts are built on the server for the signed-in user. Nothing is logged about content (spec 007).
 
 ## Open questions
-- Home greeting: one fixed text or by time of day. See m1-summary, question 6.
+None.

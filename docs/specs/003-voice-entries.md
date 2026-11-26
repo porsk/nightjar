@@ -1,6 +1,6 @@
 # 003 Voice entries
 
-Status: draft
+Status: approved
 Milestone: M1
 
 ## Why
@@ -10,7 +10,7 @@ turns it into text in the background, if the admin turned transcription on.
 ## Scope
 In (screen names from `design/alkony/m1.html`):
 - **Recorder** (`recorder`): from the Home record button, the desktop sidebar button, or "Újabb felvétel" on an entry.
-  Timer, level meter, pause / resume, stop, discard, screen wake lock, privacy note. Uses the user's default entry language.
+  Timer, level meter, pause / resume, stop, discard (with a confirm dialog), screen wake lock, privacy note. Uses the user's default entry language.
 - **Upload** (`upload`, `uploadready`, `uploadprog`): from Home "Hangfájl feltöltése" (new entry) or from an entry (adds to it).
   Pick or drop a file, language (Magyar / English / Automatikus), date (new entry only), progress, cancel.
 - **Storage**: the original file is kept as is under the user's folder, type checked by content, duration measured on the server.
@@ -36,13 +36,13 @@ Recorder
 - **AC-1** Given Home, when the user presses the record button, then the recorder opens, recording starts, the timer counts up from 00:00 and the level meter moves with the microphone input.
 - **AC-2** Given a recording in progress, when the user pauses, then the timer stops and the state shows paused; after resume it continues, and the saved recording's `duration_ms` matches the time spent recording (paused time not included) within 0.5 s.
 - **AC-3** Given a recording started from Home, when the user presses "Leállítás", then the audio is uploaded, a new entry for today (user's time zone) is created and its entry page opens with the recording card; a recording started from "Újabb felvétel" is added to that entry instead.
-- **AC-4** Given a recording in progress, when the user presses "Elvetés" (and confirms, if question 7 in m1-summary is approved), then nothing is uploaded and the previous screen opens.
+- **AC-4** Given a recording in progress, when the user presses "Elvetés", then a dialog "Elveted a felvételt?" opens and the recording keeps running; "Elvetés" in the dialog uploads nothing and opens the previous screen, "Felvétel folytatása" closes the dialog and the recording goes on.
 - **AC-5** Given the microphone is blocked or missing, when the recorder opens, then it shows a message on how to allow the microphone and a way back, and nothing is recorded.
 - **AC-6** Given the upload after "Leállítás" fails (network error or 5xx), then the recorder shows an error with "Újrapróbálás", keeps the audio in memory, and a retry uploads it.
 - **AC-7** Given a recording in progress, then a screen wake lock is held, and it is released on stop or discard.
 
 Upload
-- **AC-8** Given the upload screen, when the user picks or drops an audio file, then its name, size and duration show, the language defaults to the user's default entry language, and the date defaults as decided in question 9; "Feltöltés" uploads with a progress bar, and "Mégse" during the upload aborts it and nothing is saved.
+- **AC-8** Given the upload screen, when the user picks or drops an audio file, then its name, size and duration show, the language defaults to the user's default entry language, and the date defaults to the file's last-modified date; "Feltöltés" uploads with a progress bar, and "Mégse" during the upload aborts it and nothing is saved.
 - **AC-9** Given a file, then the server accepts it only if its content is webm, ogg/opus, mp4/m4a/aac, mp3, wav or flac (magic bytes, not file name or `Content-Type`); anything else gets 415 `unsupported_audio`, and a file over 200 MB gets 413 `file_too_large`; in both cases no row and no partial file remain.
 - **AC-10** Given an accepted file, then the original bytes are stored unchanged at `/data/media/<user_id>/recordings/<recording_id>.<ext>`, `duration_ms` is measured on the server, and the client's file name is stored nowhere.
 
@@ -62,13 +62,13 @@ Transcription off / on
 - **AC-21** Given the admin turns transcription on and the model is not on disk, then the model downloads to a temp file in `/data/models`, Settings shows live progress ("Modell letöltése…", MB / MB, %), the file is moved into place only if its sha256 matches the model list, and Settings then shows "A modell letöltve, az új felvételeket átírjuk."
 - **AC-22** Given the model files are already in `/data/models` with the expected size, when the admin turns transcription on, then nothing is downloaded and it is ready at once.
 - **AC-23** Given the download fails (network error or checksum mismatch), then the partial file is removed and Settings shows an error with "Újrapróbálás"; recordings saved meanwhile stay `pending` and are transcribed once the model is ready; after a server restart with transcription on and no model, the download starts again.
-- **AC-24** Given the model is ready and N recordings are `skipped`, then Settings asks "N felvételt még nem írtunk át. Átírjuk most?"; "Átírás most" sets all of them to `pending` and they are transcribed one at a time; "Most nem" hides the question as decided in question 8.
+- **AC-24** Given the model is ready and N recordings are `skipped`, then Settings asks "N felvételt még nem írtunk át. Átírjuk most?"; "Átírás most" sets all of them to `pending` and they are transcribed one at a time; "Most nem" hides the question until the admin opens Settings again.
 - **AC-25** Given transcription on with queued recordings, when the admin turns it off, then queued (not running) jobs are cancelled and those recordings become `skipped`, the running job finishes, the model files stay on disk, and new recordings are `skipped`.
 - **AC-26** Given a user who is not an admin, then the transcription endpoints answer 403 and Settings does not show the admin section.
 
 Isolation, accessibility, real model
 - **AC-27** Given user A's recording and entry, when user B fetches the audio, edits the transcript, retries, or uploads into A's entry, then B gets 404 and nothing changes; B's SSE stream never receives A's events.
-- **AC-28** Given the recorder, upload (3 states), entry cards (done, transcribing, editing, failed, off) and the Settings admin states (off, downloading, ready + question), then axe reports no violations on mobile and desktop, light and dark.
+- **AC-28** Given the recorder (and its discard dialog), upload (3 states), entry cards (done, transcribing, editing, failed, off) and the Settings admin states (off, downloading, ready + question), then axe reports no violations on mobile and desktop, light and dark.
 - **AC-29** Given the real default model (nightly only), when `hu-sample.wav` and `en-sample.wav` are transcribed, then the word error rate against the fixture text is under 30% for each.
 
 ## Test plan
@@ -82,7 +82,7 @@ small fixture HTTP server started by the test (no internet). API tests need `ffm
 | AC-1 | | | | fake mic → timer moves, meter bars change | `fakeMic('hu-sample.wav')`, Chromium only |
 | AC-2 | | timer with fake timers | `duration_ms` from server | pause 2 s, resume, stop → duration check | tolerance 0.5 s |
 | AC-3 | | | | stop → entry page with card; "Újabb felvétel" adds a 2nd card | |
-| AC-4 | | | | discard → no request to `/recordings` | Playwright request listener |
+| AC-4 | | dialog opens, keep → recording goes on | | discard → dialog → confirm → no request to `/recordings`; discard → keep → still recording | Playwright request listener |
 | AC-5 | | `getUserMedia` rejects `NotAllowedError` / `NotFoundError` → message | | | |
 | AC-6 | | upload mocked to fail → retry succeeds with same blob | | | |
 | AC-7 | | `navigator.wakeLock` mock: request on start, release on stop / discard | | | |
@@ -90,10 +90,10 @@ small fixture HTTP server started by the test (no internet). API tests need `ffm
 | AC-9 | magic-byte sniffer per format | | 415 for `.jpg` renamed `.m4a`, 413 for 201 MB, no leftovers | | fixtures: one tiny file per format |
 | AC-10 | path builder | | bytes equal, path shape, no file name in DB | | |
 | AC-11 | | | status sequence, transcript row, temp dir empty | | fake transcriber |
-| AC-12 | | | SSE event order for one recording | HU and EN fake mic → "Átírás folyamatban…" → fixture text | `fake-mic.hu.spec.ts`, `fake-mic.en.spec.ts`; the EN test sets the default entry language to `en` |
+| AC-12 | | | SSE event order for one recording | HU and EN fake mic → "Átírás folyamatban…" → fixture text | `fake-mic.hu.spec.ts`, `fake-mic.en.spec.ts`; the HU test sets the default entry language to `hu` first (the default is `en`) |
 | AC-13 | | | 3 jobs → max parallel = 1, finish order | | fake reports max concurrency |
 | AC-14 | | | live instances 0 → 1 → 0 | | |
-| AC-15 | | card language label | language passed through, `auto` stores detected | | fake returns the language it got, `en` for `auto` (so "detected" differs from the `hu` default) |
+| AC-15 | | card language label | language passed through, `auto` stores detected | | fake returns the language it got, `hu` for `auto` (so "detected" differs from the `en` default) |
 | AC-16 | | failed card + retry | 3 attempts then `failed`, retry → `done` | failed card → retry → transcript | fake set to fail N times |
 | AC-17 | | edit / save / cancel | `is_user_edited`, search hit on new word | edit transcript → reload shows it | |
 | AC-18 | | | job re-run leaves edited text | | |
@@ -122,6 +122,7 @@ New keys, in both `hu` and `en`.
 | `recorder.recording` / `.paused` | Felvétel folyamatban / Szünetel | Recording / Paused |
 | `recorder.calm` | Beszélj nyugodtan, nem sietünk. | Take your time, there's no rush. |
 | `recorder.discard` / `.stop` / `.pause` / `.resume` | Elvetés / Leállítás / Szünet / Folytatás | Discard / Stop / Pause / Resume |
+| `recorder.discardConfirm.title` / `.text` / `.keep` | Elveted a felvételt? / A hang nem lesz elmentve. / Felvétel folytatása | Discard the recording? / The audio won't be saved. / Keep recording |
 | `recorder.elapsed` | Eltelt idő | Elapsed time |
 | `recorder.micBlocked` | A mikrofon nem érhető el. Engedélyezd a böngésző beállításaiban, és próbáld újra. | The microphone isn't available. Allow it in your browser settings and try again. |
 | `recorder.uploadFailed` | A felvételt nem sikerült elmenteni. A hang még megvan, próbáld újra. | Couldn't save the recording. The audio is still here, try again. |
@@ -149,7 +150,4 @@ New keys, in both `hu` and `en`.
 - Outbound traffic: only the model download, only after the admin turns transcription on. Audio never leaves the server.
 
 ## Open questions
-- Recorder language: the mockup has a language choice only on upload. See m1-summary, question 4.
-- Confirm before "Elvetés"? See m1-summary, question 7.
-- What "Most nem" on the backlog question does. See m1-summary, question 8.
-- Default date of an uploaded file. See m1-summary, question 9.
+None. The recorder uses the default recording language (D-30 Q4).
