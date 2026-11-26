@@ -43,6 +43,14 @@ export default defineConfig({
     { name: 'webkit-mobile', use: { ...devices['iPhone 15'] }, testIgnore: /fake-mic/ },
   ],
   webServer: [
+    // the app server serves the built web app, so the build has to be finished first
+    {
+      command: `pnpm --filter @nightjar/web build && pnpm --filter @nightjar/web exec vite preview --port ${webPort} --strictPort`,
+      url: `http://localhost:${webPort}`,
+      env: { NIGHTJAR_API_PORT: serverPort },
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
     {
       command: 'pnpm --filter @nightjar/server exec node test/support/e2e-server.ts',
       url: `http://localhost:${serverPort}/readyz`,
@@ -52,13 +60,6 @@ export default defineConfig({
         NIGHTJAR_DATA_DIR: path.join(e2eDir, 'data'),
         NIGHTJAR_WEB_DIR: path.join(import.meta.dirname, 'apps/web/dist'),
       },
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
-    {
-      command: `pnpm --filter @nightjar/web build && pnpm --filter @nightjar/web exec vite preview --port ${webPort} --strictPort`,
-      url: `http://localhost:${webPort}`,
-      env: { NIGHTJAR_API_PORT: serverPort },
       reuseExistingServer: false,
       timeout: 120_000,
     },
