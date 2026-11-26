@@ -1,0 +1,31 @@
+# Design plan
+
+## Feel
+Calm, private, evening-friendly. Dusk palette (deep blue/violet, warm amber accent), dark mode as good as light.
+The app follows the system light/dark theme. There is no theme setting.
+Readable type for long entries. Big, obvious record button. Mobile first, works great on desktop.
+Hungarian words are long, so layouts must handle long labels. WCAG 2.2 AA.
+
+## Process
+1. 2 or 3 visual directions as quick HTML mockups (home + recording + entry screen). Owner picks one.
+2. Design tokens (colours, type, spacing, radius) from the chosen direction.
+3. Clickable mockups of the M1 screens. Owner reviews.
+4. Build the screens with those tokens. Playwright screenshots catch visual regressions.
+
+## M1 screens
+| Screen | Main content |
+|---|---|
+| Setup wizard | account, language, model download progress |
+| Login | email + password |
+| Home / Today | record button, write button, today's entries |
+| Recorder | timer, level meter, pause, stop, discard |
+| Entry | date, text, recordings with transcript + player, status while transcribing |
+| Timeline | entries grouped by day |
+| Search | search box, results with highlighted matches |
+| Settings | UI language, default entry language, time zone |
+
+## Direction feedback
+
+| Round | Feedback |
+|---|---|
+| 1 | Alkony favourite, Erdő also liked, Tinta (bold, graphic) dropped. Round 2: 3 more in the same calm family, one blends Alkony + Erdő |
