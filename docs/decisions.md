@@ -43,6 +43,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-16 | AI photo captions | backlog |
 | S-17 | Native app wrapper (Capacitor) | backlog |
 | S-18 | Also publish images to GHCR | backlog |
+| S-19 | Keyboard shortcuts (desktop) | suggested |
+| S-20 | Plugins to extend the app (like Wealthfolio) | backlog, later milestone. Keep `Transcriber` / `AiProvider` as clean seams |
 
 ## Decided
 
@@ -67,6 +69,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-17 | 11-26 | Speech eval round 2: fairer scoring, bigger sample, Whisper turbo vs large-v3 vs BuzzASR HU fine-tune vs Canary-1B-v2. Owner clips later | Owner: 20% WER not good enough |
 | D-18 | 11-26 | Fast follow after round 2: Soniox as a cloud yardstick in the eval, piloted once the owner has an account | Owner |
 | D-19 | 11-26 | CI checks PR titles are conventional commits. CodeQL runs as a workflow file, not the one-click setup | Owner OK |
+| D-20 | 11-26 | Default speech model: Whisper large-v3-turbo (int8, sherpa-onnx). Final pick after owner clips + Soniox yardstick | Best speed/accuracy trade-off. Owner homelab: old 4-core i5, no GPU, 8 GB RAM shared with other services |
+| D-21 | 11-26 | Hardware target = owner homelab (4 cores, 8 GB shared). Transcribe one job at a time; load the model only while jobs run | Turbo peaks ~2.5 GB RAM; must not starve other services |
 
 ## Proposed (approved together with the plan)
 
