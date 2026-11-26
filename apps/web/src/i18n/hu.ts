@@ -18,6 +18,7 @@ export const hu = {
     generic: 'Valami hiba történt. Próbáld újra.',
     notFound: 'Nincs ilyen oldal.',
     invalid_setup_code: 'Hibás telepítési kód.',
+    invalid_time_zone: 'Ismeretlen időzóna.',
   },
   setup: {
     step: '{{n}}. lépés a 3-ból',
@@ -67,6 +68,13 @@ export const hu = {
   },
   settings: {
     title: 'Beállítások',
+    personal: 'Személyes',
     account: 'Fiók',
+    uiLanguage: 'A felület nyelve',
+    entryLanguage: 'Alapértelmezett nyelv a felvételekhez',
+    entryLanguageHint: 'Bejegyzésenként felülírhatod.',
+    auto: 'Automatikus',
+    timeZone: 'Időzóna',
+    saveFailed: 'Nem sikerült menteni a beállítást.',
   },
 }

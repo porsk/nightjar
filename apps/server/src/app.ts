@@ -8,6 +8,7 @@ import type { Logger } from './logger.ts'
 import type { Metrics } from './metrics.ts'
 import type { Auth } from './modules/auth/auth.ts'
 import { registerAuthRoutes } from './modules/auth/routes.ts'
+import { registerSettingsRoutes } from './modules/settings/routes.ts'
 import type { Readiness } from './readiness.ts'
 
 export interface AppDependencies {
@@ -65,6 +66,7 @@ export async function buildApp({
     errorResponseBuilder: () => new AppError(429, 'too_many_attempts'),
   })
   registerAuthRoutes(app, { database, getAuth })
+  registerSettingsRoutes(app, { database })
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions.url ?? 'unmatched'

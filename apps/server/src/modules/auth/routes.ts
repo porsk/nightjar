@@ -42,7 +42,7 @@ const toHeaders = (raw: FastifyRequest['headers']) => {
   return headers
 }
 
-const toMe = (user: {
+export const toMe = (user: {
   id: string
   email: string
   isAdmin?: boolean | null | undefined

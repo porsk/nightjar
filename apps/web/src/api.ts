@@ -3,6 +3,7 @@ import {
   meResponseSchema,
   setupStatusSchema,
   type Me,
+  type SettingsPatch,
   type SetupRequest,
 } from '@nightjar/shared'
 import { queryOptions } from '@tanstack/react-query'
@@ -18,7 +19,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(method: 'GET' | 'POST', path: string, body?: object) {
+async function request(method: 'GET' | 'POST' | 'PATCH', path: string, body?: object) {
   const response = await fetch(path, {
     method,
     credentials: 'same-origin',
@@ -53,6 +54,9 @@ export const meQuery = queryOptions({
 
 export const createAccount = async (input: SetupRequest): Promise<Me> =>
   parse(meResponseSchema, await request('POST', '/api/v1/setup', input))
+
+export const updateSettings = async (patch: SettingsPatch): Promise<Me> =>
+  parse(meResponseSchema, await request('PATCH', '/api/v1/me/settings', patch))
 
 export const signIn = async (credentials: { email: string; password: string }) => {
   await request('POST', '/api/v1/auth/sign-in/email', credentials)

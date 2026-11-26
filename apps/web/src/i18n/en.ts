@@ -20,6 +20,7 @@ export const en: typeof hu = {
     generic: 'Something went wrong. Try again.',
     notFound: 'Page not found.',
     invalid_setup_code: 'Wrong setup code.',
+    invalid_time_zone: 'Unknown time zone.',
   },
   setup: {
     step: 'Step {{n}} of 3',
@@ -69,6 +70,13 @@ export const en: typeof hu = {
   },
   settings: {
     title: 'Settings',
+    personal: 'Personal',
     account: 'Account',
+    uiLanguage: 'App language',
+    entryLanguage: 'Default language for recordings',
+    entryLanguageHint: 'You can change it per entry.',
+    auto: 'Automatic',
+    timeZone: 'Time zone',
+    saveFailed: "Couldn't save the setting.",
   },
 }

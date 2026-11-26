@@ -1,6 +1,6 @@
 # 006 Settings + HU/EN UI
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

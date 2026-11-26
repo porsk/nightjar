@@ -13,7 +13,10 @@ export type Language = z.infer<typeof languageSchema>
 
 export const passwordMinLength = 8
 
-const isTimeZone = (value: string) => {
+export const entryLanguageSchema = z.enum(['hu', 'en', 'auto'])
+export type EntryLanguage = z.infer<typeof entryLanguageSchema>
+
+export const isTimeZone = (value: string) => {
   try {
     new Intl.DateTimeFormat('en', { timeZone: value })
     return true
@@ -44,10 +47,21 @@ export const meResponseSchema = z.object({
   email: z.string(),
   isAdmin: z.boolean(),
   uiLanguage: languageSchema,
-  entryLanguage: z.enum(['hu', 'en', 'auto']),
+  entryLanguage: entryLanguageSchema,
   timeZone: z.string(),
 })
 export type Me = z.infer<typeof meResponseSchema>
+
+/** The time zone is checked by the route, which answers `invalid_time_zone` for it. */
+export const settingsPatchSchema = z
+  .strictObject({
+    uiLanguage: languageSchema,
+    entryLanguage: entryLanguageSchema,
+    timeZone: z.string(),
+  })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0)
+export type SettingsPatch = z.infer<typeof settingsPatchSchema>
 
 export const errorResponseSchema = z.object({
   error: z.object({ code: z.string(), message: z.string() }),
