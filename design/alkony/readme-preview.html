@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar Alkony: M1 screens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* page chrome (not part of the design) */
+*{box-sizing:border-box}
+body{margin:0;background:#08070f;color:#e9e6f5;font:16px/1.5 system-ui,sans-serif;padding:20px 24px 48px}
+.bar{max-width:1440px;margin:0 auto 20px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.bar h1{font:600 20px/1.2 system-ui;margin:0 12px 0 0}
+.bar label{display:flex;align-items:center;gap:8px;font-size:14px;color:#cfcbe4}
+.bar select{font:inherit;color:#e9e6f5;background:#1e1b3d;border:1px solid #6b6598;border-radius:8px;padding:6px 8px}
+.bar p{flex-basis:100%;margin:0;color:#b9b5d0;font-size:14px;max-width:100ch}
+.stage{max-width:1440px;margin:0 auto;overflow-x:auto;padding-bottom:12px}
+body.nochrome{padding:0}body.nochrome .bar{display:none}body.nochrome .stage{margin:0;max-width:none;overflow:visible;padding:0}
+
+/* ---------- design tokens (same as Alkony mobile + desktop): dark default ---------- */
+.frame{
+  --bg:#14122b; --bg2:#1c1940; --surface:#1e1b3d; --surface2:#2b2754; --line:#3a3568; --field:#8f89b8;
+  --text:#f0ecfa; --muted:#b4aed3; --accent:#f6b45c; --on-accent:#2a1a05; --accent-text:#f6b45c;
+  --glow:#4a3a8c; --danger:#ff8a8a; --on-danger:#2d0b0b; --mark:#6a5048; --scrim:#08070fb3;
+  position:relative;overflow:hidden;background:var(--bg);color:var(--text);
+  font:400 16px/1.5 'Figtree',system-ui,sans-serif;box-shadow:0 0 0 1px #ffffff1f,0 24px 60px #0008;
+}
+.frame.light{
+  --bg:#f7f2fb; --bg2:#ebe3f6; --surface:#ffffff; --surface2:#efe8f8; --line:#d6cbe8; --field:#7a72a3;
+  --text:#231f45; --muted:#585280; --accent:#f0a93f; --on-accent:#2a1a05; --accent-text:#8a4a00;
+  --glow:#ffd9a0; --danger:#b3261e; --on-danger:#ffffff; --mark:#ffd98a; --scrim:#231f4573;
+}
+.frame.m{width:390px;min-height:844px;border-radius:44px;display:flex;flex-direction:column}
+.frame.d{border-radius:20px;display:grid;grid-template-columns:232px minmax(0,1fr)}
+.frame.d.bare{display:flex;align-items:center;justify-content:center}
+.frame::before{content:"";position:absolute;inset:0 0 auto 0;height:380px;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,var(--bg2) 0%,transparent 70%),radial-gradient(60% 40% at 50% 100%,var(--glow) 0%,transparent 100%);opacity:.7}
+.frame.d::before{inset:0;height:auto;background:radial-gradient(90% 60% at 60% 0%,var(--bg2) 0%,transparent 100%),radial-gradient(50% 45% at 60% 100%,var(--glow) 0%,transparent 100%);opacity:.6}
+.frame>*{position:relative;min-height:0}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+h1,h2,h3,p{margin:0}
+
+/* mobile chrome */
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:600;flex:none}
+.m .scroll{flex:1;padding:0 20px 28px}
+.tabs{flex:none;display:flex;justify-content:space-around;padding:8px 8px 22px;background:var(--surface);border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.tabs a{min-height:48px;min-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);text-decoration:none;font-weight:500}
+.tabs a[aria-current]{color:var(--accent-text);font-weight:700}
+
+/* desktop chrome */
+.side{background:var(--surface);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding:24px 16px;display:flex;flex-direction:column;gap:6px}
+.side .brand{padding:0 10px 22px;font-size:22px}
+.side .brand svg{width:30px;height:30px}
+.nav{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 14px;border-radius:24px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav[aria-current]{background:var(--surface2);color:var(--text);font-weight:700}
+.nav[aria-current] svg{color:var(--accent-text)}
+.side .grow{flex:1}
+.newrec{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:26px;border:0;background:var(--accent);color:var(--on-accent);font-weight:700;margin-bottom:10px}
+.privacy{font-size:13px;color:var(--muted);padding:0 10px}
+.main{display:flex;flex-direction:column;min-width:0}
+.d .page{padding:40px 56px 56px}
+.col{max-width:720px}
+
+/* shared type + parts */
+.brand{display:flex;align-items:center;gap:10px;font:600 20px 'Fraunces',serif;letter-spacing:.01em}
+.brand svg{width:28px;height:28px;color:var(--accent-text)}
+.hd{display:flex;justify-content:space-between;align-items:center;min-height:56px}
+.date{font:italic 400 17px 'Fraunces',serif;color:var(--muted)}
+.title{font:600 28px/1.2 'Fraunces',serif;margin:8px 0 16px}
+.d .title{font-size:34px;margin:0 0 24px}
+.lead{color:var(--muted);margin:-8px 0 22px;max-width:46ch}
+.d .lead{margin-top:-14px}
+.sec{font:600 18px 'Fraunces',serif;margin:12px 0 8px}
+.d .sec{font-size:20px;margin:0 0 14px}
+.lab{font-weight:700;font-size:15px;margin:12px 0 8px;color:var(--muted)}
+.hint{font-size:14px;color:var(--muted);margin-top:8px}
+.card{background:var(--surface);border-radius:22px;padding:14px 16px;margin-bottom:10px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.card .meta,.row .meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin-bottom:4px;flex-wrap:wrap}
+.card .meta svg,.row .meta svg{width:16px;height:16px}
+.card p.ex,.row p.ex{font:400 16px/1.45 'Fraunces',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ex.none{font-style:italic;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent-text);margin-left:auto}
+.badge svg{width:15px;height:15px}
+.badge.mute{color:var(--muted)}
+.badge.err{color:var(--danger)}
+.day{font:600 15px 'Figtree',sans-serif;color:var(--muted);margin:18px 0 8px}
+.day:first-child{margin-top:0}
+.sk{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 2s linear infinite;margin-bottom:8px}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* buttons + fields */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 28px;border-radius:26px;border:1.5px solid transparent;background:var(--accent);color:var(--on-accent);font-weight:700;text-decoration:none}
+.btn.ghost{background:var(--surface);border-color:var(--field);color:var(--text);font-weight:600}
+.btn.line{background:none;border-color:var(--line);color:var(--text);font-weight:600}
+.btn.danger{background:var(--danger);color:var(--on-danger)}
+.btn.dangerline{background:none;border-color:var(--danger);color:var(--danger);font-weight:600}
+.btn.sm{min-height:44px;padding:0 18px;font-size:15px}
+.btn.block{width:100%}
+.btn.text{background:none;border:0;color:var(--accent-text);padding:0 12px;font-weight:600;min-height:48px}
+.actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.actions .btn.block{flex:1}
+.m .actions{flex-direction:column-reverse}
+.d .page .actions .btn.block{flex:0 0 auto;min-width:200px}
+.field{margin-bottom:18px}
+.field>label,.field>.fl{display:block;font-weight:700;font-size:15px;margin-bottom:8px;color:var(--muted)}
+.inp{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 16px;border-radius:16px;border:1.5px solid var(--field);background:var(--surface);color:var(--text)}
+.inp input{all:unset;flex:1;min-width:0;height:50px;color:var(--text)}
+.inp input::placeholder{color:var(--muted)}
+.inp.sel{justify-content:space-between}
+.inp.focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.seg{display:flex;gap:4px;padding:4px;border-radius:28px;border:1.5px solid var(--field);background:var(--surface)}
+.seg button{flex:1;min-height:44px;border-radius:22px;border:0;background:none;font-weight:600;color:var(--text);padding:0 10px}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--on-accent);font-weight:700}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;border:1.5px solid var(--danger);background:var(--surface);color:var(--text);margin-bottom:18px;font-size:15px}
+.alert svg{color:var(--danger);margin-top:1px}
+.toggle{width:56px;height:34px;border-radius:17px;border:1.5px solid var(--field);background:var(--surface2);position:relative;flex:none;padding:0}
+.toggle::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--muted)}
+.toggle[aria-checked="true"]{background:var(--accent);border-color:var(--accent)}
+.toggle[aria-checked="true"]::after{left:26px;background:var(--on-accent)}
+.progress{height:10px;border-radius:5px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.steps{display:flex;gap:6px;margin:0 0 20px}
+.steps i{flex:1;height:5px;border-radius:3px;background:var(--surface2);border:1px solid var(--line)}
+.steps i.on{background:var(--accent);border-color:var(--accent)}
+.stepno{font-size:14px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.opt{display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:20px;border:1.5px solid var(--field);background:var(--surface);margin-bottom:12px}
+.opt[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.opt .r{width:22px;height:22px;border-radius:50%;border:2px solid var(--field);flex:none;margin-top:2px;display:grid;place-items:center}
+.opt[aria-checked="true"] .r{border-color:var(--accent-text)}
+.opt[aria-checked="true"] .r::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent-text)}
+.opt b{display:block;font-size:17px;margin-bottom:2px}
+.opt span.t{color:var(--muted);font-size:15px}
+
+/* bare screens (wizard, login) */
+.bare-in{width:100%}
+.d .bare-in{width:480px;max-width:100%;background:var(--surface);border-radius:32px;padding:40px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);margin:40px 0}
+.bare-brand{margin:0 0 24px}
+.m .bare-brand{padding-top:12px}
+.bare .privacy{padding:0;margin-top:22px;text-align:center}
+
+/* Home */
+.greet{font:400 30px/1.15 'Fraunces',serif;margin:12px 0 0;max-width:12ch}
+.rec-wrap{display:flex;flex-direction:column;align-items:center;margin:22px 0 20px}
+.rec{width:156px;height:156px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;
+  box-shadow:0 0 0 12px color-mix(in srgb,var(--accent) 22%,transparent),0 0 0 26px color-mix(in srgb,var(--accent) 10%,transparent),0 14px 40px color-mix(in srgb,var(--accent) 30%,transparent)}
+.rec svg{width:60px;height:60px;stroke-width:1.8}
+.rec-label{margin-top:34px;font-weight:600;font-size:17px}
+.write{width:100%;min-height:52px;border-radius:26px;border:1.5px solid var(--field);background:var(--surface);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600}
+.upl{width:100%;justify-content:center}
+.home{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,430px);flex:1}
+.home .hero{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 40px;text-align:center}
+.d .greet{font-size:44px;margin:6px 0 0;max-width:16ch;text-wrap:balance}
+.d .rec{width:176px;height:176px;margin:48px 0 0;box-shadow:0 0 0 14px color-mix(in srgb,var(--accent) 22%,transparent),0 0 0 30px color-mix(in srgb,var(--accent) 10%,transparent),0 14px 40px color-mix(in srgb,var(--accent) 30%,transparent)}
+.d .rec svg{width:68px;height:68px}
+.d .rec-label{margin:44px 0 22px;font-size:18px}
+.hero .two{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.hero .write{width:auto;min-width:220px;padding:0 28px}
+.today{border-left:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding:32px 28px}
+
+/* Recorder */
+.state{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:var(--surface);font-weight:600;font-size:14px}
+.state b{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.timer{font:300 84px/1 'Fraunces',serif;font-variant-numeric:tabular-nums;text-align:center;margin:90px 0 10px;letter-spacing:-.01em}
+.sub{text-align:center;color:var(--muted)}
+.meter{display:flex;align-items:center;justify-content:center;gap:4px;height:120px;margin:50px 0 0}
+.meter span{width:5px;border-radius:3px;background:var(--accent);flex:none}
+.meter span.old{opacity:.4}
+.ctrls{display:flex;justify-content:space-around;align-items:flex-start;margin-top:50px}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;font-weight:600;font-size:14px;min-width:84px;padding:0}
+.ctrl .c{width:64px;height:64px;border-radius:50%;background:var(--surface2);display:grid;place-items:center}
+.ctrl.stop .c{width:96px;height:96px;background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 20%,transparent)}
+.ctrl.stop svg{width:36px;height:36px;fill:currentColor}
+.ctrl.del{color:var(--danger)}
+.note{margin:44px 0 0;text-align:center;font-size:14px;color:var(--muted)}
+.d .rec-main{flex:1;align-items:center;justify-content:center;padding:32px 40px}
+.d .timer{font-size:128px;margin:36px 0 12px}
+.d .meter{gap:5px;margin-top:40px;width:min(640px,100%)}
+.d .meter span{width:6px}
+.d .ctrls{gap:56px;margin-top:40px;justify-content:center}
+
+/* Entry */
+.back{display:inline-flex;align-items:center;gap:6px;min-height:48px;background:none;border:0;padding:0;font-weight:600;color:var(--accent-text)}
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.topbar>div{display:flex}
+.icbtn{width:48px;height:48px;border-radius:50%;border:0;background:none;display:grid;place-items:center;color:var(--text)}
+.icbtn.del{color:var(--danger)}
+.entry-date{font:600 26px/1.2 'Fraunces',serif;margin:2px 0 8px}
+.d .entry-date{font-size:32px;margin:0 0 12px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:22px;background:var(--surface);border:1px solid var(--field);font-size:14px;font-weight:600}
+.body-text{font:400 18px/1.6 'Fraunces',serif;margin:16px 0 0}
+.d .body-text{font-size:19px;line-height:1.65;margin-top:18px}
+.rcard{background:var(--surface);border-radius:22px;padding:14px 16px;margin-bottom:12px}
+.d .rcard{padding:16px 20px}
+.player{display:flex;align-items:center;gap:12px}
+.pl{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.pl svg{width:20px;height:20px;fill:currentColor;stroke:none}
+.track{flex:1;height:6px;border-radius:3px;background:var(--surface2);position:relative}
+.track i{position:absolute;inset:0 auto 0 0;width:42%;background:var(--accent);border-radius:3px}
+.time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr{font:400 16px/1.6 'Fraunces',serif;margin:12px 0 0}
+.d .tr{font-size:17px}
+.tag{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.tag .btn.text{min-height:44px;font-size:14px;margin-left:auto;padding:0 8px}
+.working{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-weight:600;font-size:15px;color:var(--accent-text)}
+.failed{display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--danger)}
+.failed svg{color:var(--danger);margin-top:2px}
+.failed b{display:block;margin-bottom:2px}
+.failed p{color:var(--muted);font-size:15px}
+.failed .btn{margin-top:12px}
+.offnote{display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--surface2)}
+.offnote svg{margin-top:2px;color:var(--muted)}
+.offnote b{display:block;margin-bottom:2px}
+.offnote p{color:var(--muted);font-size:15px}
+.add{min-height:48px;padding:0 24px;border-radius:24px;border:1.5px dashed var(--field);background:none;font-weight:600;color:var(--text);display:inline-flex;gap:8px;align-items:center}
+.m .add{width:100%;justify-content:center}
+.addrow{display:flex;gap:12px;flex-wrap:wrap}
+.m .addrow{flex-direction:column}
+textarea.edit{width:100%;min-height:150px;margin-top:12px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent);background:var(--bg);color:var(--text);font:400 16px/1.6 'Fraunces',serif;resize:none}
+.d textarea.edit{font-size:17px}
+.editbtns{display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.editnote{font-size:14px;color:var(--muted);margin-top:10px}
+.split{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);flex:1}
+.list{border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);padding:24px 16px}
+.list .day{margin:14px 10px 8px}
+.list .day:first-child{margin-top:0}
+.row{display:block;border-radius:18px;padding:10px 14px;margin-bottom:6px;color:inherit;text-decoration:none}
+.row[aria-current]{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+.row p.ex{font-size:15px}
+.read{padding:28px 56px 48px}
+.read-in{max-width:720px}
+.read .topbar{margin:-8px 0 4px;justify-content:flex-end}
+
+/* Writer */
+.wr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.m .wr-top{min-height:56px}
+.saved{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.saved svg{width:16px;height:16px}
+.paper{display:block;width:100%;min-height:340px;margin-top:16px;padding:18px 18px;border-radius:22px;border:1.5px solid var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent);background:var(--surface);color:var(--text);font:400 18px/1.65 'Fraunces',serif;resize:none}
+.d .paper{min-height:420px;font-size:19px;padding:24px 28px}
+
+/* Upload */
+.drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:40px 24px;border-radius:26px;border:2px dashed var(--field);background:var(--surface)}
+.drop svg.big{width:44px;height:44px;color:var(--accent-text)}
+.drop p{color:var(--muted);max-width:34ch}
+.file{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 60%,transparent);margin-bottom:20px}
+.file .fi{width:44px;height:44px;border-radius:14px;background:var(--surface2);display:grid;place-items:center;flex:none}
+.file .fn{min-width:0;flex:1}
+.file b{display:block;overflow-wrap:anywhere}
+.file small{color:var(--muted);font-size:14px}
+.file .progress{margin-top:10px}
+
+/* Search */
+.sbox{margin-bottom:6px}
+.sbox .inp{border-radius:26px}
+.sbox .x{width:36px;height:36px;border-radius:50%;border:0;background:var(--surface2);display:grid;place-items:center;flex:none}
+.count{font-size:14px;color:var(--muted);margin:12px 4px 12px}
+mark{background:var(--mark);color:var(--text);border-radius:4px;padding:0 2px}
+.hit .src{font-size:13px;color:var(--muted);font-weight:600}
+.hit p.ex{-webkit-line-clamp:3}
+.empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.empty h2{font:600 20px 'Fraunces',serif;color:var(--text);margin-bottom:8px}
+.empty svg{width:40px;height:40px;margin-bottom:12px}
+
+/* Settings */
+.group{background:var(--surface);border-radius:22px;padding:6px 18px;margin-bottom:22px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.srow{padding:14px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.srow:last-child{border-bottom:0}
+.srow>.fl,.srow>label{display:block;font-weight:700;margin-bottom:8px}
+.srow .hint{margin:8px 0 0}
+.trow{display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+.trow b{display:block;font-size:17px}
+.trow p{color:var(--muted);font-size:15px;margin-top:2px}
+.dl{margin-top:14px}
+.dl .line1{display:flex;justify-content:space-between;gap:12px;font-size:15px;font-weight:600;margin-bottom:8px;flex-wrap:wrap}
+.dl .num{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
+.ask{margin-top:14px;padding:14px 16px;border-radius:18px;background:var(--surface2)}
+.ask b{display:block;font-size:16px;margin-bottom:12px;font-weight:600}
+.ask .acts{display:flex;gap:10px;flex-wrap:wrap}
+.okline{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--muted)}
+.okline svg{width:20px;height:20px;color:var(--accent-text)}
+.acct{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.acct span{color:var(--muted);overflow-wrap:anywhere}
+
+/* Dialogs */
+.frame>.scrim{position:absolute;inset:0;background:var(--scrim);display:flex;z-index:5}
+.m>.scrim{align-items:flex-end}
+.d>.scrim{align-items:center;justify-content:center}
+.dialog{background:var(--surface);color:var(--text);padding:26px 24px 24px;border:1px solid var(--line)}
+.m .dialog{width:100%;border-radius:28px 28px 0 0;padding-bottom:36px}
+.d .dialog{width:420px;border-radius:28px}
+.dialog h2{font:600 22px/1.25 'Fraunces',serif;margin-bottom:8px}
+.dialog p{color:var(--muted)}
+.dialog .actions{margin-top:22px}
+.cal{margin-top:14px}
+.cal .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:700}
+.cal .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;text-align:center;justify-items:center}
+.cal .dow{font-size:13px;color:var(--muted);font-weight:600;padding:6px 0}
+.cal .dd{width:44px;height:44px;border-radius:22px;border:0;background:none;font-weight:500;font-variant-numeric:tabular-nums}
+.cal .dd.sel{background:var(--accent);color:var(--on-accent);font-weight:700}
+.cal .dd.tdy{box-shadow:inset 0 0 0 1.5px var(--field)}
+@media (prefers-reduced-motion:reduce){.state b,.sk{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+    <symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+    <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/></symbol>
+    <symbol id="list" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+    <symbol id="bird" viewBox="0 0 24 24"><path d="M3 15c4 1 8-1 10-5 1-2 3-3 6-2-1 1-1 2-1 3 0 5-4 9-9 9-3 0-5-2-6-5z" fill="currentColor" stroke="none"/><circle cx="17" cy="10" r="1" fill="#14122b" stroke="none"/></symbol>
+    <symbol id="upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></symbol>
+    <symbol id="file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6zM14 3v5h5"/></symbol>
+    <symbol id="alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="retry" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></symbol>
+    <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="out" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></symbol>
+  </defs>
+</svg>
+
+<div class="bar">
+  <h1>Alkony: M1 screens</h1>
+  <label>Screen <select id="s"></select></label>
+  <label>Size <select id="d"><option value="m">390 mobile</option><option value="1280">1280 desktop</option><option value="1440">1440 desktop</option></select></label>
+  <label>Theme <select id="t"><option value="dark">dark</option><option value="light">light</option></select></label>
+  <p>Mockup only: frames grow with their content so nothing is cut off (on a real phone the page scrolls). Same tokens as the Alkony mobile and desktop mockups.</p>
+</div>
+<div class="stage"><div id="frame"></div></div>
+
+<script>
+const ic=(n,s)=>`<svg class="i"${s?` style="width:${s}px;height:${s}px"`:''} aria-hidden="true"><use href="#${n}"/></svg>`;
+const play=`<button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></button>`;
+const brand=`<div class="brand">${ic('bird')}Nightjar</div>`;
+const field=(l,v,o={})=>`<div class="field"><label>${l}</label><div class="inp${o.focus?' focus':''}"><input ${o.type?`type="${o.type}"`:''} value="${v||''}" ${o.ph?`placeholder="${o.ph}"`:''} aria-label="${l}"></div>${o.hint?`<p class="hint">${o.hint}</p>`:''}</div>`;
+const select=(l,v,hint)=>`<div class="field"><div class="fl">${l}</div><div class="inp sel"><span>${v}</span>${ic('down')}</div>${hint?`<p class="hint">${hint}</p>`:''}</div>`;
+const seg=(l,opts,sel)=>`<div class="seg" role="radiogroup" aria-label="${l}">${opts.map((o,i)=>`<button role="radio" aria-checked="${i===sel}">${o}</button>`).join('')}</div>`;
+const steps=n=>`<div class="stepno">${n}. lépés a 3-ból</div><div class="steps" aria-hidden="true">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</div>`;
+const privacy=`<p class="privacy">Your audio stays on your own server.</p>`;
+
+/* ---- screens: each returns {body, nav, tabs, side, rec, bare, d (desktop override), over} ---- */
+const S={};
+
+S.setup1={label:'Setup 1: account',bare:1,body:()=>`
+  <div class="bare-brand">${brand}</div>${steps(1)}
+  <h1 class="title" style="margin-top:0">Üdv a Nightjarban</h1>
+  <p class="lead">Hozd létre az első fiókot. Ezzel a fiókkal kezeled majd a szervert is.</p>
+  ${field('E-mail cím','napsugar@example.hu',{type:'email'})}
+  ${field('Jelszó','••••••••••••',{type:'password'})}
+  ${field('Jelszó újra','••••••••••••',{type:'password'})}
+  <div class="actions"><button class="btn block">Tovább</button></div>${privacy}`};
+
+S.setup2={label:'Setup 2: language + time zone',bare:1,body:()=>`
+  <div class="bare-brand">${brand}</div>${steps(2)}
+  <h1 class="title" style="margin-top:0">Nyelv és időzóna</h1>
+  <p class="lead">Ezeket később a Beállításokban bármikor átállíthatod.</p>
+  <div class="field"><div class="fl">A felület nyelve</div>${seg('A felület nyelve',['Magyar','English'],0)}</div>
+  ${select('Időzóna','Europe/Budapest (UTC+01:00)','A böngésződ alapján választottuk ki. A bejegyzések napjai ez szerint számolódnak.')}
+  <div class="actions"><button class="btn block">Tovább</button><button class="btn line block">Vissza</button></div>`};
+
+const setup3=on=>({label:'Setup 3: transcription '+(on?'on':'off'),bare:1,body:()=>`
+  <div class="bare-brand">${brand}</div>${steps(3)}
+  <h1 class="title" style="margin-top:0">Szöveggé alakítsuk a felvételeket?</h1>
+  <p class="lead">Az átírás a saját szervereden fut, nem megy ki semmi az internetre.</p>
+  <div class="opt" role="radio" aria-checked="${!on}"><span class="r"></span><div><b>Most nem</b><span class="t">A felvételeket meghallgathatod, de nem lesz hozzájuk szöveg. Bármikor bekapcsolhatod a Beállításokban.</span></div></div>
+  <div class="opt" role="radio" aria-checked="${on}"><span class="r"></span><div><b>Átírás bekapcsolása</b><span class="t">A magyar és angol felvételekből szöveg lesz. Egyszeri, kb. 560 MB letöltés kell hozzá, ez a belépés után indul el.</span></div></div>
+  <div class="actions"><button class="btn block">${on?'Befejezés és letöltés indítása':'Befejezés'}</button><button class="btn line block">Vissza</button></div>`});
+S.setup3=setup3(false);S.setup3on=setup3(true);
+
+const login=err=>({label:'Login'+(err?': wrong password':''),bare:1,body:()=>`
+  <div class="bare-brand">${brand}</div>
+  <h1 class="title" style="margin-top:0">Üdv újra.</h1>
+  <p class="lead">Jelentkezz be a naplódba.</p>
+  ${err?`<div class="alert" role="alert">${ic('alert')}<span>Hibás e-mail cím vagy jelszó. Ellenőrizd, és próbáld újra.</span></div>`:''}
+  ${field('E-mail cím','napsugar@example.hu',{type:'email'})}
+  ${field('Jelszó',err?'••••••••':'',{type:'password',ph:'Jelszó'})}
+  <div class="actions"><button class="btn block">Belépés</button></div>${privacy}`});
+S.login=login(false);S.loginerr=login(true);
+
+const todayCards=`
+  <div class="card"><div class="meta">${ic('mic')}20:42 · 1:48</div><p class="ex">A long day, but in a good way. The morning meeting went better than I expected.</p></div>
+  <div class="card"><div class="meta">${ic('pen')}13:05</div><p class="ex">Lunch with Anna. She told me about her new flat, and I got a little jealous.</p></div>`;
+S.home={label:'Home',nav:'ma',tabs:1,side:1,rec:0,
+  body:()=>`
+  <div class="hd">${brand}<span class="date">Thursday</span></div>
+  <h1 class="greet">Good evening. What's on your mind?</h1>
+  <div class="rec-wrap"><button class="rec" aria-label="Start recording">${ic('mic')}</button><div class="rec-label">Start recording</div></div>
+  <button class="write">${ic('pen')}I'd rather type</button>
+  <button class="btn text upl">${ic('upload')}Upload audio file</button>
+  <h2 class="sec">Today's entries</h2>${todayCards}`,
+  d:()=>`<div class="home">
+  <section class="hero"><div class="date">Thursday, November 26</div>
+    <h1 class="greet">Good evening. What's on your mind?</h1>
+    <button class="rec" aria-label="Start recording">${ic('mic')}</button><div class="rec-label">Start recording</div>
+    <div class="two"><button class="write">${ic('pen')}I'd rather type</button><button class="write">${ic('upload')}Upload audio file</button></div></section>
+  <section class="today" aria-label="Today's entries"><h2 class="sec">Today's entries</h2>${todayCards}</section></div>`};
+
+const bars=n=>Array.from({length:n},(_,i)=>`<span class="${i>n*.75?'old':''}" style="height:${14+Math.abs(Math.sin(i*.55)*Math.cos(i*.21))*92}px"></span>`).join('');
+S.recorder={label:'Recorder',nav:'',tabs:0,side:1,rec:0,body:()=>`
+  <div class="hd"><span class="state"><b></b>Felvétel folyamatban</span></div>
+  <div class="timer" role="timer" aria-label="Eltelt idő">02:14</div>
+  <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
+  <div class="meter" aria-hidden="true">${bars(36)}</div>
+  <div class="ctrls">
+    <button class="ctrl del"><span class="c">${ic('trash')}</span>Elvetés</button>
+    <button class="ctrl stop"><span class="c"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>Leállítás</button>
+    <button class="ctrl"><span class="c">${ic('pause')}</span>Szünet</button></div>
+  <p class="note">Your audio stays on your own server.</p>`,
+  d:()=>`<div class="main rec-main" style="align-items:center;justify-content:center;flex:1">
+  <span class="state"><b></b>Felvétel folyamatban</span>
+  <div class="timer" role="timer" aria-label="Eltelt idő">02:14</div>
+  <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
+  <div class="meter" aria-hidden="true">${bars(56)}</div>
+  <div class="ctrls">
+    <button class="ctrl del"><span class="c">${ic('trash')}</span>Elvetés</button>
+    <button class="ctrl stop"><span class="c"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>Leállítás</button>
+    <button class="ctrl"><span class="c">${ic('pause')}</span>Szünet</button></div></div>`};
+
+/* ---- entry ---- */
+const chip=t=>`<button class="chip">${ic('cal',18)}${t}</button>`;
+const doneCard=`<div class="rcard">
+  <div class="player">${play}<div class="track"><i></i></div><span class="time">0:46 / 1:48</span></div>
+  <p class="tr">Ma reggel korán keltem, és megint eszembe jutott a költözés. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek.</p>
+  <div class="tag"><span>Magyar</span><span>20:42</span><button class="btn text">${ic('pen',18)}Átirat szerkesztése</button></div></div>`;
+const workingCard=`<div class="rcard">
+  <div class="player">${play}<div class="track"><i style="width:0"></i></div><span class="time">0:00 / 0:36</span></div>
+  <div class="working" role="status">${ic('bird',18)}Átírás folyamatban…</div>
+  <div class="sk" style="width:100%"></div><div class="sk" style="width:82%"></div><div class="sk" style="width:55%"></div></div>`;
+const editCard=`<div class="rcard">
+  <div class="player">${play}<div class="track"><i></i></div><span class="time">0:46 / 1:48</span></div>
+  <textarea class="edit" aria-label="Átirat szerkesztése">Ma reggel korán keltem, és megint eszembe jutott a költözés. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek és Annának is.</textarea>
+  <div class="editbtns"><button class="btn sm">Mentés</button><button class="btn sm line">Mégse</button></div>
+  <p class="editnote">A módosításaidat az átírás később sem írja felül.</p></div>`;
+const failedCard=`<div class="rcard">
+  <div class="player">${play}<div class="track"><i style="width:0"></i></div><span class="time">0:00 / 2:31</span></div>
+  <div class="failed" role="alert">${ic('alert')}<div><b>Az átírás nem sikerült.</b><p>A felvétel megvan, a szöveg hiányzik. Próbáld újra.</p><button class="btn sm ghost">${ic('retry',18)}Újrapróbálás</button></div></div>
+  <div class="tag"><span>Magyar</span><span>08:05</span></div></div>`;
+const offCard=`<div class="rcard">
+  <div class="player">${play}<div class="track"><i style="width:0"></i></div><span class="time">0:00 / 2:31</span></div>
+  <div class="offnote">${ic('info')}<div><b>Nincs átírva.</b><p>Az átírás ki van kapcsolva, ezért ehhez a felvételhez csak hang tartozik. Bekapcsolni a Beállításokban tudod.</p></div></div>
+  <div class="tag"><span>08:05</span></div></div>`;
+const addRow=`<div class="addrow"><button class="add">${ic('mic')}Újabb felvétel</button><button class="add">${ic('upload')}Upload audio file</button></div>`;
+const rows=cur=>`
+  <h2 class="day">Ma, november 26.</h2>
+  <a class="row" href="#" ${cur===0?'aria-current="true"':''}><div class="meta">${ic('mic')}20:42 · 1:48</div><p class="ex">A long day, but in a good way. The morning meeting went better than I expected.</p></a>
+  <a class="row" href="#"><div class="meta">${ic('pen')}13:05</div><p class="ex">Lunch with Anna. She told me about her new flat, and I got a little jealous.</p></a>
+  <h2 class="day">Tegnap, november 25.</h2>
+  <a class="row" href="#"><div class="meta">${ic('mic')}22:10 · 0:52</div><p class="ex">Későn értem haza, de jólesett a csend a lépcsőházban.</p></a>
+  <h2 class="day">Hétfő, november 23.</h2>
+  <a class="row" href="#"><div class="meta">${ic('pen')}18:30</div><p class="ex">Elkezdtem pakolni a könyveket, többet találtam, mint gondoltam.</p></a>
+  <a class="row" href="#" ${cur===1?'aria-current="true"':''}><div class="meta">${ic('mic')}08:05 · 2:31</div><p class="ex none">Hangfelvétel, szöveg nélkül</p></a>`;
+const acts=`<button class="icbtn" aria-label="Szerkesztés">${ic('pen')}</button><button class="icbtn del" aria-label="Törlés">${ic('trash')}</button>`;
+const entry=(o)=>({label:o.label,nav:'ido',tabs:0,side:1,rec:1,over:o.over,
+  body:()=>`<div class="topbar"><button class="back">${ic('back')}Vissza</button><div>${acts}</div></div>
+   <h1 class="entry-date">${o.date}</h1>${chip('Dátum módosítása')}
+   ${o.text?`<p class="body-text">${o.text}</p>`:''}
+   <div class="lab">Hangfelvételek</div>${o.cards}${addRow}`,
+  d:()=>`<div class="split"><section class="list" aria-label="Idővonal">${rows(o.cur)}</section>
+   <article class="read"><div class="read-in"><div class="topbar">${acts}</div>
+   <h1 class="entry-date">${o.date}</h1>${chip('Dátum módosítása')}
+   ${o.text?`<p class="body-text">${o.text}</p>`:''}
+   <div class="lab">Hangfelvételek</div>${o.cards}${addRow}</div></article></div>`});
+const typed='Hosszú nap, de jó értelemben. Délelőtt a megbeszélés jobban sikerült, mint vártam, délután pedig kiszaladtam a partra.';
+S.entry=entry({label:'Entry: done + transcribing',date:'2026. november 26., csütörtök',text:typed,cards:doneCard+workingCard,cur:0});
+S.entryedit=entry({label:'Entry: editing a transcript',date:'2026. november 26., csütörtök',text:typed,cards:editCard+workingCard,cur:0});
+S.entryfail=entry({label:'Entry: transcription failed',date:'2026. november 23., hétfő',cards:failedCard,cur:1});
+S.entryoff=entry({label:'Entry: not transcribed (transcription off)',date:'2026. november 23., hétfő',cards:offCard,cur:1});
+
+/* delete + date dialogs */
+const delDialog=`<div class="scrim"><div class="dialog" role="alertdialog" aria-labelledby="dt"><h2 id="dt">Törlöd ezt a bejegyzést?</h2>
+  <p>A szöveg és a hozzá tartozó hangfelvételek végleg törlődnek. Ezt nem lehet visszavonni.</p>
+  <div class="actions"><button class="btn danger block">Törlés</button><button class="btn line block">Mégse</button></div></div></div>`;
+S.delete={...entry({label:'Delete confirmation',date:'2026. november 26., csütörtök',text:typed,cards:doneCard,cur:0}),over:delDialog};
+
+const days=(()=>{let h='';['H','K','Sze','Cs','P','Szo','V'].forEach(d=>h+=`<div class="dow" aria-hidden="true">${d}</div>`);
+  for(let i=0;i<6;i++)h+='<div></div>';
+  for(let n=1;n<=30;n++)h+=`<button class="dd${n===25?' sel':''}${n===26?' tdy':''}" ${n===25?'aria-pressed="true"':''}>${n}</button>`;return h;})();
+const dateDialog=`<div class="scrim"><div class="dialog" role="dialog" aria-labelledby="dd"><h2 id="dd">Melyik napról szól?</h2>
+  <p>A bejegyzés a kiválasztott napnál jelenik meg az idővonalon.</p>
+  <div class="cal"><div class="mh"><button class="icbtn" aria-label="Előző hónap">${ic('back')}</button><span>2026. november</span><button class="icbtn" aria-label="Következő hónap">${ic('next')}</button></div><div class="grid">${days}</div></div>
+  <div class="actions"><button class="btn block">Kész</button><button class="btn line block">Mégse</button></div></div></div>`;
+
+/* ---- writer ---- */
+const writer=(edit)=>({label:edit?'Typed entry: edit existing':'Typed entry: write new',nav:edit?'ido':'ma',tabs:0,side:1,rec:1,over:edit==='date'?dateDialog:'',
+  body:()=>`<div class="wr-top"><button class="back">${ic('back')}Vissza</button><button class="btn sm">Kész</button></div>
+   <h1 class="title" style="margin-bottom:12px">${edit?'Bejegyzés szerkesztése':'Új bejegyzés'}</h1>
+   ${chip(edit?'2026. november 26., csütörtök':'Ma, november 26.')}
+   <textarea class="paper" aria-label="A bejegyzés szövege">${edit?typed:'Ma reggel végre elmentem futni, először egy hete. Hideg volt, de a Duna-parton alig volt valaki, és a fejem is kitisztult.'}</textarea>
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px;flex-wrap:wrap"><span class="saved">${ic('check')}Mentve 21:32</span><span class="saved">Markdown használható</span></div>
+   ${edit?`<div class="actions" style="margin-top:20px"><button class="btn dangerline block">${ic('trash',20)}Bejegyzés törlése</button></div>`:''}`});
+S.write=writer(false);S.edit=writer(true);
+S.date={...writer('date'),label:'Typed entry: change entry date'};
+
+/* ---- upload ---- */
+const fileCard=(pct)=>`<div class="file"><span class="fi">${ic('file')}</span><div class="fn"><b>hangjegyzet-2026-11-20.m4a</b><small>${pct==null?'3,2 MB · 2:04':'Feltöltés: '+pct+'%'}</small>${pct==null?'':`<div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Feltöltés"><i style="width:${pct}%"></i></div>`}</div>${pct==null?`<button class="btn text" style="padding:0 4px">Csere</button>`:''}</div>`;
+const upFields=`<div class="field"><div class="fl">Nyelv</div>${seg('Nyelv',['Magyar','English','Automatikus'],0)}</div>
+  <div class="field"><div class="fl">Melyik napról szól?</div>${chip('2026. november 20., péntek')}</div>`;
+const up=(k)=>({label:'Upload: '+({empty:'choose file',ready:'file chosen',prog:'uploading'})[k],nav:'ma',tabs:0,side:1,rec:1,
+  body:()=>`<div class="wr-top"><button class="back">${ic('back')}Vissza</button></div>
+   <h1 class="title" style="margin-top:0">Upload audio file</h1>
+   <p class="lead">Például egy telefonos hangjegyzet. Új bejegyzés lesz belőle.</p>
+   ${k==='empty'?`<div class="drop">${ic('upload').replace('class="i"','class="i big"')}<p>Húzd ide a fájlt, vagy válaszd ki az eszközödről.</p><button class="btn">Fájl kiválasztása</button></div>`
+    :fileCard(k==='prog'?64:null)+upFields+
+     (k==='ready'?`<div class="actions"><button class="btn block">Feltöltés</button><button class="btn line block">Mégse</button></div>`
+      :`<div class="actions"><button class="btn line block">Mégse</button></div>`)}`});
+S.upload=up('empty');S.uploadready=up('ready');S.uploadprog=up('prog');
+
+/* ---- timeline ---- */
+const tcard=(i,meta,ex,badge)=>`<div class="card"><div class="meta">${ic(i)}${meta}${badge||''}</div><p class="ex${ex?'':' none'}">${ex||'Hangfelvétel, szöveg nélkül'}</p></div>`;
+S.timeline={label:'Timeline',nav:'ido',tabs:1,side:1,rec:1,body:()=>`
+  <h1 class="title">Idővonal</h1>
+  <h2 class="day">Ma, november 26.</h2>
+  ${tcard('mic','20:42 · 1:48','A long day, but in a good way. The morning meeting went better than I expected.',`<span class="badge">${ic('bird')}Átírás folyamatban</span>`)}
+  ${tcard('pen','13:05','Lunch with Anna. She told me about her new flat, and I got a little jealous.')}
+  <h2 class="day">Tegnap, november 25.</h2>
+  ${tcard('mic','22:10 · 0:52','Későn értem haza, de jólesett a csend a lépcsőházban.')}
+  <h2 class="day">Hétfő, november 23.</h2>
+  ${tcard('pen','18:30','Elkezdtem pakolni a könyveket, többet találtam, mint gondoltam.')}
+  ${tcard('mic','08:05 · 2:31','',`<span class="badge mute">Nincs átírva</span>`)}
+  ${tcard('mic','07:40 · 0:15','',`<span class="badge err">${ic('alert')}Nem sikerült</span>`)}
+  <h2 class="day">Szombat, november 21.</h2>
+  ${tcard('mic','19:20 · 1:12','Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.')}
+  <div class="sk" style="width:100%;margin-top:18px" aria-hidden="true"></div><div class="sk" style="width:70%" aria-hidden="true"></div>
+  <p class="hint" role="status">További bejegyzések betöltése…</p>`};
+
+/* ---- search ---- */
+const hit=(i,meta,src,txt)=>`<div class="card hit"><div class="meta">${ic(i)}${meta}<span class="src" style="margin-left:auto">${src}</span></div><p class="ex">${txt}</p></div>`;
+const sbox=q=>`<div class="sbox"><div class="inp focus">${ic('search')}<input type="search" value="${q}" aria-label="Keresés"><button class="x" aria-label="Törlés">${ic('x',18)}</button></div></div>`;
+S.search={label:'Search: results',nav:'kereses',tabs:1,side:1,rec:1,body:()=>`
+  <h1 class="title">Keresés</h1>${sbox('költözés')}
+  <p class="count" role="status">4 találat</p>
+  ${hit('mic','2026. nov. 26., 20:42','átirat','Ma reggel korán keltem, és megint eszembe jutott a <mark>költözés</mark>. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek.')}
+  ${hit('mic','2026. nov. 23., 08:05','átirat','Reggeli gondolatok a <mark>költözésről</mark>, még nem mondtam el senkinek.')}
+  ${hit('pen','2026. nov. 23., 18:30','szöveg','Elkezdtem pakolni a könyveket, többet találtam, mint gondoltam. A <mark>költözéshez</mark> még dobozok kellenek.')}
+  ${hit('pen','2026. nov. 14., 17:15','szöveg','Annával a <mark>költözésről</mark> beszélgettünk, szerinte jövő tavasz lenne a jó időpont.')}`};
+S.searchempty={label:'Search: no results',nav:'kereses',tabs:1,side:1,rec:1,body:()=>`
+  <h1 class="title">Keresés</h1>${sbox('hajóút')}
+  <div class="empty" role="status">${ic('search')}<h2>Nincs találat</h2><p>Próbálj rövidebb vagy más szót. Az ékezetek nem számítanak.</p></div>`};
+
+/* ---- settings ---- */
+const personal=`<h2 class="sec">Személyes</h2><div class="group">
+  <div class="srow"><div class="fl">A felület nyelve</div>${seg('A felület nyelve',['Magyar','English'],0)}</div>
+  <div class="srow"><div class="fl">Alapértelmezett nyelv a felvételekhez</div>${seg('Alapértelmezett nyelv',['Magyar','English','Automatikus'],0)}
+    <p class="hint">Bejegyzésenként felülírhatod.</p></div>
+  <div class="srow"><div class="fl">Időzóna</div><div class="inp sel"><span>Europe/Budapest (UTC+01:00)</span>${ic('down')}</div></div></div>`;
+const account=`<h2 class="sec">Fiók</h2><div class="group"><div class="srow acct"><span>napsugar@example.hu</span><button class="btn sm line">${ic('out',20)}Kijelentkezés</button></div></div>`;
+const trans=(on,inner)=>`<h2 class="sec">Rendszergazda</h2><div class="group"><div class="srow">
+  <div class="trow"><div><b id="tl">Átírás</b><p>A felvételek szöveggé alakítása a saját szervereden. Egyszeri, kb. 560 MB letöltés kell hozzá.</p></div>
+  <button class="toggle" role="switch" aria-checked="${on}" aria-labelledby="tl"></button></div>${inner||''}</div></div>`;
+const dl=`<div class="dl" role="status"><div class="line1"><span>Modell letöltése…</span><span class="num">340 MB / 560 MB · 61%</span></div>
+  <div class="progress" role="progressbar" aria-valuenow="61" aria-valuemin="0" aria-valuemax="100" aria-label="Modell letöltése"><i style="width:61%"></i></div></div>`;
+const ready=`<div class="okline">${ic('check')}A modell letöltve, az új felvételeket átírjuk.</div>
+  <div class="ask"><b>14 felvételt még nem írtunk át. Átírjuk most?</b><div class="acts"><button class="btn sm">Átírás most</button><button class="btn sm line">Most nem</button></div></div>`;
+const settings=(k)=>({label:'Settings: '+({off:'transcription off',dl:'model downloading',ready:'model ready, backlog question'})[k],nav:'beall',tabs:1,side:1,rec:1,
+  body:()=>`<h1 class="title">Beállítások</h1>${personal}${trans(k!=='off',k==='dl'?dl:k==='ready'?ready:'')}${account}`});
+S.settings=settings('off');S.settingsdl=settings('dl');S.settingsready=settings('ready');
+
+/* ---- render ---- */
+const nav=[['ma','home','Today'],['ido','list','Timeline'],['kereses','search','Search'],['beall','gear','Settings']];
+function render(id,dev,theme){
+  const sc=S[id];const m=dev==='m';const w=m?390:+dev;
+  const f=document.getElementById('frame');
+  const cls=`frame ${m?'m':'d'} ${theme==='light'?'light':''} ${!m&&sc.bare?'bare':''}`;
+  let h='';
+  if(m){
+    h+=`<div class="status"><span>21:14</span><span>5G ▮▮▮</span></div><div class="scroll">${sc.body()}</div>`;
+    if(sc.tabs)h+=`<nav class="tabs" aria-label="Main navigation">${nav.map(([k,i,l])=>`<a href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}</nav>`;
+  }else if(sc.bare){
+    h+=`<div class="bare-in">${sc.body()}</div>`;
+  }else{
+    h+=`<nav class="side" aria-label="Main navigation"><div class="brand">${ic('bird')}Nightjar</div>${nav.map(([k,i,l])=>`<a class="nav" href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}<div class="grow"></div>${sc.rec?`<button class="newrec">${ic('mic')}Start recording</button>`:''}<p class="privacy">Your audio stays on your own server.</p></nav>`;
+    h+=`<main class="main">${sc.d?sc.d():`<div class="page"><div class="col">${sc.body()}</div></div>`}</main>`;
+  }
+  if(sc.over)h+=sc.over;
+  f.className=cls;f.style.width=m?'':w+'px';f.style.minHeight=m?'':(w>=1440?900:800)+'px';
+  f.innerHTML=h;document.title='Nightjar Alkony: '+sc.label;
+}
+const sel=document.getElementById('s');
+sel.innerHTML=Object.entries(S).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+const q=new URLSearchParams(location.hash.slice(1));
+if(q.get('chrome')==='0')document.body.classList.add('nochrome');
+sel.value=q.get('s')||'home';document.getElementById('d').value=q.get('d')||'1280';document.getElementById('t').value=q.get('t')||'dark';
+const go=()=>render(sel.value,document.getElementById('d').value,document.getElementById('t').value);
+['s','d','t'].forEach(i=>document.getElementById(i).addEventListener('change',go));
+go();
+window.SCREENS=Object.keys(S);
+</script>
+</body>
+</html>
