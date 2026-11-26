@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
@@ -53,8 +54,14 @@ export async function buildApp({
 }: AppDependencies) {
   const app = Fastify({
     loggerInstance: logger,
+    requestIdHeader: false,
+    genReqId: () => randomUUID(),
     trustProxy: (_address: string, hop: number) => hop < (trustProxy ?? 0),
     logController: new LogController({ disableRequestLogging: true }),
+  })
+
+  app.addHook('onRequest', async (request, reply) => {
+    reply.header('x-request-id', request.id)
   })
 
   app.addHook('onRequest', async (request, reply) => {

@@ -183,6 +183,7 @@ No extra services. Everything is in the app process.
 | What | How |
 |---|---|
 | Logs | pino, JSON to stdout, with redaction (no journal text, transcripts or file names) |
+| Request id | Every request gets a random UUID `reqId` (an incoming `x-request-id` is ignored). It is returned in the `x-request-id` response header and is on every log line of that request. Jobs will log their `jobId` and the `requestId` of the request that enqueued them |
 | Health | `/healthz` (process is up), `/readyz` (database reachable, migrations done) |
 | Metrics | Prometheus `/metrics` using `prom-client` on a separate internal port (`NIGHTJAR_METRICS_PORT`, not published by default): request latency, job duration, transcription speed (real-time factor), queue depth |
 
