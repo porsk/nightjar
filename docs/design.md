@@ -29,6 +29,9 @@ entries beside the record button, Entry as timeline list + reading pane side by 
 | Search | search box, results with highlighted matches |
 | Settings | UI language, default entry language, time zone |
 
+M1 mockups (all screens and states, 390 / 1280 / 1440, dark + light, screen switcher): `design/alkony/m1.html`
+(screenshots in `design/alkony/screenshots/m1/`).
+
 ## Direction feedback
 
 | Round | Feedback |
