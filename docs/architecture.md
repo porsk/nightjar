@@ -223,3 +223,21 @@ sign-in, maybe a hosted version.
 | First account made in the setup wizard is the admin | Natural place for "invite people" later |
 | Settings are per user (language, time zone); only server things (AI keys, models) are instance-wide | Each person keeps their own setup |
 | Jobs carry the `user_id` and only need Postgres | Workers can move to their own process when a hosted version needs to scale |
+
+## Ready to scale later (D-32)
+
+No new services now. These rules keep a hosted version possible without a rewrite.
+
+| Rule | Later it allows |
+|---|---|
+| Live events (e.g. "transcript ready") go through Postgres `LISTEN/NOTIFY`, never an in-process emitter | Several web containers behind a load balancer |
+| Separate `web` and `worker` entry points in code; one process runs both today | Web and workers as separate containers from the same image |
+| Every job is safe to retry or run twice | Many workers, crashes mid-job |
+| Storage module takes keys, not file paths | Object storage (S3-style) instead of `/data` |
+| No important state in process memory (login rate limit is the one exception) | Stateless web containers |
+| Queue = pg-boss on Postgres, no broker | Swap is contained in one module if ever needed |
+
+```
+Today:   [ one container: web + worker ] ── Postgres ── /data
+Later:   [ web ×N ] + [ worker ×M ] ── Postgres (queue + notify) ── object storage
+```

@@ -82,6 +82,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-29 | 11-26 | CI upgrade test, added right after the first release: start the previous release, save sample data, start the new image on the same database, check migrations ran and the data is intact | Owner: pulling a new version must just work |
 | D-30 | 11-26 | M1 specs approved with these answers (m1-summary open questions): 1 B setup code from container log, 2 A, 3 A, 4 A, 5 A, 6 A, 7 B confirm discard, 8 A, 9 A, 10 C /metrics on a separate internal port not exposed by default, 11 A, 12 A installable PWA in M1, 13 A several entries per day | Owner: all looks good |
 | D-31 | 11-26 | English is the default UI language: setup wizard starts in English (Hungarian can be picked), new users default to English. Default recording language follows the UI language picked | Owner: makes more sense for a shared project |
+| D-32 | 11-26 | Scale-ready from day one, no new services: live events go through Postgres LISTEN/NOTIFY (no in-process emitter for cross-request events); code has separate web and worker entry points, one process runs both for now; every job is safe to retry or run twice; storage module works with keys, not paths; no important state in process memory (login rate limit is the one accepted exception). No message broker | Owner: keep a later SaaS possible without a rewrite |
+| D-33 | 11-26 | Before sign-in the UI follows the browser language (hu browser gets Hungarian), English otherwise | Owner |
 
 ## Proposed (approved together with the plan)
 
