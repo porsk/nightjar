@@ -1,0 +1,32 @@
+services:
+  nightjar:
+    image: porsk/nightjar:latest
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgres://nightjar:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/nightjar
+    volumes:
+      - nightjar-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:19
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nightjar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: nightjar
+    volumes:
+      - nightjar-db:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nightjar']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  nightjar-data:
+  nightjar-db:
