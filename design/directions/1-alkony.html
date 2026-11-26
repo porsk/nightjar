@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar direction 1: Alkony</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* page chrome (not part of the design) */
+*{box-sizing:border-box}
+body{margin:0;background:#08070f;color:#e9e6f5;font:16px/1.5 system-ui,sans-serif;padding:32px 24px 64px}
+.top{max-width:1300px;margin:0 auto 32px}
+.top h1{font:600 28px/1.2 system-ui;margin:0 0 6px}
+.top p{margin:0 0 16px;color:#b9b5d0;max-width:70ch}
+.sw{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px;padding:0;list-style:none}
+.sw li{display:flex;align-items:center;gap:8px;font:13px/1.2 ui-monospace,monospace;color:#cfcbe4}
+.sw i{width:28px;height:28px;border-radius:6px;border:1px solid #ffffff44;display:block}
+.fonts{font-size:14px;color:#b9b5d0}
+.row{display:flex;flex-wrap:wrap;gap:32px;max-width:1300px;margin:0 auto 40px}
+.row h2{flex-basis:100%;margin:0;font:600 16px system-ui;color:#b9b5d0}
+figure{margin:0}
+figcaption{font:13px system-ui;color:#b9b5d0;margin-top:8px}
+
+/* ---------- design tokens: dark (default) ---------- */
+.phone{
+  --bg:#14122b; --bg2:#1c1940; --surface:#1e1b3d; --surface2:#2b2754; --line:#3a3568;
+  --text:#f0ecfa; --muted:#b4aed3; --accent:#f6b45c; --on-accent:#2a1a05; --accent-text:#f6b45c;
+  --glow:#4a3a8c; --danger:#ff8a8a;
+  width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  background:var(--bg);color:var(--text);font:400 16px/1.5 'Figtree',system-ui,sans-serif;
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px #ffffff1f,0 24px 60px #0008;
+}
+.phone.light{
+  --bg:#f7f2fb; --bg2:#ebe3f6; --surface:#ffffff; --surface2:#efe8f8; --line:#d6cbe8;
+  --text:#231f45; --muted:#585280; --accent:#f0a93f; --on-accent:#2a1a05; --accent-text:#8a4a00;
+  --glow:#ffd9a0; --danger:#b3261e;
+}
+.phone::before{ /* dusk sky: soft glow rising from the bottom of the top area */
+  content:"";position:absolute;inset:0 0 auto 0;height:380px;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,var(--bg2) 0%,transparent 70%),
+             radial-gradient(60% 40% at 50% 100%,var(--glow) 0%,transparent 100%);opacity:.7;
+}
+.phone>*{position:relative}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:600;flex:none}
+.scroll{flex:1;overflow:hidden;padding:0 20px}
+button{font:inherit;color:inherit;cursor:pointer}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+.brand{display:flex;align-items:center;gap:10px;font:600 20px 'Fraunces',serif;letter-spacing:.01em}
+.brand svg{width:28px;height:28px;color:var(--accent)}
+.hd{display:flex;justify-content:space-between;align-items:center;min-height:56px}
+.date{font:italic 400 17px 'Fraunces',serif;color:var(--muted)}
+
+/* Home */
+.greet{font:400 30px/1.15 'Fraunces',serif;margin:12px 0 0;max-width:12ch}
+.rec-wrap{display:flex;flex-direction:column;align-items:center;margin:22px 0 20px}
+.rec{width:156px;height:156px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);
+  display:grid;place-items:center;
+  box-shadow:0 0 0 12px color-mix(in srgb,var(--accent) 22%,transparent),0 0 0 26px color-mix(in srgb,var(--accent) 10%,transparent),0 14px 40px color-mix(in srgb,var(--accent) 30%,transparent)}
+.rec svg{width:60px;height:60px;stroke-width:1.8}
+.rec-label{margin-top:34px;font-weight:600;font-size:17px}
+.write{width:100%;min-height:52px;border-radius:26px;border:1.5px solid var(--line);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600}
+.row h2.sec{font:600 18px 'Fraunces',serif;margin:12px 0 8px;flex-basis:auto;color:var(--text)}
+.card{background:var(--surface);border-radius:22px;padding:14px 16px;margin-bottom:10px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.card .meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;margin-bottom:4px}
+.card .meta svg{width:16px;height:16px}
+.card p{margin:0;font:400 16px/1.45 'Fraunces',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tabs{flex:none;display:flex;justify-content:space-around;padding:8px 8px 22px;background:var(--surface);border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.tabs a{min-height:48px;min-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);text-decoration:none;font-weight:500}
+.tabs a[aria-current]{color:var(--accent-text);font-weight:700}
+
+/* Recorder */
+.state{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:var(--surface);font-weight:600;font-size:14px}
+.state b{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.timer{font:300 84px/1 'Fraunces',serif;font-variant-numeric:tabular-nums;text-align:center;margin:90px 0 10px;letter-spacing:-.01em}
+.sub{text-align:center;color:var(--muted);margin:0}
+.meter{display:flex;align-items:center;justify-content:center;gap:4px;height:120px;margin:50px 0 0}
+.meter span{width:5px;border-radius:3px;background:var(--accent)}
+.meter span.old{opacity:.4}
+.ctrls{display:flex;justify-content:space-around;align-items:flex-start;margin-top:50px}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;font-weight:600;font-size:14px;min-width:84px;padding:0}
+.ctrl .c{width:64px;height:64px;border-radius:50%;background:var(--surface2);display:grid;place-items:center}
+.ctrl.stop .c{width:96px;height:96px;background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 20%,transparent)}
+.ctrl.stop svg{width:36px;height:36px;fill:currentColor}
+.ctrl.del{color:var(--danger)}
+.note{margin:44px 0 0;text-align:center;font-size:14px;color:var(--muted)}
+
+/* Entry */
+.back{display:inline-flex;align-items:center;gap:6px;min-height:48px;background:none;border:0;padding:0;font-weight:600;color:var(--accent-text)}
+.entry-date{font:600 26px/1.2 'Fraunces',serif;margin:2px 0 6px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:22px;background:var(--surface);border:1px solid var(--line);font-size:14px;font-weight:600}
+.body-text{font:400 18px/1.6 'Fraunces',serif;margin:16px 0 0}
+.lab{font-weight:700;font-size:15px;margin:12px 0 8px;color:var(--muted)}
+.rcard{background:var(--surface);border-radius:22px;padding:14px 16px;margin-bottom:12px}
+.player{display:flex;align-items:center;gap:12px}
+.pl{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.pl svg{width:20px;height:20px;fill:currentColor;stroke:none}
+.track{flex:1;height:6px;border-radius:3px;background:var(--surface2);position:relative}
+.track i{position:absolute;inset:0 auto 0 0;width:42%;background:var(--accent);border-radius:3px}
+.time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr{font:400 16px/1.6 'Fraunces',serif;margin:12px 0 0}
+.tag{font-size:13px;color:var(--muted);display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.working{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-weight:600;font-size:15px;color:var(--accent-text)}
+.sk{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2));background-size:200% 100%;animation:sh 2s linear infinite;margin-bottom:8px}
+@keyframes sh{to{background-position:-200% 0}}
+.add{width:100%;min-height:48px;border-radius:24px;border:1.5px dashed var(--line);background:none;font-weight:600;color:var(--muted);display:flex;gap:8px;align-items:center;justify-content:center}
+@media (prefers-reduced-motion:reduce){.state b,.sk{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+    <symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="edit" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+    <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/></symbol>
+    <symbol id="list" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+    <symbol id="bird" viewBox="0 0 24 24"><path d="M3 15c4 1 8-1 10-5 1-2 3-3 6-2-1 1-1 2-1 3 0 5-4 9-9 9-3 0-5-2-6-5z" fill="currentColor" stroke="none"/><circle cx="17" cy="10" r="1" fill="#14122b" stroke="none"/></symbol>
+  </defs>
+</svg>
+
+<div class="top">
+  <h1>Direction 1: Alkony (dusk)</h1>
+  <p>The dusk palette taken literally: deep indigo night with a warm amber lamp. Soft, big radii, a serif for everything you write or say, a friendly sans for controls. The record button glows like a lit window.</p>
+  <ul class="sw">
+    <li><i style="background:#14122b"></i>#14122b night</li>
+    <li><i style="background:#1e1b3d"></i>#1e1b3d surface</li>
+    <li><i style="background:#2b2754"></i>#2b2754 raised</li>
+    <li><i style="background:#f0ecfa"></i>#f0ecfa text</li>
+    <li><i style="background:#b4aed3"></i>#b4aed3 muted</li>
+    <li><i style="background:#f6b45c"></i>#f6b45c amber</li>
+    <li><i style="background:#f7f2fb"></i>#f7f2fb light bg</li>
+    <li><i style="background:#8a4a00"></i>#8a4a00 light amber text</li>
+  </ul>
+  <div class="fonts">Fonts: Fraunces (entries, headings, timer) and Figtree (controls, labels).</div>
+</div>
+
+<div class="row">
+<h2>Sötét téma (dark)</h2>
+
+<!-- HOME dark -->
+<figure>
+<section class="phone" aria-label="Ma, sötét">
+  <div class="status"><span>21:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><div class="brand"><svg class="i"><use href="#bird"/></svg>Nightjar</div><span class="date">csütörtök</span></div>
+    <h1 class="greet">Jó estét. Mi járt a fejedben?</h1>
+    <div class="rec-wrap">
+      <button class="rec" aria-label="Felvétel indítása"><svg class="i"><use href="#mic"/></svg></button>
+      <div class="rec-label">Felvétel indítása</div>
+    </div>
+    <button class="write"><svg class="i"><use href="#pen"/></svg>Inkább írok</button>
+    <h2 class="sec">Mai bejegyzések</h2>
+    <div class="card"><div class="meta"><svg class="i"><use href="#mic"/></svg>20:42 · 1:48</div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p></div>
+    <div class="card"><div class="meta"><svg class="i"><use href="#pen"/></svg>13:05</div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></div>
+  </div>
+  <nav class="tabs" aria-label="Fő navigáció">
+    <a href="#" aria-current="page"><svg class="i"><use href="#home"/></svg>Ma</a>
+    <a href="#"><svg class="i"><use href="#list"/></svg>Idővonal</a>
+    <a href="#"><svg class="i"><use href="#search"/></svg>Keresés</a>
+    <a href="#"><svg class="i"><use href="#gear"/></svg>Beállítások</a>
+  </nav>
+</section>
+<figcaption>1. Ma (Home)</figcaption>
+</figure>
+
+<!-- RECORDER dark -->
+<figure>
+<section class="phone" aria-label="Felvétel, sötét">
+  <div class="status"><span>21:16</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><span class="state"><b></b>Felvétel folyamatban</span></div>
+    <div class="timer" aria-label="Eltelt idő">02:14</div>
+    <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
+    <div class="meter" data-meter aria-hidden="true"></div>
+    <div class="ctrls">
+      <button class="ctrl del"><span class="c"><svg class="i"><use href="#trash"/></svg></span>Elvetés</button>
+      <button class="ctrl stop"><span class="c"><svg class="i" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>Leállítás</button>
+      <button class="ctrl"><span class="c"><svg class="i"><use href="#pause"/></svg></span>Szünet</button>
+    </div>
+    <p class="note">A hang a saját szervereden marad.</p>
+  </div>
+</section>
+<figcaption>2. Felvétel (Recorder)</figcaption>
+</figure>
+
+<!-- ENTRY dark -->
+<figure>
+<section class="phone" aria-label="Bejegyzés, sötét">
+  <div class="status"><span>21:20</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <button class="back"><svg class="i"><use href="#back"/></svg>Vissza</button>
+    <h1 class="entry-date">2026. november 26., csütörtök</h1>
+    <button class="chip"><svg class="i" style="width:18px;height:18px"><use href="#cal"/></svg>Dátum módosítása</button>
+    <p class="body-text">Hosszú nap, de jó értelemben. Délelőtt a megbeszélés jobban sikerült, mint vártam, délután pedig kiszaladtam a partra.</p>
+    <div class="lab">Hangfelvételek</div>
+    <div class="rcard">
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i></i></div><span class="time">0:46 / 1:48</span></div>
+      <p class="tr">Ma reggel korán keltem, és megint eszembe jutott a költözés. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek.</p>
+      <div class="tag"><span>Magyar</span><span>20:42</span></div>
+    </div>
+    <div class="rcard">
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i style="width:0"></i></div><span class="time">0:00 / 0:36</span></div>
+      <div class="working"><svg class="i" style="width:18px;height:18px"><use href="#bird"/></svg>Átírás folyamatban…</div>
+      <div class="sk" style="width:100%"></div><div class="sk" style="width:82%"></div><div class="sk" style="width:55%"></div>
+    </div>
+    <button class="add"><svg class="i"><use href="#mic"/></svg>Újabb felvétel</button>
+  </div>
+</section>
+<figcaption>3. Bejegyzés (Entry)</figcaption>
+</figure>
+</div>
+
+<div class="row">
+<h2>Világos téma (light)</h2>
+<figure>
+<section class="phone light" aria-label="Ma, világos">
+  <div class="status"><span>9:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><div class="brand"><svg class="i"><use href="#bird"/></svg>Nightjar</div><span class="date">csütörtök</span></div>
+    <h1 class="greet">Jó estét. Mi járt a fejedben?</h1>
+    <div class="rec-wrap">
+      <button class="rec" aria-label="Felvétel indítása"><svg class="i"><use href="#mic"/></svg></button>
+      <div class="rec-label">Felvétel indítása</div>
+    </div>
+    <button class="write"><svg class="i"><use href="#pen"/></svg>Inkább írok</button>
+    <h2 class="sec">Mai bejegyzések</h2>
+    <div class="card"><div class="meta"><svg class="i"><use href="#mic"/></svg>20:42 · 1:48</div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p></div>
+    <div class="card"><div class="meta"><svg class="i"><use href="#pen"/></svg>13:05</div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></div>
+  </div>
+  <nav class="tabs" aria-label="Fő navigáció">
+    <a href="#" aria-current="page"><svg class="i"><use href="#home"/></svg>Ma</a>
+    <a href="#"><svg class="i"><use href="#list"/></svg>Idővonal</a>
+    <a href="#"><svg class="i"><use href="#search"/></svg>Keresés</a>
+    <a href="#"><svg class="i"><use href="#gear"/></svg>Beállítások</a>
+  </nav>
+</section>
+<figcaption>Ma, világos</figcaption>
+</figure>
+</div>
+
+<script>
+// mockup only: fake level meter bars
+document.querySelectorAll('[data-meter]').forEach(m=>{
+  for(let i=0;i<41;i++){
+    const s=document.createElement('span');
+    const h=14+Math.abs(Math.sin(i*.55)*Math.cos(i*.21))*92;
+    s.style.height=h+'px'; if(i>30)s.className='old'; m.appendChild(s);
+  }
+});
+</script>
+</body>
+</html>

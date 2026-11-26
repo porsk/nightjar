@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar direction 2: Erdő</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#070b09;color:#e3ece6;font:16px/1.5 system-ui,sans-serif;padding:32px 24px 64px}
+.top{max-width:1300px;margin:0 auto 32px}
+.top h1{font:600 28px/1.2 system-ui;margin:0 0 6px}
+.top p{margin:0 0 16px;color:#b2c2b8;max-width:70ch}
+.sw{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px;padding:0;list-style:none}
+.sw li{display:flex;align-items:center;gap:8px;font:13px/1.2 ui-monospace,monospace;color:#cbd8d0}
+.sw i{width:28px;height:28px;border-radius:6px;border:1px solid #ffffff44;display:block}
+.fonts{font-size:14px;color:#b2c2b8}
+.row{display:flex;flex-wrap:wrap;gap:32px;max-width:1300px;margin:0 auto 40px}
+.row h2{flex-basis:100%;margin:0;font:600 16px system-ui;color:#b2c2b8}
+figure{margin:0}
+figcaption{font:13px system-ui;color:#b2c2b8;margin-top:8px}
+
+/* ---------- tokens ---------- */
+.phone{
+  --bg:#0e1613; --surface:#16221d; --raised:#1f3029; --rule:#2c4037;
+  --text:#e6efe8; --muted:#a2b6aa; --accent:#a9d6a0; --on-accent:#0c1a12; --accent-text:#a9d6a0; --danger:#ffa08f;
+  width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  background:var(--bg);color:var(--text);font:400 16px/1.5 'Atkinson Hyperlegible',system-ui,sans-serif;
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px #ffffff1f,0 24px 60px #0008;
+}
+.phone.light{
+  --bg:#eef2ec; --surface:#ffffff; --raised:#e0e8de; --rule:#c5d1c3;
+  --text:#15221b; --muted:#4d6157; --accent:#1f5c3a; --on-accent:#ffffff; --accent-text:#1f5c3a; --danger:#a8321f;
+}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:700;flex:none}
+.scroll{flex:1;overflow:hidden;padding:0 22px}
+button{font:inherit;color:inherit;cursor:pointer}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.serif{font-family:'Literata',Georgia,serif}
+
+.bar{display:flex;align-items:center;justify-content:space-between;min-height:52px}
+.word{font:700 17px 'Literata',serif;display:flex;align-items:center;gap:8px;letter-spacing:.01em}
+.word svg{width:22px;height:22px;color:var(--accent-text)}
+.icons{display:flex}
+.ib{width:44px;height:44px;border-radius:12px;border:0;background:none;display:grid;place-items:center;color:var(--muted)}
+
+/* Home */
+.day{margin:14px 0 0}
+.day .big{font:700 46px/1.05 'Literata',serif;letter-spacing:-.02em;margin:0}
+.day .small{font:400 18px 'Literata',serif;color:var(--muted);margin:6px 0 0}
+.ledger{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule)}
+.ledger li{display:grid;grid-template-columns:56px 1fr;gap:6px 14px;padding:16px 0;border-bottom:1px solid var(--rule)}
+.ledger .t{font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px;padding-top:2px}
+.ledger .t svg{width:16px;height:16px;display:block;margin-top:6px}
+.ledger p{margin:0;font:400 17px/1.5 'Literata',serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ledger small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+.dock{flex:none;display:flex;gap:10px;padding:12px 18px 30px;background:linear-gradient(transparent,var(--bg) 24%)}
+.recbar{flex:1;min-height:76px;border-radius:38px;border:0;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;gap:14px;padding:0 10px 0 10px;font:700 20px 'Atkinson Hyperlegible',sans-serif;text-align:left}
+.recbar .dot{width:56px;height:56px;border-radius:50%;background:var(--on-accent);color:var(--accent);display:grid;place-items:center;flex:none}
+.recbar .dot svg{width:28px;height:28px}
+.recbar span.t2{display:block;font-size:13px;font-weight:400;opacity:.9}
+.writebtn{width:76px;min-height:76px;border-radius:26px;border:2px solid var(--accent);background:none;color:var(--accent-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:700;font-size:13px}
+
+/* Recorder */
+.rtop{display:flex;align-items:center;gap:10px;min-height:52px;color:var(--danger);font-weight:700}
+.rtop b{width:12px;height:12px;border-radius:50%;background:var(--danger);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.timer{font:700 92px/1 'Literata',serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:60px 0 0}
+.timer small{font-size:36px;color:var(--muted);font-weight:400}
+.hint{font:italic 400 18px 'Literata',serif;color:var(--muted);margin:14px 0 0;max-width:24ch}
+.wave{position:relative;display:flex;align-items:center;gap:3px;height:150px;margin:56px -22px 0;padding:0 22px;overflow:hidden;background:var(--surface);border-block:1px solid var(--rule)}
+.wave span{width:4px;border-radius:2px;background:var(--accent-text);flex:none;opacity:.85}
+.wave::after{content:"";position:absolute;right:46px;top:14px;bottom:14px;width:2px;background:var(--text)}
+.rdock{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 30px}
+.rdock .stop{grid-column:1/-1;min-height:72px;border-radius:36px;border:0;background:var(--accent);color:var(--on-accent);font:700 20px 'Atkinson Hyperlegible',sans-serif;display:flex;align-items:center;justify-content:center;gap:12px}
+.rdock .stop svg{fill:currentColor;width:22px;height:22px}
+.rdock .sec{min-height:56px;border-radius:28px;background:none;border:2px solid var(--rule);font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.rdock .sec.del{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 55%,transparent)}
+
+/* Entry */
+.back{display:inline-flex;align-items:center;gap:4px;min-height:48px;background:none;border:0;padding:0;font-weight:700;color:var(--accent-text)}
+.edate{font:700 30px/1.15 'Literata',serif;letter-spacing:-.01em;margin:6px 0 4px}
+.edit{display:inline-flex;align-items:center;gap:8px;min-height:44px;background:none;border:0;padding:0;color:var(--accent-text);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.etext{font:400 18px/1.7 'Literata',serif;margin:10px 0 0}
+.shead{margin:22px 0 0;padding-top:12px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;font-weight:700;color:var(--muted);font-size:15px}
+.rec1{padding:12px 0 6px}
+.player{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:6px 14px 6px 6px}
+.pl{width:48px;height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.pl svg{width:20px;height:20px;fill:currentColor;stroke:none}
+.track{flex:1;height:6px;border-radius:3px;background:var(--raised);position:relative}
+.track i{position:absolute;inset:0 auto 0 0;width:42%;background:var(--accent-text);border-radius:3px}
+.time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr{font:400 16.5px/1.65 'Literata',serif;margin:12px 0 0}
+.working{display:flex;align-items:center;gap:10px;margin:12px 0 10px;font-weight:700;font-size:15px;color:var(--accent-text)}
+.spin{width:16px;height:16px;border-radius:50%;border:3px solid var(--raised);border-top-color:var(--accent-text);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.sk{height:10px;border-radius:5px;background:var(--raised);margin-bottom:9px}
+@media (prefers-reduced-motion:reduce){.rtop b,.spin{animation:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+    <symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+    <symbol id="list" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+    <symbol id="leaf" viewBox="0 0 24 24"><path d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16zM4 20l9-9" /></symbol>
+  </defs>
+</svg>
+
+<div class="top">
+  <h1>Direction 2: Erdő (forest at night)</h1>
+  <p>A quiet ledger. Deep moss-black, pale lichen green, a book serif for what you wrote. No cards: entries sit on hairlines like a notebook. The record control is a wide bar in the thumb zone instead of a floating circle.</p>
+  <ul class="sw">
+    <li><i style="background:#0e1613"></i>#0e1613 moss black</li>
+    <li><i style="background:#16221d"></i>#16221d surface</li>
+    <li><i style="background:#2c4037"></i>#2c4037 rule</li>
+    <li><i style="background:#e6efe8"></i>#e6efe8 text</li>
+    <li><i style="background:#a2b6aa"></i>#a2b6aa muted</li>
+    <li><i style="background:#a9d6a0"></i>#a9d6a0 lichen</li>
+    <li><i style="background:#eef2ec"></i>#eef2ec light bg</li>
+    <li><i style="background:#1f5c3a"></i>#1f5c3a light green</li>
+  </ul>
+  <div class="fonts">Fonts: Literata (entries, big numerals) and Atkinson Hyperlegible (controls, labels).</div>
+</div>
+
+<div class="row">
+<h2>Sötét téma (dark)</h2>
+
+<figure>
+<section class="phone" aria-label="Ma, sötét">
+  <div class="status"><span>21:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="bar">
+      <div class="word"><svg class="i"><use href="#leaf"/></svg>Nightjar</div>
+      <div class="icons">
+        <button class="ib" aria-label="Idővonal"><svg class="i"><use href="#list"/></svg></button>
+        <button class="ib" aria-label="Keresés"><svg class="i"><use href="#search"/></svg></button>
+        <button class="ib" aria-label="Beállítások"><svg class="i"><use href="#gear"/></svg></button>
+      </div>
+    </div>
+    <div class="day"><h1 class="big">Ma</h1><p class="small">csütörtök, november 26.</p></div>
+    <ul class="ledger">
+      <li><span class="t">20:42<svg class="i"><use href="#mic"/></svg></span><div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p><small>Hangfelvétel, 1:48</small></div></li>
+      <li><span class="t">13:05<svg class="i"><use href="#pen"/></svg></span><div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></div></li>
+    </ul>
+  </div>
+  <div class="dock">
+    <button class="recbar"><span class="dot"><svg class="i"><use href="#mic"/></svg></span><span>Felvétel indítása<span class="t2">Koppints és beszélj</span></span></button>
+    <button class="writebtn"><svg class="i"><use href="#pen"/></svg>Írás</button>
+  </div>
+</section>
+<figcaption>1. Ma (Home)</figcaption>
+</figure>
+
+<figure>
+<section class="phone" aria-label="Felvétel, sötét">
+  <div class="status"><span>21:16</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="rtop"><b></b>Felvétel folyamatban</div>
+    <div class="timer" aria-label="Eltelt idő">02<small>:</small>14</div>
+    <p class="hint">Beszélj nyugodtan, nem sietünk.</p>
+    <div class="wave" data-meter aria-hidden="true"></div>
+  </div>
+  <div class="rdock">
+    <button class="sec del"><svg class="i"><use href="#trash"/></svg>Elvetés</button>
+    <button class="sec"><svg class="i"><use href="#pause"/></svg>Szünet</button>
+    <button class="stop"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>Leállítás</button>
+  </div>
+</section>
+<figcaption>2. Felvétel (Recorder)</figcaption>
+</figure>
+
+<figure>
+<section class="phone" aria-label="Bejegyzés, sötét">
+  <div class="status"><span>21:20</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <button class="back"><svg class="i"><use href="#back"/></svg>Vissza</button>
+    <h1 class="edate">2026. november 26., csütörtök</h1>
+    <button class="edit"><svg class="i" style="width:18px;height:18px"><use href="#cal"/></svg>Dátum módosítása</button>
+    <p class="etext">Hosszú nap, de jó értelemben. Délelőtt a megbeszélés jobban sikerült, mint vártam, délután pedig kiszaladtam a partra.</p>
+    <div class="shead"><span>Hangfelvétel, 20:42</span><span>Magyar</span></div>
+    <div class="rec1">
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i></i></div><span class="time">0:46 / 1:48</span></div>
+      <p class="tr">Ma reggel korán keltem, és megint eszembe jutott a költözés. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek.</p>
+    </div>
+    <div class="shead"><span>Hangfelvétel, 21:10</span><span>Magyar</span></div>
+    <div class="rec1">
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i style="width:0"></i></div><span class="time">0:00 / 0:36</span></div>
+      <div class="working"><span class="spin"></span>Átírás folyamatban…</div>
+      <div class="sk" style="width:100%"></div><div class="sk" style="width:84%"></div>
+    </div>
+  </div>
+</section>
+<figcaption>3. Bejegyzés (Entry)</figcaption>
+</figure>
+</div>
+
+<div class="row">
+<h2>Világos téma (light)</h2>
+<figure>
+<section class="phone light" aria-label="Ma, világos">
+  <div class="status"><span>9:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="bar">
+      <div class="word"><svg class="i"><use href="#leaf"/></svg>Nightjar</div>
+      <div class="icons">
+        <button class="ib" aria-label="Idővonal"><svg class="i"><use href="#list"/></svg></button>
+        <button class="ib" aria-label="Keresés"><svg class="i"><use href="#search"/></svg></button>
+        <button class="ib" aria-label="Beállítások"><svg class="i"><use href="#gear"/></svg></button>
+      </div>
+    </div>
+    <div class="day"><h1 class="big">Ma</h1><p class="small">csütörtök, november 26.</p></div>
+    <ul class="ledger">
+      <li><span class="t">20:42<svg class="i"><use href="#mic"/></svg></span><div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p><small>Hangfelvétel, 1:48</small></div></li>
+      <li><span class="t">13:05<svg class="i"><use href="#pen"/></svg></span><div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></div></li>
+    </ul>
+  </div>
+  <div class="dock">
+    <button class="recbar"><span class="dot"><svg class="i"><use href="#mic"/></svg></span><span>Felvétel indítása<span class="t2">Koppints és beszélj</span></span></button>
+    <button class="writebtn"><svg class="i"><use href="#pen"/></svg>Írás</button>
+  </div>
+</section>
+<figcaption>Ma, világos</figcaption>
+</figure>
+</div>
+
+<script>
+// mockup only: fake waveform, newest on the right edge
+document.querySelectorAll('[data-meter]').forEach(m=>{
+  for(let i=0;i<60;i++){
+    const s=document.createElement('span');
+    s.style.height=(8+Math.abs(Math.sin(i*.5)*Math.cos(i*.17))*110)+'px';
+    m.appendChild(s);
+  }
+});
+</script>
+</body>
+</html>

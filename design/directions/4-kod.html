@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightjar direction 4: Köd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* page chrome (not part of the design) */
+*{box-sizing:border-box}
+body{margin:0;background:#0c0c10;color:#ebebf0;font:16px/1.5 system-ui,sans-serif;padding:32px 24px 64px}
+.top{max-width:1300px;margin:0 auto 32px}
+.top h1{font:600 28px/1.2 system-ui;margin:0 0 6px}
+.top p{margin:0 0 12px;color:#c0c0cc;max-width:75ch}
+.sw{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 12px;padding:0;list-style:none}
+.sw li{display:flex;align-items:center;gap:8px;font:13px/1.2 ui-monospace,monospace;color:#d4d4de}
+.sw i{width:28px;height:28px;border-radius:6px;border:1px solid #ffffff44;display:block}
+.fonts{font-size:14px;color:#c0c0cc}
+.row{display:flex;flex-wrap:wrap;gap:32px;max-width:1300px;margin:0 auto 40px}
+.row h2{flex-basis:100%;margin:0;font:600 16px system-ui;color:#c0c0cc}
+figure{margin:0}
+figcaption{font:13px system-ui;color:#c0c0cc;margin-top:8px}
+
+/* ---------- design tokens: dark (default) ---------- */
+.phone{
+  --bg:#161a22; --bg2:#222a38; --surface:#1f2530; --raised:#2c3441; --line:#3a4454;
+  --text:#eef0f4; --muted:#b6bfce; --accent:#eeb2bd; --on-accent:#2c1218; --accent-text:#f0b8c2; --danger:#ffa39a;
+  width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  background:var(--bg);color:var(--text);font:400 16px/1.5 'Public Sans',system-ui,sans-serif;
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px #ffffff1f,0 24px 60px #0008;
+}
+.phone.light{
+  --bg:#f2f3f6; --bg2:#e2e6ee; --surface:#ffffff; --raised:#e7eaf0; --line:#d0d6e0;
+  --text:#1c2230; --muted:#505d77; --accent:#e8a2af; --on-accent:#2c1218; --accent-text:#9a3350; --danger:#a8321f;
+}
+.phone::before{content:"";position:absolute;inset:0 0 auto 0;height:300px;pointer-events:none;
+  background:radial-gradient(110% 80% at 80% 0%,var(--bg2) 0%,transparent 75%)}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;font-size:14px;font-weight:600;flex:none}
+.scroll{flex:1;overflow:hidden;padding:0 22px;min-height:0}
+button{font:inherit;color:inherit;cursor:pointer}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.phone>*{position:relative}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.brand{display:flex;align-items:center;gap:8px;font:600 17px 'Public Sans',sans-serif;letter-spacing:.02em}
+.brand svg{width:22px;height:22px;color:var(--accent-text)}
+.hd{display:flex;justify-content:space-between;align-items:center;min-height:56px}
+
+/* Home */
+.title{font:600 42px/1.05 'Source Serif 4',Georgia,serif;margin:10px 0 0;letter-spacing:-.015em}
+.subt{font:400 18px 'Source Serif 4',serif;color:var(--muted);margin:6px 0 24px}
+.paper{background:var(--surface);border-radius:20px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 0 var(--line)}
+.paper .meta{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--muted)}
+.paper .meta svg{width:16px;height:16px}
+.paper p{margin:8px 0 0;font:400 18px/1.55 'Source Serif 4',serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.dock{flex:none;display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:10px 20px 12px}
+.fab{min-height:64px;padding:0 28px 0 22px;border-radius:32px;border:0;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;gap:12px;font:700 18px 'Public Sans',sans-serif;box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 28%,transparent)}
+.fab svg{width:28px;height:28px}
+.pen{width:56px;height:56px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--text)}
+.tabs{flex:none;display:flex;justify-content:space-around;padding:6px 8px 22px;border-top:1px solid var(--line);background:var(--bg)}
+.tabs a{min-height:48px;min-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--muted);text-decoration:none;font-weight:500}
+.tabs a[aria-current]{color:var(--accent-text);font-weight:700}
+
+/* Recorder */
+.state{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:var(--surface);font-weight:600;font-size:14px}
+.state b{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.timer{font:300 80px/1 'Source Serif 4',serif;font-variant-numeric:tabular-nums;margin:36px 0 0;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:10px 0 0;font:italic 400 18px 'Source Serif 4',serif}
+.panel{margin:34px 0 0;height:210px;border-radius:28px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:4px;padding:0 18px;overflow:hidden}
+.panel span{width:4px;border-radius:2px;background:var(--accent);flex:none}
+.panel span.old{opacity:.4}
+.note{margin:22px 0 0;font-size:14px;color:var(--muted)}
+.sheet{flex:none;border-radius:30px 30px 0 0;background:var(--surface);border-top:1px solid var(--line);padding:22px 20px 34px;display:flex;align-items:center;gap:12px}
+.rb{width:56px;height:56px;border-radius:50%;border:1.5px solid var(--line);background:var(--raised);display:grid;place-items:center;flex:none;color:var(--text)}
+.rb.del{color:var(--danger)}
+.stopb{flex:1;min-height:64px;border-radius:32px;border:0;background:var(--accent);color:var(--on-accent);font:700 19px 'Public Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:12px}
+.stopb svg{width:22px;height:22px;fill:currentColor}
+
+/* Entry */
+.back{display:inline-flex;align-items:center;gap:6px;min-height:48px;background:none;border:0;padding:0;font-weight:600;color:var(--accent-text)}
+.edate{font:600 30px/1.15 'Source Serif 4',serif;margin:2px 0 12px;letter-spacing:-.01em}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:22px;background:var(--surface);border:1px solid var(--line);font-size:14px;font-weight:600}
+.etext{font:400 18px/1.6 'Source Serif 4',serif;margin:14px 0 0}
+.lab{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:18px 0 8px;color:var(--muted)}
+.rcard{background:var(--surface);border-radius:22px;padding:14px 18px;margin-bottom:10px;border:1px solid var(--line)}
+.pill{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:12px;background:var(--raised);color:var(--muted);margin:0 0 10px}
+.player{display:flex;align-items:center;gap:12px}
+.pl{width:48px;height:48px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.pl svg{width:20px;height:20px;fill:currentColor;stroke:none}
+.track{flex:1;height:6px;border-radius:3px;background:var(--raised);position:relative}
+.track i{position:absolute;inset:0 auto 0 0;width:42%;background:var(--accent);border-radius:3px}
+.time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tr{font:400 17px/1.6 'Source Serif 4',serif;margin:12px 0 0}
+.working{display:flex;align-items:center;gap:10px;margin:12px 0 8px;font-weight:600;font-size:15px;color:var(--accent-text)}
+.spin{width:16px;height:16px;border-radius:50%;border:3px solid var(--raised);border-top-color:var(--accent-text);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.sk{height:10px;border-radius:5px;background:var(--raised);margin-bottom:8px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+<symbol id="pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+<symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+<symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+<symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/></symbol>
+<symbol id="list" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></symbol>
+<symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+<symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+<symbol id="flame" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+<symbol id="lamp" viewBox="0 0 24 24"><path d="M9 3h6M12 3v3M8 6h8l1 4v7a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-7zM7 11h10"/></symbol>
+</defs></svg>
+
+<div class="top">
+  <h1>Direction 4: Köd (mist)</h1>
+  <p>A quiet blue-grey evening mist with a dusty rose accent. Calm and airy: entries are generous paper-like cards in a large reading serif, and the controls sit low and to the right, an extended record pill with a small pen button beside it. The recorder puts everything in one bottom sheet, within thumb reach. Source Serif 4 for text, Public Sans for controls.</p>
+  <ul class="sw">
+    <li><i style="background:#161a22"></i>#161a22 mist night</li>
+    <li><i style="background:#1f2530"></i>#1f2530 surface</li>
+    <li><i style="background:#2c3441"></i>#2c3441 raised</li>
+    <li><i style="background:#eef0f4"></i>#eef0f4 text</li>
+    <li><i style="background:#b6bfce"></i>#b6bfce muted</li>
+    <li><i style="background:#eeb2bd"></i>#eeb2bd rose</li>
+    <li><i style="background:#f2f3f6"></i>#f2f3f6 light bg</li>
+    <li><i style="background:#9a3350"></i>#9a3350 light rose text</li>
+  </ul>
+  <div class="fonts">Fonts: Source Serif 4 (entries, headings, timer) and Public Sans (controls, labels).</div>
+</div>
+
+<div class="row">
+<h2>Sötét téma (dark)</h2>
+
+<figure>
+<section class="phone" aria-label="Ma, sötét">
+  <div class="status"><span>21:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><div class="brand"><svg class="i"><use href="#moon"/></svg>Nightjar</div></div>
+    <h1 class="title">Ma</h1>
+    <p class="subt">csütörtök, november 26.</p>
+    <article class="paper"><div class="meta"><svg class="i"><use href="#mic"/></svg>20:42 · 1:48</div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p></article>
+    <article class="paper"><div class="meta"><svg class="i"><use href="#pen"/></svg>13:05</div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></article>
+  </div>
+  <div class="dock">
+    <button class="pen" aria-label="Írás"><svg class="i"><use href="#pen"/></svg></button>
+    <button class="fab"><svg class="i"><use href="#mic"/></svg>Felvétel</button>
+  </div>
+  <nav class="tabs" aria-label="Fő navigáció">
+    <a href="#" aria-current="page"><svg class="i"><use href="#home"/></svg>Ma</a>
+    <a href="#"><svg class="i"><use href="#list"/></svg>Idővonal</a>
+    <a href="#"><svg class="i"><use href="#search"/></svg>Keresés</a>
+    <a href="#"><svg class="i"><use href="#gear"/></svg>Beállítások</a>
+  </nav>
+</section>
+<figcaption>1. Ma (Home)</figcaption>
+</figure>
+
+<figure>
+<section class="phone" aria-label="Felvétel, sötét">
+  <div class="status"><span>21:16</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><span class="state"><b></b>Felvétel folyamatban</span></div>
+    <div class="timer" aria-label="Eltelt idő">02:14</div>
+    <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
+    <div class="panel" data-meter aria-hidden="true"></div>
+    <p class="note">A hang a saját szervereden marad.</p>
+  </div>
+  <div class="sheet">
+    <button class="rb del" aria-label="Elvetés"><svg class="i"><use href="#trash"/></svg></button>
+    <button class="rb" aria-label="Szünet"><svg class="i"><use href="#pause"/></svg></button>
+    <button class="stopb"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>Leállítás</button>
+  </div>
+</section>
+<figcaption>2. Felvétel (Recorder)</figcaption>
+</figure>
+
+<figure>
+<section class="phone" aria-label="Bejegyzés, sötét">
+  <div class="status"><span>21:20</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <button class="back"><svg class="i"><use href="#back"/></svg>Vissza</button>
+    <h1 class="edate">2026. november 26., csütörtök</h1>
+    <button class="chip"><svg class="i" style="width:18px;height:18px"><use href="#cal"/></svg>Dátum módosítása</button>
+    <p class="etext">Hosszú nap, de jó értelemben. Délelőtt a megbeszélés jobban sikerült, mint vártam, délután pedig kiszaladtam a partra.</p>
+    <div class="lab">Hangfelvételek</div>
+    <div class="rcard">
+      <span class="pill">Magyar · 20:42</span>
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i></i></div><span class="time">0:46 / 1:48</span></div>
+      <p class="tr">Ma reggel korán keltem, és megint eszembe jutott a költözés. Szerintem készen állok rá, csak még el kell mondanom a szüleimnek.</p>
+    </div>
+    <div class="rcard">
+      <span class="pill">Magyar · 21:10</span>
+      <div class="player"><button class="pl" aria-label="Lejátszás"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button><div class="track"><i style="width:0"></i></div><span class="time">0:00 / 0:36</span></div>
+      <div class="working"><span class="spin"></span>Átírás folyamatban…</div>
+      <div class="sk" style="width:100%"></div><div class="sk" style="width:84%"></div>
+    </div>
+  </div>
+</section>
+<figcaption>3. Bejegyzés (Entry)</figcaption>
+</figure>
+</div>
+
+<div class="row">
+<h2>Világos téma (light)</h2>
+<figure>
+<section class="phone light" aria-label="Ma, világos">
+  <div class="status"><span>9:14</span><span>5G ▮▮▮</span></div>
+  <div class="scroll">
+    <div class="hd"><div class="brand"><svg class="i"><use href="#moon"/></svg>Nightjar</div></div>
+    <h1 class="title">Ma</h1>
+    <p class="subt">csütörtök, november 26.</p>
+    <article class="paper"><div class="meta"><svg class="i"><use href="#mic"/></svg>20:42 · 1:48</div><p>Séta a Duna-parton munka után. Végre nem sietett senki, csak a víz meg én.</p></article>
+    <article class="paper"><div class="meta"><svg class="i"><use href="#pen"/></svg>13:05</div><p>Ebéd Annával. Mesélt az új lakásról, és kicsit irigy lettem.</p></article>
+  </div>
+  <div class="dock">
+    <button class="pen" aria-label="Írás"><svg class="i"><use href="#pen"/></svg></button>
+    <button class="fab"><svg class="i"><use href="#mic"/></svg>Felvétel</button>
+  </div>
+  <nav class="tabs" aria-label="Fő navigáció">
+    <a href="#" aria-current="page"><svg class="i"><use href="#home"/></svg>Ma</a>
+    <a href="#"><svg class="i"><use href="#list"/></svg>Idővonal</a>
+    <a href="#"><svg class="i"><use href="#search"/></svg>Keresés</a>
+    <a href="#"><svg class="i"><use href="#gear"/></svg>Beállítások</a>
+  </nav>
+</section>
+<figcaption>Ma, világos</figcaption>
+</figure>
+</div>
+
+<script>
+// mockup only: fake level meter bars
+document.querySelectorAll('[data-meter]').forEach(m=>{
+  for(let i=0;i<48;i++){
+    const s=document.createElement('span');
+    s.style.height=(14+Math.abs(Math.sin(i*0.5)*Math.cos(i*0.19))*130)+'px';
+    if(i>36)s.className='old';
+    m.appendChild(s);
+  }
+});
+</script>
+</body>
+</html>
