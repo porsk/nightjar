@@ -31,6 +31,7 @@ Out (not now): filters (M2), semantic search / "ask your journal" (backlog), sea
 - **AC-9** Given user A and user B both have entries with the searched word, then A's search returns only A's entries.
 - **AC-10** Given a query with search operators or quotes (`a & b`, `!x`, `"`, `'`, `:*`, `(`), then the API answers 200 (results or none), never 500.
 - **AC-11** Given the results and the no-results state, then axe reports no violations on mobile and desktop, light and dark.
+- **AC-12** Given the flows of this spec (search with a marker query, no results) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
 
 ## Test plan
 
@@ -49,6 +50,7 @@ Search tests run on real Postgres 19 (Testcontainers), since stemming and `unacc
 | AC-9 | | | two users, same word | | |
 | AC-10 | | | each odd query → 200 | | `websearch_to_tsquery`, no raw `to_tsquery` |
 | AC-11 | | | | axe on both states | `emulateMedia({ colorScheme })` |
+| AC-12 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 
 Also covered: both languages, mobile + desktop, screenshots of `search` and `searchempty`.
 

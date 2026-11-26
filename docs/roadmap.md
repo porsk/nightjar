@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 done. M1 build starting with 007.
+**Now:** M0 done. M1 build: 007 done (PR open), next 001.
 **Next:** M1 build order is in `docs/specs/m1-summary.md`. Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -46,7 +46,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [ ] 004 Timeline
 - [ ] 005 Search (Hungarian + English aware)
 - [ ] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
-- [ ] 007 Logs, health, metrics
+- [x] 007 Logs, health, metrics
 - [ ] 008 Backup guide (docs only: `pg_dump` + `/data` volume)
 - [ ] CI upgrade test: previous release to new image on the same database (right after the first release, D-29)
 

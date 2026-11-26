@@ -34,6 +34,7 @@ Out (not now): title, mood, tags, photos, journals, favourites, Markdown toolbar
 - **AC-10** Given a failed autosave (network error or 500), then the writer shows "Nem sikerült menteni" with a retry, the text stays in the textarea, and the next successful save clears the message.
 - **AC-11** Given user A's entry, when user B calls `GET`, `PATCH` or `DELETE /api/v1/entries/:id` on it, then B gets 404 and A's entry is unchanged.
 - **AC-12** Given the writer (new and edit), the date dialog, the delete dialog and the entry page, then axe reports no violations on mobile and desktop, light and dark.
+- **AC-13** Given the flows of this spec (create, edit, validation error, delete) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
 
 ## Test plan
 
@@ -51,6 +52,7 @@ Out (not now): title, mood, tags, photos, journals, favourites, Markdown toolbar
 | AC-10 | | API mocked to fail → message, text kept, retry works | | | |
 | AC-11 | | | B gets 404 on all three, A's row unchanged | | second user made by a test helper |
 | AC-12 | | | | axe on each screen state | `emulateMedia({ colorScheme })` |
+| AC-13 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 
 Also covered: both languages, mobile + desktop, screenshots of `write`, `edit`, `date`, `delete`, `entry`.
 
