@@ -103,8 +103,8 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 | Layer | Where | Run with |
 |---|---|---|
 | Unit | `src/**/*.test.ts(x)` next to the code, in `packages/shared`, `apps/server`, `apps/web` (jsdom + Testing Library) | `pnpm test` (per-workspace coverage gate: 90% / 90% / 80% lines) |
-| API | `apps/server/test/*.test.ts`, Testcontainers starts `postgres:19` (needs Docker) | `pnpm test:api` |
-| E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (`:3000`) and the built web app via `vite preview` (`:4173`). Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
+| API | `apps/server/test/*.test.ts`, Testcontainers starts `postgres:19` (needs Docker and the `docker` CLI on the PATH, some tests stop and start the container) | `pnpm test:api` |
+| E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (`:3000`, with its own Postgres container from Testcontainers) and the built web app via `vite preview` (`:4173`). Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
 
 - **Fake mic:** each language has its own spec (`e2e/fake-mic.hu.spec.ts`, `e2e/fake-mic.en.spec.ts`) because Chromium
   launch args are per worker. They use `fakeMic('<clip>.wav')` from `e2e/support/fake-mic.ts` and only run in
@@ -133,7 +133,7 @@ ships or gets tested end-to-end runs in Docker.
 |---|---|
 | Logs | pino, JSON to stdout, redaction on (no journal text, transcripts or file names) |
 | Health | `/healthz` (up), `/readyz` (database reachable, migrations done) |
-| Metrics | Prometheus `/metrics` via `prom-client` 15.1 (Apache-2.0): request latency, job duration, transcription speed (real-time factor), queue depth |
+| Metrics | Prometheus `/metrics` via `prom-client` 15.1 (Apache-2.0): request latency and Node process metrics now; job duration, transcription speed (real-time factor) and queue depth arrive with the jobs (spec 003) |
 
 `/metrics` is served on its own internal port (`NIGHTJAR_METRICS_PORT`, default 9464), not on the app port, and
 `docker/compose.yaml` does not publish it. To scrape it, run Prometheus on the same compose network and add:
@@ -146,6 +146,28 @@ scrape_configs:
 ```
 
 Only publish the port (`ports: ['9464:9464']`) if Prometheus runs elsewhere, and keep it off the internet.
+
+Log lines carry `level`, `time`, `msg` and, inside a request, `reqId`. Request lines hold only method, route
+template, status and duration. Tests check log output with `apps/server/test/support/log-capture.ts` (capture logs,
+assert a marker is absent).
+
+### Configuration
+
+Environment variables, validated with Zod at startup. A bad value stops the server with a message that names the
+variable and never prints its value.
+
+| Variable | Default | What |
+|---|---|---|
+| `DATABASE_URL` | required | Postgres connection string |
+| `PORT` | `3000` | App port |
+| `NIGHTJAR_METRICS_PORT` | `9464` | Internal metrics port |
+| `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
+| `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
+
+Code layout: `apps/server/src/web.ts` (HTTP) and `worker.ts` (background jobs) are separate entry points that one
+process starts together (`start.ts`). SQL migrations live in `apps/server/migrations` (made with
+`pnpm --filter @nightjar/server db:generate`) and run in one transaction on start. `/api/v1` answers 503 until
+they are done.
 
 No extra services. Tests cover redaction, both health endpoints and the metrics output.
 
@@ -160,7 +182,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 - No models inside the image, they download to `/data/models` on first start.
 - Built for `linux/amd64` and `linux/arm64` (Raspberry Pi 5, ARM NAS boxes). Built with buildx + QEMU in one job.
 - `docker/compose.yaml` for users: `nightjar` + `db` (Postgres 19), one `.env` file (`POSTGRES_PASSWORD`).
-  The app does not use the database yet.
+  The app runs its migrations on start and reports ready when they are done. It has no tables yet.
 
 ## CI/CD (GitHub Actions)
 

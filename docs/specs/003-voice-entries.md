@@ -70,6 +70,8 @@ Isolation, accessibility, real model
 - **AC-27** Given user A's recording and entry, when user B fetches the audio, edits the transcript, retries, or uploads into A's entry, then B gets 404 and nothing changes; B's SSE stream never receives A's events.
 - **AC-28** Given the recorder (and its discard dialog), upload (3 states), entry cards (done, transcribing, editing, failed, off) and the Settings admin states (off, downloading, ready + question), then axe reports no violations on mobile and desktop, light and dark.
 - **AC-29** Given the real default model (nightly only), when `hu-sample.wav` and `en-sample.wav` are transcribed, then the word error rate against the fixture text is under 30% for each.
+- **AC-30** Given a few API requests and one finished fake transcription job, then `/metrics` on the metrics port returns `nightjar_job_duration_seconds` (labels `queue`, `outcome`), `nightjar_transcription_rtf` (label `model`) and `nightjar_queue_depth` (label `queue`), their counts went up, and no label holds a user id, file name or text.
+- **AC-31** Given the flows of this spec (upload with a marker file name, fake transcript with a marker, transcript edit, failing job) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
 
 ## Test plan
 
@@ -108,6 +110,8 @@ small fixture HTTP server started by the test (no internet). API tests need `ffm
 | AC-27 | | | 404 on audio, transcript, retry, upload into A's entry; SSE isolation | | two users, two SSE clients |
 | AC-28 | | | | axe on each state | `emulateMedia({ colorScheme })` |
 | AC-29 | WER helper | | | | nightly, real model in `/data/models`, skipped unless `NIGHTJAR_TRANSCRIBER=sherpa` |
+| AC-30 | | | parse `/metrics` after a finished job; labels checked against a pattern | | fake transcriber reports a duration so the RTF is known |
+| AC-31 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 
 Also covered: both languages, mobile + desktop, screenshots of every listed screen state.
 

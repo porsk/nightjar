@@ -43,6 +43,7 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 - **AC-16** Given an empty database, when the server starts, then it logs one line with a random setup code (8 characters); given at least one user, then no setup code is generated or logged.
 - **AC-17** Given an empty database, when `POST /api/v1/setup` has a missing or wrong `setupCode`, then it answers 403 `invalid_setup_code`, creates nothing, and step 1 shows "Hibás telepítési kód." next to the code field; the right code works.
 - **AC-18** Given the first account was created with the right code, when the same code is sent again, then it answers 409 `setup_done` and creates nothing; a restart with a user prints no code.
+- **AC-19** Given the flows of this spec (setup, login, wrong password, logout) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
 
 ## Test plan
 
@@ -66,6 +67,7 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 | AC-16 | | | captured log stream: one line with an 8-character code on an empty DB, none with a user | | log capture as in spec 007 |
 | AC-17 | | code error shown | missing / wrong code → 403, no rows; right code → 200 | wrong code on step 1 → error → right code works | |
 | AC-18 | | | second request with the used code → 409; restart with a user → no code logged | | |
+| AC-19 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 
 Also covered: both languages (`hu` + `en`) on every screen, mobile + desktop, Playwright screenshots of all 6 states.
 

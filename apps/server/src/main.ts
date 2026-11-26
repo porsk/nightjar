@@ -1,6 +1,25 @@
-import { buildApp } from './app.ts'
+import { join } from 'node:path'
+import { ConfigError, loadConfig } from './config.ts'
+import { createLogger, type Logger } from './logger.ts'
+import { describeError, installCrashHandlers, installShutdownHandlers } from './process-handlers.ts'
+import { start } from './start.ts'
 
-const port = Number(process.env['PORT'] ?? 3000)
-const webDir = process.env['NIGHTJAR_WEB_DIR']
+const exit = (code: number) => process.exit(code)
+let logger: Logger | undefined
 
-await buildApp({ webDir }).listen({ port, host: '0.0.0.0' })
+try {
+  const config = loadConfig(process.env)
+  logger = createLogger({ level: config.LOG_LEVEL })
+  installCrashHandlers(process, { logger, exit })
+  const server = await start({
+    config,
+    logger,
+    migrationsFolder: join(import.meta.dirname, '../migrations'),
+    exit,
+  })
+  installShutdownHandlers(process, { logger, exit, close: server.close })
+} catch (error) {
+  if (error instanceof ConfigError) console.error(error.message)
+  else logger?.fatal(describeError(error), 'startup failed')
+  exit(1)
+}
