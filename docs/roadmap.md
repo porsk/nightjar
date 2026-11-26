@@ -31,7 +31,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 | 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
 | 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
-| 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 running (public clips); own clips later; Soniox after |
+| 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 done; own clips + Soniox next |
 | 5 | #5 | Design directions | - | Approve desktop views | Alkony picked; desktop views running |
 | 6 | #6 | iPhone recording test page | WP3 | Open it on your iPhone | todo |
 | 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | todo |
