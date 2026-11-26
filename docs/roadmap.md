@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 running. WP1-WP3 done (PR #28 waits on owner merge). Speech eval round 2 and Alkony desktop mockups running.
+**Now:** M0 running. WP1-WP3 done, `edge` (amd64 + arm64) on Docker Hub. WP4 round 2 done. M1 mockups running.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -15,7 +15,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
 - [x] Docker image + compose files
-- [~] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`). Written, `edge` publishes on first merge to main
+- [x] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
 - [ ] Follow-up: run e2e against the Docker image instead of `vite preview`; nightly workflow once real-model tests exist
 - [ ] Design direction + M1 mockups approved
 - [ ] M1 specs approved
@@ -31,10 +31,10 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 |---|---|---|---|---|---|
 | 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
 | 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
-| 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | done, PR #28 waits on owner merge |
+| 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | done (PR #28) |
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | round 2 done; own clips + Soniox next |
-| 5 | #5 | Design directions | - | Approve desktop views | Alkony picked; desktop views running |
-| 6 | #6 | iPhone recording test page | WP3 | Open it on your iPhone | todo |
+| 5 | #5 | Design directions | - | Approve M1 mockups | Alkony + desktop approved; M1 mockups running |
+| 6 | #6 | iPhone recording test page | WP3 | Deploy `edge` behind your proxy (D-26), open on iPhone | todo |
 | 7 | #7 | M1 specs with test plans (main session) | WP5 | Approve specs | todo |
 
 Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
