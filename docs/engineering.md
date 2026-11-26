@@ -54,7 +54,7 @@ All licenses are MIT / Apache-2.0 / ISC / MPL-2.0 (test-only), which are fine wi
 2. **Tests first.** One or more failing tests per acceptance criterion, named after it:
    `it('AC-2: shows the transcript when the job finishes', …)`.
 3. **Code** until green, then tidy up.
-4. **PR** links the spec. CI must pass. A small script checks that every AC in the spec has at least one test.
+4. **PR** links the spec. CI must pass. `pnpm check:acs` checks that every AC in the spec has at least one test.
 5. Update `roadmap.md` (and `decisions.md` if a decision was made) in the same PR.
 
 Planning and specs are done with the strongest model (Opus). Implementing an approved spec is handed to a
@@ -90,12 +90,28 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 
 | Need | How |
 |---|---|
-| One command for everything | `pnpm verify` = lint + typecheck + unit + integration + e2e, non-zero exit on any failure |
+| One command for everything | `pnpm verify` = format check + lint + typecheck + unit (with coverage) + API + AC check + e2e. Runs every step, prints a PASS/FAIL summary, non-zero exit if any failed |
 | Fast inner loop | `pnpm test` (unit, watch off), `pnpm test:api`, `pnpm test:e2e --grep AC-3` |
-| See what the UI looks like | Playwright saves screenshots, videos and traces on failure into `test-results/`, readable by Claude |
+| See what the UI looks like | Playwright saves screenshots, videos and traces on failure into `test-results/` and an HTML report into `playwright-report/`. Both are gitignored, readable by Claude. Coverage HTML is in `coverage/` of each workspace |
 | Try the running app | `pnpm dev` or the compose stack, plus the Playwright MCP browser for exploring a flow |
 | Deterministic runs | Fake transcriber + fake AI, seeded test data, fixed clock and time zone in tests, WAV fixtures for the fake mic |
 | Trust the gate | CI runs exactly the same `pnpm verify` inside the same Docker setup |
+
+### Test layout and conventions
+
+| Layer | Where | Run with |
+|---|---|---|
+| Unit | `src/**/*.test.ts(x)` next to the code, in `packages/shared`, `apps/server`, `apps/web` (jsdom + Testing Library) | `pnpm test` (per-workspace coverage gate: 90% / 90% / 80% lines) |
+| API | `apps/server/test/*.test.ts`, Testcontainers starts `postgres:19` (needs Docker) | `pnpm test:api` |
+| E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (`:3000`) and the built web app via `vite preview` (`:4173`). Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
+
+- **Fake mic:** each language has its own spec (`e2e/fake-mic.hu.spec.ts`, `e2e/fake-mic.en.spec.ts`) because Chromium
+  launch args are per worker. They use `fakeMic('<clip>.wav')` from `e2e/support/fake-mic.ts` and only run in
+  Chromium. Fixtures and their CC-BY-4.0 attribution are in `e2e/fixtures/`. Never use private recordings there.
+- **Linking tests to a spec:** the spec file is `docs/specs/NNN-name.md`. The test file has a top-level
+  `describe('NNN-name: short title', ...)`, and inside it `it('AC-2: ...')` (or `test(...)`).
+  `pnpm check:acs` fails if a spec has an `**AC-n**` with no matching test in a file linked to that spec.
+  `_template.md` is skipped.
 
 Definition of done for any task: `pnpm verify` green locally, AC traceability check green, docs updated.
 
@@ -103,7 +119,7 @@ Definition of done for any task: `pnpm verify` green locally, AC traceability ch
 
 - `docker compose -f docker/compose.dev.yaml up -d` starts Postgres.
 - `pnpm dev` runs the server (`node --watch`) and Vite (hot reload) on your machine.
-- Integration tests start their own Postgres through Testcontainers. E2E runs against the real image in Docker.
+- Integration tests start their own Postgres through Testcontainers. E2E runs against the real image in Docker (for now: the dev server + built web app, until the image exists).
 - Production runs in Docker only.
 
 Node stays on the host for dev because file watching through bind mounts on Windows is slow. Everything that

@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M0 running. WP1 pushed, TS 6 switch + WP2 + WP3 running. WP4 public eval done, waiting on owner clips. WP5 waiting on owner's pick.
+**Now:** M0 running. WP1 and WP2 done (TS 6, test harness). WP3 running. WP4 public eval done, waiting on owner clips. WP5 waiting on owner's pick.
 **Next:** run M0 work packages (see below). Open items in `decisions.md`.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
@@ -11,8 +11,8 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
 - [x] High-level plan approved by owner
 - [ ] Spikes, results go to the owner: transcription eval on the owner's own clips, sherpa-onnx in Docker (amd64 + arm64),
       Node type stripping, iPhone PWA recording
-- [ ] Repo setup: git, LICENSE, README, CONTRIBUTING, pnpm workspace, lint/format
-- [ ] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
+- [x] Repo setup: git, LICENSE, README, CONTRIBUTING, pnpm workspace, lint/format
+- [x] Test harness before any feature: Vitest, Testcontainers, Playwright (fake-mic WAV fixtures, screenshots,
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
 - [ ] Docker image + compose files
 - [ ] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
@@ -29,7 +29,7 @@ Task status lives in GitHub issues/milestones (`gh` CLI at `"/c/Program Files/Gi
 | WP | Issue | What | Depends on | Needs from owner | Status |
 |---|---|---|---|---|---|
 | 1 | #1 | Repo skeleton + TS / type stripping spikes | - | - | done (TS 6.0, D-14) |
-| 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | running |
+| 2 | #2 | Test harness: Vitest, Testcontainers, Playwright, `pnpm verify`, AC check | WP1 | - | done |
 | 3 | #3 | Docker image + compose, CI, sherpa-onnx in Docker (amd64 + arm64) | WP1 | - (secrets added) | running |
 | 4 | #4 | Speech eval (public clips first) | - | ~20 own clips in `eval/clips/own/` | public round done (`eval/reports/public-2026-11-26.md`) |
 | 5 | #5 | Design directions | - | Pick a direction | round 2 ready (5 directions) |

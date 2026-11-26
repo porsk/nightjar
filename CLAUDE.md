@@ -57,4 +57,9 @@ pnpm lint           # ESLint
 pnpm typecheck      # tsc --noEmit in every workspace
 pnpm format         # Prettier, write
 pnpm format:check   # Prettier, check only
+pnpm test           # unit tests with coverage (all workspaces)
+pnpm test:api       # API tests, Vitest + Testcontainers (needs Docker)
+pnpm test:e2e       # Playwright (reports in playwright-report/, traces + screenshots in test-results/)
+pnpm check:acs      # every AC in docs/specs has a test
+pnpm verify         # everything above, run before calling anything done
 ```
