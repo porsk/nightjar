@@ -137,23 +137,32 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 
 ## Docker image
 
-- Multi-stage build: install → build web → `pnpm deploy --prod` (only runtime deps) → runtime stage on
-  `node:26` slim + ffmpeg.
+- Multi-stage build (`docker/Dockerfile`): install and build web → separate `pnpm install --prod` for the server
+  (only runtime deps) → runtime stage on `node:26-trixie-slim` + ffmpeg. The server's `.ts` files are copied in as they are.
+- Not `pnpm deploy`: it copies workspace packages into `node_modules`, and Node refuses to strip types there.
+  A normal prod install keeps `@nightjar/shared` as a symlink, so type stripping works.
+- Fastify serves the built web app when `NIGHTJAR_WEB_DIR` is set (the image sets it).
 - Runs as a non-root user, only `/data` writable, `HEALTHCHECK` on `/healthz`, OCI labels.
 - No models inside the image, they download to `/data/models` on first start.
 - Built for `linux/amd64` and `linux/arm64` (Raspberry Pi 5, ARM NAS boxes). Built with buildx + QEMU in one job.
-- `docker/compose.yaml` for users: `nightjar` + `db`, one `.env` file. 
+- `docker/compose.yaml` for users: `nightjar` + `db` (Postgres 19), one `.env` file (`POSTGRES_PASSWORD`).
+  The app does not use the database yet.
 
 ## CI/CD (GitHub Actions)
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every PR and push to `main` | install (cached) → lint, typecheck, unit + integration tests → build image → e2e against the image. On `main`: push `edge` tag |
-| `release.yml` | release-please PR merged | release-please bumps the version and writes the changelog from conventional commits → build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance → GitHub release |
-| `nightly.yml` | nightly | real-model transcription tests + eval report |
+| `ci.yml` | every PR and push to `main` | install (cached) → `pnpm verify` (needs Docker for Testcontainers, Playwright browsers cached) → build image (amd64 on PRs). On `main`: build amd64 + arm64 and push `edge`. Reports upload on failure |
+| `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
+| `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
+| `nightly.yml` | nightly | real-model transcription tests + eval report. Not written yet, there are no real-model tests |
+
+- PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
+  the release PR (or switch to a PAT) if the checks do not show up.
+- E2E still runs against `vite preview`. Switching it to the built image is a follow-up.
 
 - Images go to **Docker Hub** only: `porsk/nightjar`. Secrets needed: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
-- Dependabot for npm, Docker and Actions, weekly, grouped. CodeQL default setup (one click in repo settings).
+- Dependabot for npm, Docker and Actions, weekly, grouped. CodeQL runs from `codeql.yml` (do not also enable default setup).
 - Versioning: SemVer, `0.x` until 1.0. Database migrations only move forward and run on startup.
 
 ## Git workflow
