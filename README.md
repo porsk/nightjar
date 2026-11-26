@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/porsk/nightjar/main/design/logo/nightjar.svg" alt="Nightjar logo" width="96" height="96">
+</p>
+
 # Nightjar
 
 *Verba volant, scripta manent.* Spoken words fly away, written words remain.
@@ -10,7 +14,7 @@
 [![Docker image size](https://img.shields.io/docker/image-size/porsk/nightjar/edge)](https://hub.docker.com/r/porsk/nightjar)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
-![Nightjar home screen, dark theme](https://raw.githubusercontent.com/porsk/nightjar/main/design/alkony/screenshots/m1/home-dark-1280.png)
+![Nightjar home screen, dark theme](https://raw.githubusercontent.com/porsk/nightjar/main/design/alkony/screenshots/readme-home-dark-1280.png)
 
 *Design preview.*
 

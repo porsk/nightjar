@@ -88,6 +88,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-33 | 11-26 | Before sign-in the UI follows the browser language (hu browser gets Hungarian), English otherwise | Owner |
 | D-34 | 11-26 | First release 0.1.0 (release-please PR) once specs 001 + 002 are merged: you can log in and write. The CI upgrade test (D-29) starts from there. Claude may merge reviewed, green PRs; releases need the owner OK | Owner |
 | D-35 | 11-26 | M1 build order with parallel rounds: 001, then a small fix so each e2e run picks its own free ports, then 002 ∥ 006, 003 ∥ 004, 005 ∥ 008. Each spec its own worktree, PR, review, merge | Owner OK |
+| D-37 | 11-26 | Logo: the minimalist mockup bird (option A), `design/logo/nightjar.svg` | Owner pick |
 
 ## Proposed (approved together with the plan)
 
