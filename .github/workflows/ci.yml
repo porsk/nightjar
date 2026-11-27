@@ -38,6 +38,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install --yes --no-install-recommends ffmpeg)
       - run: pnpm install --frozen-lockfile
       - id: playwright
         run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"

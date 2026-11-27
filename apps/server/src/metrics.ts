@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { collectDefaultMetrics, Histogram, Registry } from 'prom-client'
+import { collectDefaultMetrics, Gauge, Histogram, Registry } from 'prom-client'
 
 export function createMetrics() {
   const registry = new Registry()
@@ -11,7 +11,42 @@ export function createMetrics() {
     labelNames: ['method', 'route', 'status_code'],
     registers: [registry],
   })
-  return { registry, httpDuration }
+  const jobDuration = new Histogram({
+    name: 'nightjar_job_duration_seconds',
+    help: 'Background job duration in seconds',
+    labelNames: ['queue', 'outcome'],
+    buckets: [0.1, 0.5, 1, 5, 15, 30, 60, 120, 300, 600, 1800],
+    registers: [registry],
+  })
+  const transcriptionRtf = new Histogram({
+    name: 'nightjar_transcription_rtf',
+    help: 'Transcription time divided by audio length (real-time factor)',
+    labelNames: ['model'],
+    buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
+    registers: [registry],
+  })
+  const queueDepthSource = { read: () => Promise.resolve<Record<string, number>>({}) }
+  new Gauge({
+    name: 'nightjar_queue_depth',
+    help: 'Jobs waiting in a queue',
+    labelNames: ['queue'],
+    registers: [registry],
+    async collect() {
+      for (const [queue, depth] of Object.entries(await queueDepthSource.read())) {
+        this.set({ queue }, depth)
+      }
+    },
+  })
+  return {
+    registry,
+    httpDuration,
+    jobDuration,
+    transcriptionRtf,
+    /** The worker tells the gauge where to read queue lengths from. */
+    setQueueDepthSource: (read: () => Promise<Record<string, number>>) => {
+      queueDepthSource.read = read
+    },
+  }
 }
 
 export type Metrics = ReturnType<typeof createMetrics>

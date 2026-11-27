@@ -1,8 +1,9 @@
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { request as playwrightRequest } from '@playwright/test'
 import { Client } from 'pg'
+import { modelFiles, testModelId } from '../../apps/server/test/support/model-server.ts'
 import { e2eServerFiles } from './server-files.ts'
 
 export const password = 'correct horse battery'
@@ -28,6 +29,8 @@ export async function resetDatabase() {
   } finally {
     await client.end()
   }
+  rmSync(path.join(e2eServerFiles.dataDir, 'models'), { recursive: true, force: true })
+  rmSync(path.join(e2eServerFiles.dataDir, 'media'), { recursive: true, force: true })
 }
 
 export async function readTranscriptionFlag() {
@@ -44,7 +47,11 @@ export async function readTranscriptionFlag() {
 }
 
 /** Creates the admin through the API with its own client, so no test client holds the session cookie. */
-export async function createAdmin(headers: Record<string, string>, uiLanguage: 'hu' | 'en' = 'en') {
+export async function createAdmin(
+  headers: Record<string, string>,
+  uiLanguage: 'hu' | 'en' = 'en',
+  transcriptionEnabled = false,
+) {
   const api = await playwrightRequest.newContext({
     baseURL: `http://localhost:${process.env['NIGHTJAR_E2E_WEB_PORT'] ?? ''}`,
     extraHTTPHeaders: headers,
@@ -57,7 +64,7 @@ export async function createAdmin(headers: Record<string, string>, uiLanguage: '
         password,
         uiLanguage,
         timeZone: 'Europe/Budapest',
-        transcriptionEnabled: false,
+        transcriptionEnabled,
       },
     })
     if (!response.ok()) throw new Error(`setup failed with ${String(response.status())}`)
@@ -191,3 +198,105 @@ export const fileExists = (key: string) => existsSync(path.join(e2eServerFiles.d
 /** One client address per test. The e2e server trusts one proxy hop, so a single entry is the client. */
 export const uniqueIp = () =>
   `10.${String(Math.floor(Math.random() * 250))}.${String(Math.floor(Math.random() * 250))}.${String(1 + Math.floor(Math.random() * 250))}`
+
+const fixtureFolder = path.join(import.meta.dirname, '..', 'fixtures')
+
+/** Puts files of the right size where the model is expected, so transcription counts as ready. */
+export function seedModelFiles() {
+  const folder = path.join(e2eServerFiles.dataDir, 'models', testModelId)
+  mkdirSync(folder, { recursive: true })
+  for (const [name, data] of Object.entries(modelFiles)) {
+    writeFileSync(path.join(folder, name), Buffer.alloc(data.length))
+  }
+}
+
+export const modelFolderExists = () =>
+  existsSync(path.join(e2eServerFiles.dataDir, 'models', testModelId, 'test-encoder.onnx'))
+
+export async function setTranscriptionFlag(enabled: boolean) {
+  await withDatabase((client) =>
+    client.query('update instance_settings set transcription_enabled = $1', [enabled]),
+  )
+}
+
+/** Transcription on with the model already on disk, like a server that was set up earlier. */
+export async function turnTranscriptionOn() {
+  seedModelFiles()
+  await setTranscriptionFlag(true)
+}
+
+export async function setEntryLanguage(language: 'hu' | 'en' | 'auto') {
+  await withDatabase((client) => client.query('update users set entry_language = $1', [language]))
+}
+
+/** A recording of the first user with a real audio file, in the given state. */
+export async function seedRecording(options: {
+  entryId: string
+  status: 'pending' | 'transcribing' | 'done' | 'failed' | 'skipped'
+  language?: 'hu' | 'en' | 'auto'
+  transcript?: { text: string; language: 'hu' | 'en'; isUserEdited?: boolean }
+  clip?: 'en-sample.wav' | 'hu-sample.wav'
+}) {
+  return withDatabase(async (client) => {
+    const user = await client.query<{ id: string }>('select id from users limit 1')
+    const userId = user.rows[0]?.id
+    if (!userId) throw new Error('no user to seed a recording for')
+    const id = randomUUID()
+    const key = `media/${userId}/recordings/${id}.wav`
+    const target = path.join(e2eServerFiles.dataDir, key)
+    mkdirSync(path.dirname(target), { recursive: true })
+    const clip = options.clip ?? 'en-sample.wav'
+    copyFileSync(path.join(fixtureFolder, clip), target)
+    const size = readFileSync(target).length
+    await client.query(
+      `insert into recordings (id, user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status)
+       values ($1, $2, $3, $4, 'audio/wav', $5, $6, $7, $8)`,
+      [
+        id,
+        userId,
+        options.entryId,
+        key,
+        size,
+        Math.round(((size - 44) / 32000) * 1000),
+        options.language ?? 'en',
+        options.status,
+      ],
+    )
+    if (options.transcript) {
+      await client.query(
+        `insert into transcripts (user_id, recording_id, model, language, text, is_user_edited)
+         values ($1, $2, 'fake', $3, $4, $5)`,
+        [
+          userId,
+          id,
+          options.transcript.language,
+          options.transcript.text,
+          options.transcript.isUserEdited ?? false,
+        ],
+      )
+    }
+    return { id, key }
+  })
+}
+
+export async function readRecordings() {
+  return withDatabase(async (client) => {
+    const result = await client.query<{
+      id: string
+      status: string
+      language: string
+      duration_ms: number
+      entry_id: string
+    }>('select id, status, language, duration_ms, entry_id from recordings order by created_at')
+    return result.rows
+  })
+}
+
+export async function readTranscripts() {
+  return withDatabase(async (client) => {
+    const result = await client.query<{ text: string; language: string; is_user_edited: boolean }>(
+      'select text, language, is_user_edited from transcripts order by created_at',
+    )
+    return result.rows
+  })
+}

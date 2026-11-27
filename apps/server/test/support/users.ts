@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import type { Database } from '../../src/database.ts'
 import { accounts, users } from '../../src/db/schema.ts'
 import type { Auth } from '../../src/modules/auth/auth.ts'
@@ -31,6 +32,21 @@ export async function createUserWithSession(
     body: { email: options.email, password },
     asResponse: true,
   })
+  const cookie = response.headers
+    .getSetCookie()
+    .map((line) => line.split(';')[0])
+    .join('; ')
+  return { id: user.id, cookie }
+}
+
+/** Signs in a user that already exists, for tests that restart the server on the same data. */
+export async function signInExistingUser(database: Database, auth: Auth, email: string) {
+  const [user] = await database.db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email))
+  if (!user) throw new Error('user does not exist')
+  const response = await auth.api.signInEmail({ body: { email, password }, asResponse: true })
   const cookie = response.headers
     .getSetCookie()
     .map((line) => line.split(';')[0])

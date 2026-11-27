@@ -44,3 +44,41 @@ describe('006-settings: i18n catalogues', () => {
     }
   })
 })
+
+describe('003-voice-entries: i18n keys', () => {
+  it('AC-28: the labels the spec names exist in Hungarian and English', () => {
+    const texts = (catalogue: typeof en) => new Map(leaves(catalogue))
+    const hungarian = texts(hu)
+    const english = texts(en)
+    const named: [string, string, string][] = [
+      ['recorder.discard', 'Elvetés', 'Discard'],
+      ['recorder.stop', 'Leállítás', 'Stop'],
+      ['recorder.discardConfirm.title', 'Elveted a felvételt?', 'Discard the recording?'],
+      ['recorder.discardConfirm.keep', 'Felvétel folytatása', 'Keep recording'],
+      ['upload.submit', 'Feltöltés', 'Upload'],
+      ['lang.auto', 'Automatikus', 'Automatic'],
+      ['transcript.working', 'Átírás folyamatban…', 'Transcribing…'],
+      ['transcript.edit', 'Átirat szerkesztése', 'Edit transcript'],
+      ['transcript.failed', 'Az átírás nem sikerült.', 'Transcription failed.'],
+      ['transcript.off', 'Nincs átírva.', 'Not transcribed.'],
+      ['settings.model.downloading', 'Modell letöltése…', 'Downloading model…'],
+      ['settings.backlog.now', 'Átírás most', 'Transcribe now'],
+      [
+        'error.unsupported_audio',
+        'Ezt a fájlt nem tudjuk hangként kezelni.',
+        "This file isn't a supported audio format.",
+      ],
+      [
+        'error.file_too_large',
+        'A fájl túl nagy (legfeljebb 200 MB).',
+        'The file is too large (200 MB max).',
+      ],
+      ['entry.recordAnother', 'Újabb felvétel', 'Record another'],
+      ['nav.newRecording', 'Új felvétel', 'New recording'],
+    ]
+    for (const [key, huText, enText] of named) {
+      expect(hungarian.get(key), key).toBe(huText)
+      expect(english.get(key), key).toBe(enText)
+    }
+  })
+})

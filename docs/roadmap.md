@@ -42,7 +42,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 ## M1 Speak and keep
 - [x] 001 Setup wizard + login
 - [x] 002 Text entries (write, edit, delete, entry date)
-- [ ] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
+- [x] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
 - [x] 004 Timeline
 - [ ] 005 Search (Hungarian + English aware)
 - [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI

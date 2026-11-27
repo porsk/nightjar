@@ -168,6 +168,7 @@ variable and never prints its value.
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
 | `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
 | `NIGHTJAR_DATA_DIR` | `/data` | Folder for files (recordings, later models). The image has it as a volume |
+| `NIGHTJAR_TRANSCRIBER` | `sherpa` | `sherpa` runs the real model, `fake` returns fixed text per language (tests) |
 | `NIGHTJAR_TRUST_PROXY` | `0` | Number of reverse proxies in front of the server (`1` behind one). 0 ignores `X-Forwarded-*`. With 1 the client IP (login rate limit) and https (Secure cookie) come from what that proxy added; a client-set leftmost `X-Forwarded-For` is never trusted. The proxy must keep the original `Host` header |
 
 Code layout: `apps/server/src/web.ts` (HTTP) and `worker.ts` (background jobs) are separate entry points that one
@@ -199,7 +200,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 | `ci.yml` `upgrade` job | every PR and push to `main` | `scripts/upgrade-test.ts`: starts Postgres and the latest released image, sets up an account, writes two entries, then starts the image built from this commit on the same database and checks `/readyz` and that the entries are unchanged. Container logs upload on failure |
 | `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
 | `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
-| `nightly.yml` | nightly | real-model transcription tests + eval report. Not written yet, there are no real-model tests |
+| `nightly.yml` | nightly (schedule only) | downloads the real model with the app's own download code (checksum, unpacking) and transcribes `hu-sample.wav` and `en-sample.wav`: word error rate under 30% each, and `auto` detects both languages (`pnpm --filter @nightjar/server test:nightly`) |
 
 - PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
   the release PR (or switch to a PAT) if the checks do not show up.

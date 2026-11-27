@@ -10,6 +10,7 @@ import { AppError } from '../../errors.ts'
 import { authBasePath, type Auth } from './auth.ts'
 import { hashPassword } from './password.ts'
 import { isSetupCode } from './setup-code.ts'
+import type { TranscriptionService } from '../transcription/service.ts'
 
 type App = FastifyInstance<Server, IncomingMessage, ServerResponse, Logger>
 
@@ -83,7 +84,15 @@ async function sendAuthResponse(reply: FastifyReply, response: Response, secure:
 
 export function registerAuthRoutes(
   app: App,
-  { database, getAuth }: { database: Database; getAuth: () => Auth },
+  {
+    database,
+    getAuth,
+    transcription,
+  }: {
+    database: Database
+    getAuth: () => Auth
+    transcription: Pick<TranscriptionService, 'resume'>
+  },
 ) {
   const { db } = database
 
@@ -168,6 +177,7 @@ export function registerAuthRoutes(
     })
     if (!signedIn.ok) throw new Error('sign-in after setup failed')
     setCookies(reply, signedIn.headers.getSetCookie(), request.protocol === 'https')
+    if (input.transcriptionEnabled) await transcription.resume()
     return reply.code(201).send(toMe(user))
   })
 

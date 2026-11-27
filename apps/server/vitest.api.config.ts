@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     name: 'api',
     include: ['test/**/*.test.ts'],
+    exclude: ['test/nightly/**', '**/node_modules/**'],
     hookTimeout: 120_000,
     testTimeout: 60_000,
     coverage: {
@@ -14,8 +15,19 @@ export default defineConfig({
         'src/modules/auth/*.ts',
         'src/modules/settings/*.ts',
         'src/modules/entries/*.ts',
+        'src/modules/events/*.ts',
+        'src/modules/recordings/*.ts',
+        'src/modules/transcription/*.ts',
+        'src/events.ts',
+        'src/jobs.ts',
+        'src/worker.ts',
+        'src/audio/ffmpeg.ts',
       ],
-      exclude: ['**/*.test.ts'],
+      exclude: [
+        '**/*.test.ts',
+        'src/modules/transcription/sherpa-transcriber.ts',
+        'src/modules/transcription/sherpa-worker.ts',
+      ],
       reportsDirectory: 'coverage-api',
       reporter: ['text', 'html'],
       thresholds: { lines: 90 },

@@ -36,11 +36,13 @@ export function stubApi(handlers: Record<string, Handler>) {
   return calls
 }
 
-export function renderApp(path: string) {
+/** Renders the app at a path. Several paths make a history, and the last one is shown. */
+export function renderApp(path: string | string[]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const history = Array.isArray(path) ? path : [path]
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter initialEntries={history} initialIndex={history.length - 1}>
         <App />
       </MemoryRouter>
     </QueryClientProvider>,

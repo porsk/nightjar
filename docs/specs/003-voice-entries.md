@@ -1,6 +1,6 @@
 # 003 Voice entries
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why
@@ -13,6 +13,7 @@ In (screen names from `design/alkony/m1.html`):
   Timer, level meter, pause / resume, stop, discard (with a confirm dialog), screen wake lock, privacy note. Uses the user's default entry language.
 - **Upload** (`upload`, `uploadready`, `uploadprog`): from Home "Hangfájl feltöltése" (new entry) or from an entry (adds to it).
   Pick or drop a file, language (Magyar / English / Automatikus), date (new entry only), progress, cancel.
+- **Limits**: a recording can be up to 60 minutes. The recorder stops by itself at 60 minutes and says so, an upload that is longer is refused with 413 `recording_too_long`.
 - **Storage**: the original file is kept as is under the user's folder, type checked by content, duration measured on the server.
 - **Transcription** (pg-boss queue `transcribe`): ffmpeg makes a temp 16 kHz mono WAV, the `Transcriber` turns it into text,
   the temp WAV is deleted, an SSE event goes out. One job at a time; the model is loaded only while jobs run (D-21).
@@ -53,7 +54,7 @@ Transcription
 - **AC-14** Given the queue was empty, when a job starts, then one transcriber (model) is created, and once no job is left it is disposed; with an empty queue no model is in memory.
 - **AC-15** Given a recording with language `hu` or `en`, then that language is passed to the transcriber; with `auto`, the detected language is stored on the transcript; the card shows "Magyar" or "English".
 - **AC-16** Given the transcriber fails, then the job is retried 2 more times, then the status is `failed` and the card shows "Az átírás nem sikerült." with "Újrapróbálás"; retry sets it back to `pending` and a success shows the transcript; the audio stays playable the whole time.
-- **AC-17** Given a done transcript, when the user presses "Átirat szerkesztése", edits and presses "Mentés", then the text is saved with `is_user_edited = true` and search finds the new words; "Mégse" restores the old text.
+- **AC-17** (the search part is checked against the stored text for now, the real search check lands with spec 005) Given a done transcript, when the user presses "Átirat szerkesztése", edits and presses "Mentés", then the text is saved with `is_user_edited = true` and search finds the new words; "Mégse" restores the old text.
 - **AC-18** Given a transcript with `is_user_edited = true`, when a transcribe job for that recording runs again (for example a duplicate delivery), then the user's text is unchanged.
 - **AC-19** Given a recording, when the player plays it, then `GET /api/v1/recordings/:id/audio` returns the original bytes with the stored `Content-Type` and supports Range requests (206), and the player shows position / duration.
 

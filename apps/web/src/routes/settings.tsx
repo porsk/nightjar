@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router'
 import { ApiError, meQuery, signOut, updateSettings } from '../api.ts'
 import { Icon } from '../components/icon.tsx'
 import { Segmented } from '../components/segmented.tsx'
+import { TranscriptionSettings } from '../components/transcription-settings.tsx'
 import { browserLanguage } from '../i18n/index.ts'
 import { timeZoneOptions } from '../time-zones.ts'
 
@@ -130,6 +131,7 @@ export function SettingsPage() {
     <>
       <h1 className="title">{t('settings.title')}</h1>
       {me.data ? <PersonalSettings me={me.data} /> : null}
+      {me.data?.isAdmin ? <TranscriptionSettings /> : null}
       <h2 className="sec">{t('settings.account')}</h2>
       <div className="group">
         <div className="srow acct">

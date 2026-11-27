@@ -4,7 +4,9 @@ import { Writable } from 'node:stream'
 import { e2eServerFiles } from '../../../../e2e/support/server-files.ts'
 import { loadConfig } from '../../src/config.ts'
 import { createLogger } from '../../src/logger.ts'
+import { createFakeTranscriber } from '../../src/modules/transcription/fake-transcriber.ts'
 import { start } from '../../src/start.ts'
+import { startModelServer } from './model-server.ts'
 import { startPostgres } from './postgres.ts'
 
 const postgres = await startPostgres()
@@ -24,9 +26,15 @@ const logStream = new Writable({
   },
 })
 
+const modelServer = await startModelServer()
+modelServer.behaviour.slowMs = 30
+
 await start({
   config,
   logger: createLogger({ level: config.LOG_LEVEL, stream: logStream }),
   migrationsFolder: join(import.meta.dirname, '../../migrations'),
   exit: (code) => process.exit(code),
+  models: modelServer.list,
+  transcriber: createFakeTranscriber({ delayMs: 1500 }).factory,
+  jobs: { pollingIntervalSeconds: 0.5, retryDelaySeconds: 1 },
 })

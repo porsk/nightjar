@@ -124,6 +124,15 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
   `/data/models/<model_id>/`. Only the storage module builds these paths.
 - Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
   admins also get `model.updated { state, downloadedBytes, totalBytes }`.
+- Jobs: pg-boss queue `transcribe` (policy `short`, key = recording id, 2 retries), taken one at a time by `worker.ts`.
+  The handler only works on recordings still `pending` or `transcribing`, so a duplicate job is a no-op, and a
+  transcript the user edited is never overwritten. Job log lines carry `jobId` and the `requestId` that queued it.
+- Live events are SSE frames named after the event (`event: recording.updated`, `event: model.updated`) fed by
+  Postgres `NOTIFY` on channel `nightjar_events`; every web process `LISTEN`s and forwards to its own browsers.
+- Data folder: `media/<user_id>/recordings/<id>.<ext>` (original), `models/<model_id>/` (model files),
+  `models/<model_id>.<n>.part` (download in progress), `tmp/` (uploads and WAVs while a job runs, emptied after).
+- The model download state (idle, downloading, failed) and its progress are saved in `instance_settings` (about once a second) and announced with `NOTIFY`, so any process can read them.
+- Limits: uploads up to 200 MB and recordings up to 60 minutes (one constant, `maxRecordingMs`), so a recording is never too big to hold in memory while it is transcribed. A job that runs longer than 5 times the audio length (at least 10 minutes) counts as stuck and is retried; on start, recordings left in `transcribing` are queued again.
 - Not in M1: journals, title, mood, favourites, tags, photos, prompts, suggestions, access tokens, `entries.time_zone`
   (journals and title are open questions in `docs/specs/m1-summary.md`).
 

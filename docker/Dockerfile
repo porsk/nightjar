@@ -24,7 +24,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 FROM node:26-trixie-slim
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ffmpeg \
+    && apt-get install --yes --no-install-recommends ffmpeg bzip2 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /data \
     && chown node:node /data
