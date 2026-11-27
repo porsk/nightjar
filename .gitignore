@@ -32,3 +32,4 @@ __pycache__/
 
 # generated review pages (scripts/review-page.ts)
 design/review/
+upgrade-logs/
