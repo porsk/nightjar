@@ -1,6 +1,6 @@
 # 008 Backup guide
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

@@ -30,7 +30,7 @@ Image tag in `docker/compose.yaml`:
 | `nightjar-db` | `/var/lib/postgresql` (db) | The database: entries, users, settings |
 | `nightjar-data` | `/data` (nightjar) | Files on disk (recordings, media) |
 
-Back both up (see Upgrading).
+Back both up, see the [backup guide](backup.md).
 
 ## 3. Traefik
 
@@ -140,14 +140,7 @@ scrape_configs:
 
 ## 9. Upgrading
 
-Back up first. Migrations run automatically on start and only go forward, so the backup is the way back.
-
-```
-docker compose exec -T db pg_dump -U nightjar -Fc nightjar > nightjar-$(date +%F).dump
-docker run --rm -v nightjar_nightjar-data:/data -v "$PWD":/backup alpine tar czf /backup/nightjar-data-$(date +%F).tgz -C /data .
-```
-
-The volume name has your compose project prefix (here `nightjar_`). Check with `docker volume ls`.
+Back up first, with the commands in the [backup guide](backup.md#back-up). Migrations run automatically on start and only go forward, so the backup is the way back.
 
 Then change the tag if you pin one, and:
 
