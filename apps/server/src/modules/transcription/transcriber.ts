@@ -10,8 +10,8 @@ export interface Transcriber {
   /** Stored with the transcript so it is clear which model wrote it. */
   readonly modelId: string
   transcribe(wavPath: string, language: EntryLanguage): Promise<TranscriptResult>
-  /** Frees the model. The transcriber cannot be used afterwards. */
-  dispose(): void
+  /** Frees the model and resolves once it is gone. The transcriber cannot be used afterwards. */
+  dispose(): Promise<void>
 }
 
 /** Makes a transcriber, which loads the model. Called when work arrives, not at startup. */

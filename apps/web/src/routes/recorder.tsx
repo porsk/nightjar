@@ -1,4 +1,5 @@
 import { todayIn } from '@nightjar/shared'
+import { maxRecordingMs } from '@nightjar/shared/recordings'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -99,6 +100,8 @@ export function RecorderPage() {
   const [levels, setLevels] = useState<number[]>(() => Array<number>(barCount).fill(0))
   const [confirming, setConfirming] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [limitReached, setLimitReached] = useState(false)
+  const stopRef = useRef<() => Promise<void>>(undefined)
   const session = useRef<Session | undefined>(undefined)
   const saved = useRef<Blob | undefined>(undefined)
 
@@ -116,7 +119,13 @@ export function RecorderPage() {
       },
     )
     const timer = setInterval(() => {
-      if (session.current) setElapsed(elapsedOf(session.current.clock))
+      if (!session.current) return
+      const spent = elapsedOf(session.current.clock)
+      setElapsed(spent)
+      if (spent >= maxRecordingMs) {
+        setLimitReached(true)
+        void stopRef.current?.()
+      }
     }, timerIntervalMs)
     return () => {
       cancelled = true
@@ -178,6 +187,10 @@ export function RecorderPage() {
     saved.current = new Blob(open.chunks, { type: mimeType })
     await upload(saved.current, mimeType)
   }
+
+  useEffect(() => {
+    stopRef.current = stop
+  })
 
   const togglePause = () => {
     const open = session.current
@@ -255,6 +268,11 @@ export function RecorderPage() {
             {t('common.retry')}
           </button>
         </div>
+      ) : null}
+      {limitReached ? (
+        <p className="sub" role="status">
+          {t('recorder.limitReached')}
+        </p>
       ) : null}
       {phase === 'saving' ? (
         <p className="sub" role="status">

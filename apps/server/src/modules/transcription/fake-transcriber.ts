@@ -53,9 +53,11 @@ export function createFakeTranscriber(options: FakeTranscriberOptions = {}) {
         }
       },
       dispose: () => {
-        if (disposed) return
-        disposed = true
-        state.liveInstances--
+        if (!disposed) {
+          disposed = true
+          state.liveInstances--
+        }
+        return Promise.resolve()
       },
     }
     return transcriber

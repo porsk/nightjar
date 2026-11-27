@@ -28,6 +28,7 @@ export const en: typeof hu = {
     body_too_long: 'The text is too long.',
     unsupported_audio: "This file isn't a supported audio format.",
     file_too_large: 'The file is too large (200 MB max).',
+    recording_too_long: 'The recording is longer than 60 minutes.',
     recording_not_found: 'Recording not found.',
   },
   setup: {
@@ -115,6 +116,7 @@ export const en: typeof hu = {
     elapsed: 'Elapsed time',
     micBlocked: "The microphone isn't available. Allow it in your browser settings and try again.",
     uploadFailed: "Couldn't save the recording. The audio is still here, try again.",
+    limitReached: 'The recording reached 60 minutes and was stopped.',
   },
   upload: {
     title: 'Upload an audio file',

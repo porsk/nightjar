@@ -68,6 +68,10 @@ export const verifications = pgTable('verifications', {
 export const instanceSettings = pgTable('instance_settings', {
   id: integer('id').primaryKey().default(1),
   transcriptionEnabled: boolean('transcription_enabled').notNull().default(false),
+  modelDownloadState: text('model_download_state', { enum: ['idle', 'downloading', 'failed'] })
+    .notNull()
+    .default('idle'),
+  modelDownloadedBytes: integer('model_downloaded_bytes').notNull().default(0),
   authSecret: text('auth_secret').notNull(),
   setupCodeHash: text('setup_code_hash'),
   updatedAt: updatedAt(),

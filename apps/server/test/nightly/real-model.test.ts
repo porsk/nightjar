@@ -47,14 +47,14 @@ describe.skipIf(process.env['NIGHTJAR_TRANSCRIBER'] !== 'sherpa')(
       folder = await mkdtemp(join(tmpdir(), 'nightjar-real-wav-'))
     }, 1_800_000)
 
-    afterAll(() => {
-      transcriber.dispose()
+    afterAll(async () => {
+      await transcriber.dispose()
     })
 
     for (const language of ['hu', 'en'] as const) {
       it(`AC-29: ${language}-sample.wav is transcribed with a word error rate under 30%`, async () => {
         const wav = join(folder, `${language}.wav`)
-        await convertToWav(join(fixtures, `${language}-sample.wav`), wav)
+        await convertToWav(join(fixtures, `${language}-sample.wav`), wav, 'wav')
         const result = await transcriber.transcribe(wav, language)
         const rate = wordErrorRate(references[language], result.text)
         console.info(`${language}: WER ${(rate * 100).toFixed(1)}%`)

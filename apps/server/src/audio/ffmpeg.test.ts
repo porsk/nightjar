@@ -11,7 +11,7 @@ const seconds = (path: string) => (readFileSync(path).length - 44) / 32000
 
 describe('003-voice-entries: ffmpeg helpers', () => {
   it('AC-10: measures the length of a file by decoding it', async () => {
-    const measured = await measureDurationMs(english)
+    const measured = await measureDurationMs(english, 'wav')
     expect(Math.abs(measured - seconds(english) * 1000)).toBeLessThan(100)
   })
 
@@ -19,13 +19,17 @@ describe('003-voice-entries: ffmpeg helpers', () => {
     const folder = await mkdtemp(join(tmpdir(), 'nightjar-ffmpeg-'))
     const broken = join(folder, 'broken.wav')
     await writeFile(broken, Buffer.concat([Buffer.from('RIFF\0\0\0\0WAVE'), Buffer.alloc(64, 7)]))
-    await expect(measureDurationMs(broken)).rejects.toBeInstanceOf(UnreadableAudioError)
+    await expect(measureDurationMs(broken, 'wav')).rejects.toBeInstanceOf(UnreadableAudioError)
+  })
+
+  it('AC-10: ffmpeg is told the format and does not guess it from the content', async () => {
+    await expect(measureDurationMs(english, 'mp3')).rejects.toBeInstanceOf(UnreadableAudioError)
   })
 
   it('AC-11: converts to a 16 kHz mono 16-bit WAV', async () => {
     const folder = await mkdtemp(join(tmpdir(), 'nightjar-ffmpeg-'))
     const output = join(folder, 'out.wav')
-    await convertToWav(english, output)
+    await convertToWav(english, output, 'wav')
     const header = readFileSync(output).subarray(0, 44)
     expect(header.toString('ascii', 0, 4)).toBe('RIFF')
     expect(header.readUInt16LE(22)).toBe(1)

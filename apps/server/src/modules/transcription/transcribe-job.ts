@@ -1,5 +1,7 @@
 import type { RecordingStatus } from '@nightjar/shared/recordings'
 import { and, eq } from 'drizzle-orm'
+import { extname } from 'node:path'
+import { ffmpegFormatFor } from '../../audio/sniff.ts'
 import { UnreadableAudioError, convertToWav } from '../../audio/ffmpeg.ts'
 import type { Database } from '../../database.ts'
 import { instanceSettings, recordings, transcripts } from '../../db/schema.ts'
@@ -54,10 +56,15 @@ export function createTranscribeHandler({
     })
   }
 
-  const releaseModelWhenIdle = async () => {
-    if (!transcriber || (await hasQueuedJobs())) return
-    transcriber.dispose()
+  /** Frees the model and waits until it is gone, so two models are never loaded at once. */
+  const dropModel = async () => {
+    const old = transcriber
     transcriber = undefined
+    await old?.dispose()
+  }
+
+  const releaseModelWhenIdle = async () => {
+    if (transcriber && !(await hasQueuedJobs())) await dropModel()
   }
 
   async function transcribe(job: TranscribeJob, log: Logger): Promise<Outcome> {
@@ -79,7 +86,11 @@ export function createTranscribeHandler({
     await setStatus(recording, 'transcribing')
     const wav = await storage.tempFile('wav')
     try {
-      await convertToWav(storage.localPath(recording.filePath), wav.path)
+      await convertToWav(
+        storage.localPath(recording.filePath),
+        wav.path,
+        ffmpegFormatFor(extname(recording.filePath).slice(1)) ?? '',
+      )
       transcriber ??= createTranscriber()
       const startedAt = performance.now()
       const result = await transcriber.transcribe(wav.path, recording.language)
@@ -129,6 +140,7 @@ export function createTranscribeHandler({
         },
         'transcription failed',
       )
+      await dropModel()
       if (lastAttempt) await setStatus(recording, 'failed')
       throw error
     } finally {

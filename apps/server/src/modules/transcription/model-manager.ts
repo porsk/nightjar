@@ -28,7 +28,7 @@ interface Options {
 
 class DownloadError extends Error {}
 
-const progressIntervalMs = 250
+const progressIntervalMs = 1000
 
 /** Unpacks into `folder`. Paths are relative to it, which keeps tar happy on every platform. */
 function untar(archive: string, folder: string): Promise<void> {
@@ -131,10 +131,7 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
       logger.info({ modelId: model.id }, 'model download finished')
       onReady()
     } catch (error) {
-      if (signal.aborted) {
-        update({ state: 'idle', downloadedBytes: 0 })
-        return
-      }
+      if (signal.aborted) return
       logger.warn(
         { modelId: model.id, reason: error instanceof DownloadError ? error.message : 'network' },
         'model download failed',
@@ -154,6 +151,9 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
      */
     start: async () => {
       if (status.state === 'downloading') return
+      status = { ...status, state: 'downloading', downloadedBytes: 0 }
+      await running
+      if (status.state !== 'downloading') return
       if (await isModelReady(storage, model)) {
         update({ state: 'idle', downloadedBytes: totalBytes })
         onReady()
@@ -171,6 +171,8 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
     /** Stops a running download and removes what it wrote. */
     cancel: () => {
       abort?.abort()
+      abort = undefined
+      if (status.state === 'downloading') update({ state: 'idle', downloadedBytes: 0 })
     },
   }
 }

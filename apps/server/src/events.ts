@@ -17,6 +17,8 @@ export interface Subscriber {
   userId: string
   isAdmin: boolean
   send: (event: LiveEvent) => void
+  /** Closes the browser's stream. */
+  end: () => void
 }
 
 /**
@@ -57,6 +59,8 @@ export function createEvents({
       if (listener === client) listener = undefined
       void client.end().catch(() => undefined)
       if (stopped) return
+      // events were missed, so browsers reconnect and load everything again
+      for (const subscriber of subscribers) subscriber.end()
       logger.warn('lost the live events connection, reconnecting')
       reconnect = setTimeout(() => void connect(), reconnectDelayMs)
     }
@@ -89,6 +93,8 @@ export function createEvents({
       listener = undefined
       await current?.end().catch(() => undefined)
     },
+    streamsOf: (userId: string) =>
+      [...subscribers].filter((subscriber) => subscriber.userId === userId).length,
     subscribe: (subscriber: Subscriber) => {
       subscribers.add(subscriber)
       return () => {

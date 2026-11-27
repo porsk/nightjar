@@ -13,6 +13,7 @@ import { captureLogs, type LogCapture } from './log-capture.ts'
 export const inertEvents = {
   start: () => Promise.resolve(),
   stop: () => Promise.resolve(),
+  streamsOf: () => 0,
   subscribe: () => () => undefined,
   publishToUser: () => Promise.resolve(),
   publishToAdmins: () => Promise.resolve(),

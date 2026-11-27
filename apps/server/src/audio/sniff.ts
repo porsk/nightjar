@@ -3,6 +3,19 @@ export interface AudioKind {
   extension: string
 }
 
+/** The ffmpeg input format for each stored extension, so ffmpeg never has to guess from the content. */
+const ffmpegFormats: Record<string, string> = {
+  webm: 'matroska',
+  ogg: 'ogg',
+  m4a: 'mov',
+  aac: 'aac',
+  mp3: 'mp3',
+  wav: 'wav',
+  flac: 'flac',
+}
+
+export const ffmpegFormatFor = (extension: string) => ffmpegFormats[extension]
+
 export const sniffLength = 16
 
 const ascii = (bytes: Uint8Array, start: number, text: string) =>

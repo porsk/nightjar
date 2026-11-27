@@ -1,0 +1,2 @@
+ALTER TABLE "instance_settings" ADD COLUMN "model_download_state" text DEFAULT 'idle' NOT NULL;--> statement-breakpoint
+ALTER TABLE "instance_settings" ADD COLUMN "model_downloaded_bytes" integer DEFAULT 0 NOT NULL;

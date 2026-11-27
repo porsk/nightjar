@@ -3,6 +3,10 @@ import type { Logger } from './logger.ts'
 
 export const transcribeQueue = 'transcribe'
 
+/** A job that runs longer than this many seconds per second of audio, or this floor, counts as stuck. */
+const expiryPerAudioSecond = 5
+const minExpirySeconds = 600
+
 export interface TranscribeJobData {
   userId: string
   recordingId: string
@@ -42,8 +46,14 @@ export function createJobs(databaseUrl: string, logger: Logger, options: JobsOpt
     stop: () => boss.stop({ graceful: true, timeout: 10_000 }),
 
     /** A recording that is already queued is not queued twice. */
-    enqueueTranscription: async (data: TranscribeJobData) => {
-      await boss.send(transcribeQueue, data, { singletonKey: data.recordingId })
+    enqueueTranscription: async (data: TranscribeJobData, durationMs: number) => {
+      await boss.send(transcribeQueue, data, {
+        singletonKey: data.recordingId,
+        expireInSeconds: Math.max(
+          minExpirySeconds,
+          Math.ceil((durationMs / 1000) * expiryPerAudioSecond),
+        ),
+      })
     },
 
     /** Jobs that are waiting to run, per queue. Read from the job table, so it is never behind. */

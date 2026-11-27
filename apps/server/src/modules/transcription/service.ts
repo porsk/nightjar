@@ -1,5 +1,5 @@
 import type { RecordingStatus, TranscriptionStatus } from '@nightjar/shared/recordings'
-import { asc, count, eq } from 'drizzle-orm'
+import { asc, count, eq, inArray } from 'drizzle-orm'
 import type { Database } from '../../database.ts'
 import { instanceSettings, recordings } from '../../db/schema.ts'
 import { AppError } from '../../errors.ts'
@@ -23,6 +23,7 @@ interface SavedRecording {
   id: string
   userId: string
   entryId: string
+  durationMs: number
 }
 
 /** Decides what happens to recordings: transcribed, waiting for the model, or left as audio only. */
@@ -60,29 +61,38 @@ export function createTranscriptionService({
     if (await isModelReady(storage, model)) {
       return { enabled, state: 'ready', downloadedBytes: totalBytes, totalBytes, backlogCount }
     }
-    const download = manager.status()
+    const [saved] = await db
+      .select({
+        state: instanceSettings.modelDownloadState,
+        downloadedBytes: instanceSettings.modelDownloadedBytes,
+      })
+      .from(instanceSettings)
     return {
       enabled,
-      state: download.state === 'failed' ? 'failed' : 'downloading',
-      downloadedBytes: download.downloadedBytes,
+      state: saved?.state === 'failed' ? 'failed' : 'downloading',
+      downloadedBytes: saved?.downloadedBytes ?? 0,
       totalBytes,
       backlogCount,
     }
   }
 
   const queue = (recording: SavedRecording, requestId?: string) =>
-    jobs.enqueueTranscription({
-      userId: recording.userId,
-      recordingId: recording.id,
-      requestId,
-    })
+    jobs.enqueueTranscription(
+      { userId: recording.userId, recordingId: recording.id, requestId },
+      recording.durationMs,
+    )
 
-  /** Queues every recording that has been waiting for the model. */
+  /** Queues every recording that waits for the model or was left half done by a stopped server. */
   async function queueWaiting() {
     const waiting = await db
-      .select({ id: recordings.id, userId: recordings.userId, entryId: recordings.entryId })
+      .select({
+        id: recordings.id,
+        userId: recordings.userId,
+        entryId: recordings.entryId,
+        durationMs: recordings.durationMs,
+      })
       .from(recordings)
-      .where(eq(recordings.status, 'pending'))
+      .where(inArray(recordings.status, ['pending', 'transcribing']))
       .orderBy(asc(recordings.createdAt), asc(recordings.id))
     for (const recording of waiting) await queue(recording)
   }
@@ -94,9 +104,16 @@ export function createTranscriptionService({
     storage,
     model,
     logger,
-    onChange: () => {
+    onChange: (download) => {
       publishing = publishing
         .then(async () => {
+          await db
+            .update(instanceSettings)
+            .set({
+              modelDownloadState: download.state,
+              modelDownloadedBytes: download.downloadedBytes,
+            })
+            .where(eq(instanceSettings.id, 1))
           const { state, downloadedBytes, totalBytes } = await status()
           await events.publishToAdmins({
             type: 'model.updated',
@@ -169,6 +186,7 @@ export function createTranscriptionService({
           id: recordings.id,
           userId: recordings.userId,
           entryId: recordings.entryId,
+          durationMs: recordings.durationMs,
           createdAt: recordings.createdAt,
         })
       moved.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())

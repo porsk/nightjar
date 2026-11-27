@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises'
 import multipart from '@fastify/multipart'
 import { entryDateSchema, entryLanguageSchema, todayIn } from '@nightjar/shared'
 import {
+  maxRecordingMs,
   maxUploadBytes as defaultMaxUploadBytes,
   recordingSchema,
   recordingsResponseSchema,
@@ -18,7 +19,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { UnreadableAudioError, measureDurationMs } from '../../audio/ffmpeg.ts'
-import { sniffAudio, sniffLength } from '../../audio/sniff.ts'
+import { ffmpegFormatFor, sniffAudio, sniffLength } from '../../audio/sniff.ts'
 import type { Database } from '../../database.ts'
 import { entries, recordings, transcripts } from '../../db/schema.ts'
 import { AppError } from '../../errors.ts'
@@ -185,10 +186,15 @@ export function registerRecordingRoutes(
         if (!entry) throw new AppError(404, 'entry_not_found')
       }
 
-      const durationMs = await measureDurationMs(upload.path).catch((error: unknown) => {
+      const durationMs = await measureDurationMs(
+        upload.path,
+        ffmpegFormatFor(received.kind.extension) ?? '',
+      ).catch((error: unknown) => {
         if (error instanceof UnreadableAudioError) throw new AppError(415, 'unsupported_audio')
         throw error
       })
+
+      if (durationMs > maxRecordingMs) throw new AppError(413, 'recording_too_long')
 
       const key = recordingKey(user.id, recordingId, received.kind.extension)
       await storage.adopt(upload.path, key)
@@ -273,7 +279,10 @@ export function registerRecordingRoutes(
   app.post('/api/v1/recordings/:id/retry', async (request) => {
     const user = me(request)
     const row = await findOwned(user.id, idParam(request, 'recording_not_found'))
-    if (row.status !== 'failed') throw new AppError(409, 'not_failed')
+    // a recording stuck in `transcribing` after a crash can be retried too
+    if (!['failed', 'transcribing', 'pending'].includes(row.status)) {
+      throw new AppError(409, 'not_failed')
+    }
     const status = await transcription.initialStatus()
     const [updated] = await db
       .update(recordings)

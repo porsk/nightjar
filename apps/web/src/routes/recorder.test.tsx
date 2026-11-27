@@ -145,6 +145,26 @@ describe('003-voice-entries: recorder', () => {
     expect(FakeXhr.instances[0]?.body?.get('entryDate')).toBeNull()
   })
 
+  it('AC-3: at 60 minutes the recorder stops by itself, says so and uploads', async () => {
+    installRecorderFakes()
+    stubApi({ ...signedIn, ...entryPage })
+    renderApp('/record')
+    await screen.findByText('Recording')
+    await waitFor(() => {
+      expect(FakeMediaRecorder.instances[0]?.state).toBe('recording')
+    })
+
+    advance(60 * 60 * 1000 + 1000)
+
+    expect(
+      await screen.findByText('The recording reached 60 minutes and was stopped.'),
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(FakeXhr.instances).toHaveLength(1)
+    })
+    expect(FakeMediaRecorder.instances[0]?.state).toBe('inactive')
+  })
+
   it('AC-4: discarding asks first, keeping goes on recording and confirming uploads nothing and goes back', async () => {
     const fakes = installRecorderFakes()
     stubApi(signedIn)

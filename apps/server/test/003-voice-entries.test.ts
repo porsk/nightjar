@@ -33,7 +33,7 @@ import {
 } from './support/model-server.ts'
 import { startPostgres } from './support/postgres.ts'
 import { buildTestApp } from './support/test-app.ts'
-import { createUserWithSession } from './support/users.ts'
+import { createUserWithSession, signInExistingUser } from './support/users.ts'
 
 const fixtures = join(import.meta.dirname, '../../../e2e/fixtures')
 const enWav = readFileSync(join(fixtures, 'en-sample.wav'))
@@ -123,6 +123,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     dataDir?: string
     modelServer?: ModelServer
     now?: Date
+    sameUsers?: boolean
   }
 
   async function launch(options: LaunchOptions = {}) {
@@ -174,15 +175,19 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     await test.app.ready()
     await transcription.resume()
 
-    const alice = await createUserWithSession(database, auth, {
-      email: 'alice@example.test',
-      timeZone: 'Europe/Budapest',
-      isAdmin: true,
-    })
-    const bob = await createUserWithSession(database, auth, {
-      email: 'bob@example.test',
-      timeZone: 'Europe/Budapest',
-    })
+    const alice = options.sameUsers
+      ? await signInExistingUser(database, auth, 'alice@example.test')
+      : await createUserWithSession(database, auth, {
+          email: 'alice@example.test',
+          timeZone: 'Europe/Budapest',
+          isAdmin: true,
+        })
+    const bob = options.sameUsers
+      ? await signInExistingUser(database, auth, 'bob@example.test')
+      : await createUserWithSession(database, auth, {
+          email: 'bob@example.test',
+          timeZone: 'Europe/Budapest',
+        })
     const streams: AbortController[] = []
     let closed = false
     const shutdown = async () => {
@@ -247,7 +252,12 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
 
     const hubEvents = (userId: string, isAdmin = false) => {
       const seen: LiveEvent[] = []
-      const stop = events.subscribe({ userId, isAdmin, send: (event) => seen.push(event) })
+      const stop = events.subscribe({
+        userId,
+        isAdmin,
+        send: (event) => seen.push(event),
+        end: () => undefined,
+      })
       cleanups.push(() => {
         stop()
         return Promise.resolve()
@@ -267,6 +277,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         signal: controller.signal,
       })
       const seen: LiveEvent[] = []
+      const state = { ended: false }
       void (async () => {
         const reader = response.body?.getReader()
         const decoder = new TextDecoder()
@@ -274,7 +285,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         try {
           for (;;) {
             const next = await reader?.read()
-            if (!next || next.done) return
+            if (!next || next.done) {
+              state.ended = true
+              return
+            }
             buffer += decoder.decode(next.value, { stream: true })
             for (const block of buffer.split('\n\n').slice(0, -1)) {
               const data = block.split('\n').find((line) => line.startsWith('data: '))
@@ -286,7 +300,12 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
           // the test closed the stream
         }
       })()
-      return { seen, status: response.status, contentType: response.headers.get('content-type') }
+      return {
+        seen,
+        state,
+        status: response.status,
+        contentType: response.headers.get('content-type'),
+      }
     }
 
     return {
@@ -313,8 +332,11 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
 
   const launchAgain = async (previous: Awaited<ReturnType<typeof launch>>) => {
     await previous.shutdown()
-    await database.db.execute(sql`truncate users cascade`)
-    return launch({ dataDir: previous.dataDir, modelServer: previous.modelServer })
+    return launch({
+      dataDir: previous.dataDir,
+      modelServer: previous.modelServer,
+      sameUsers: true,
+    })
   }
 
   const enableTranscription = async (app: Awaited<ReturnType<typeof launch>>) => {
@@ -684,7 +706,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         .update(recordings)
         .set({ status: 'pending' })
         .where(eq(recordings.id, saved.id))
-      await app.jobs.enqueueTranscription({ userId: app.alice.id, recordingId: saved.id })
+      await app.jobs.enqueueTranscription({ userId: app.alice.id, recordingId: saved.id }, 1000)
       await doneStatus(app, saved.id)
       const [transcript] = await database.db
         .select()
@@ -699,7 +721,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       const saved = await app.uploadVoice(app.alice)
       await doneStatus(app, saved.id)
       const calls = app.fake.state.calls.length
-      await app.jobs.enqueueTranscription({ userId: app.alice.id, recordingId: saved.id })
+      await app.jobs.enqueueTranscription({ userId: app.alice.id, recordingId: saved.id }, 1000)
       await waitFor(
         async () => ((await app.jobs.queueDepths())['transcribe'] ?? 0) === 0,
         'the queue to drain',
@@ -1032,6 +1054,138 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       expect([...owners(alice.seen)][0]).not.toBe([...owners(bob.seen)][0])
       expect(alice.seen.some((event) => event.type === 'model.updated')).toBe(true)
       expect(bob.seen.some((event) => event.type === 'model.updated')).toBe(false)
+    })
+  })
+
+  describe('a server that stops, drops connections or gets long audio', () => {
+    it('AC-23: a recording left in transcribing by a stopped server is picked up again on start', async () => {
+      const app = await launch()
+      await enableTranscription(app)
+      const saved = await app.uploadVoice(app.alice)
+      await doneStatus(app, saved.id)
+      await database.db.delete(transcripts)
+      await database.db.update(recordings).set({ status: 'transcribing' })
+
+      const restarted = await launchAgain(app)
+      await doneStatus(restarted, saved.id)
+      expect(await database.db.select().from(transcripts)).toHaveLength(1)
+    })
+
+    it('AC-16: a recording stuck in transcribing can be retried', async () => {
+      const app = await launch()
+      await enableTranscription(app)
+      const release = app.fake.holdJobs()
+      const saved = await app.uploadVoice(app.alice)
+      await waitFor(() => app.fake.state.parallel === 1, 'the job to start')
+      expect(await app.statusOf(saved.id)).toBe('transcribing')
+      const retried = await app.call(app.alice, 'POST', `/api/v1/recordings/${saved.id}/retry`)
+      expect(retried.statusCode).toBe(200)
+      release()
+      await doneStatus(app, saved.id)
+    })
+
+    it('AC-16: a transcriber that failed is thrown away and the next attempt makes a new one', async () => {
+      const app = await launch()
+      await enableTranscription(app)
+      app.fake.failNext(2)
+      const saved = await app.uploadVoice(app.alice)
+      await doneStatus(app, saved.id)
+      expect(app.fake.state.createdInstances).toBe(3)
+      await waitFor(() => app.fake.state.liveInstances === 0, 'all models to be released')
+    })
+
+    it('AC-9: audio over 60 minutes is refused with 413 and leaves nothing behind', async () => {
+      const app = await launch()
+      const folder = mkdtempSync(join(tmpdir(), 'nightjar-long-'))
+      const path = join(folder, 'long.wav')
+      const made = spawnSync('ffmpeg', [
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'anullsrc=r=8000:cl=mono',
+        '-t',
+        '3700',
+        '-c:a',
+        'pcm_u8',
+        path,
+      ])
+      expect(made.status).toBe(0)
+      const response = await app.upload(
+        app.alice,
+        { language: 'en', entryDate: '2026-11-26' },
+        { data: readFileSync(path), name: 'long.wav' },
+      )
+      expect(response.statusCode).toBe(413)
+      expect(response.json()).toMatchObject({ error: { code: 'recording_too_long' } })
+      expect(await database.db.select().from(recordings)).toHaveLength(0)
+      expect(existsSync(join(app.dataDir, 'media'))).toBe(false)
+    })
+
+    it('AC-12: closing the server while a browser holds a stream open does not hang', async () => {
+      const app = await launch()
+      const stream = await app.openStream(app.alice)
+      expect(stream.status).toBe(200)
+      const outcome = await Promise.race([
+        app.app.close().then(() => 'closed'),
+        new Promise((resolve) => {
+          setTimeout(() => {
+            resolve('hung')
+          }, 5000)
+        }),
+      ])
+      expect(outcome).toBe('closed')
+      await waitFor(() => stream.state.ended, 'the stream to end')
+    })
+
+    it('AC-12: when the connection that listens for events drops, streams end so browsers reconnect', async () => {
+      const app = await launch()
+      await enableTranscription(app)
+      const stream = await app.openStream(app.alice)
+      await database.db.execute(
+        sql`select pg_terminate_backend(pid) from pg_stat_activity where query ilike 'listen nightjar_events%'`,
+      )
+      await waitFor(() => stream.state.ended, 'the stream to end')
+      const again = await app.openStream(app.alice)
+      await waitFor(async () => {
+        await app.uploadVoice(app.alice)
+        return again.seen.some((event) => event.type === 'recording.updated')
+      }, 'events on a new stream')
+    })
+
+    it('AC-27: a user can hold at most 5 event streams open', async () => {
+      const app = await launch()
+      for (let index = 0; index < 5; index++) {
+        expect((await app.openStream(app.alice)).status).toBe(200)
+      }
+      expect((await app.openStream(app.alice)).status).toBe(429)
+      expect((await app.openStream(app.bob)).status).toBe(200)
+    })
+
+    it('AC-21: the download state is kept in the database, so any process can read it', async () => {
+      const app = await launch()
+      app.modelServer.behaviour.slowMs = 40
+      await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', { enabled: true })
+      await waitFor(async () => {
+        const [row] = await database.db.select().from(instanceSettings)
+        return row?.modelDownloadState === 'downloading' && row.modelDownloadedBytes > 0
+      }, 'progress in the database')
+      const mid = await app.call(app.alice, 'GET', '/api/v1/admin/transcription')
+      expect(mid.json<{ downloadedBytes: number }>().downloadedBytes).toBeGreaterThan(0)
+      await waitFor(
+        async () =>
+          (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
+            state: string
+          }>().state === 'ready',
+        'the model to be ready',
+      )
+      await app.transcription.whenIdle()
+      await waitFor(
+        async () =>
+          (await database.db.select().from(instanceSettings))[0]?.modelDownloadState === 'idle',
+        'idle in the database',
+      )
     })
   })
 
