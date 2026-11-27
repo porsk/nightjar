@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://github.com/porsk/nightjar/compare/nightjar-v0.1.0...nightjar-v0.2.0) (2026-11-27)
+
+
+### Features
+
+* search ([#45](https://github.com/porsk/nightjar/issues/45)) ([a1458b4](https://github.com/porsk/nightjar/commit/a1458b461012e5122031558dd031844d8ab2f398))
+* sign in with a username and say hello by name ([#47](https://github.com/porsk/nightjar/issues/47)) ([4237b3f](https://github.com/porsk/nightjar/commit/4237b3fb7ff198779486c26448deca898d78d198))
+* voice entries and transcription ([#41](https://github.com/porsk/nightjar/issues/41)) ([c1253e8](https://github.com/porsk/nightjar/commit/c1253e83c58b67e62016b286500415cb7481e684))
+
+
+### Bug Fixes
+
+* transcription in a child process, 3 hour recording limit ([#48](https://github.com/porsk/nightjar/issues/48)) ([d2425dd](https://github.com/porsk/nightjar/commit/d2425ddd86c59a0163ed2b43201e55d1d78c76ba))
+
 ## 0.1.0 (2026-11-27)
 
 
