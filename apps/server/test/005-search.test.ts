@@ -278,6 +278,18 @@ describe('005-search: search API against a real Postgres', () => {
     }
   })
 
+  it('AC-6: 20 short words in 100 KB entries still answer in time', async () => {
+    const app = await launch()
+    const words = ['szél', 'folyó', 'reggel', 'költözés', 'napló', 'walk', 'river', 'dobozok']
+    const filler = Array.from({ length: 7_500 }, (_, at) => words[at % words.length]).join(' ')
+    for (let at = 0; at < 50; at += 1) await addEntry(app.alice.id, `${filler} heron`)
+    const query = 'sz zé fo ly re gg ko lt na pl wa lk ri iv do bo oz el er ok'
+    const started = performance.now()
+    const found = await app.search(app.alice, query)
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(found.results).toHaveLength(50)
+  })
+
   it('AC-6: one card per entry, newest first, at most 50, with the full count', async () => {
     const app = await launch()
     await addEntry(app.alice.id, 'owl owl owl owl owl', {
@@ -382,6 +394,9 @@ describe('005-search: search API against a real Postgres', () => {
       'a_b',
       '100%',
       '   ',
+      'a\ud800b',
+      'a\u0000b',
+      '\u0000',
     ]
     for (const query of odd) {
       const response = await app.call(app.alice, 'POST', '/api/v1/search', { q: query })
@@ -432,6 +447,23 @@ describe('005-search: search API against a real Postgres', () => {
     await addEntry(app.alice.id, `${filler}und dann der Hirsch am Waldrand ${filler}`)
     const found = await app.search(app.alice, 'hirsch')
     expect(found.results[0]?.snippet).toContain('der <mark>Hirsch</mark> am Waldrand')
+  })
+
+  it('AC-15: finds the window when unaccent makes the text longer before the match', async () => {
+    const app = await launch()
+    await addEntry(app.alice.id, '„Jó” mondta… '.repeat(60) + 'aztán hazamentünk a kutyával')
+    const found = await app.search(app.alice, 'kutya')
+    expect(found.results[0]?.snippet).toContain('<mark>kutyá</mark>val')
+  })
+
+  it('AC-15: finds the window when combining accents shrink to nothing before the match', async () => {
+    const app = await launch()
+    const filler = 'Ma este első alkalommal írtam a naplóba, és örültem. '
+      .normalize('NFD')
+      .repeat(30)
+    await addEntry(app.alice.id, `${filler}Holnap jön Zsuzsa.`)
+    const found = await app.search(app.alice, 'zsuzsa')
+    expect(found.results[0]?.snippet).toContain('<mark>Zsuzsa</mark>')
   })
 
   it('AC-16: every word must be there, in any order, and each one is marked', async () => {

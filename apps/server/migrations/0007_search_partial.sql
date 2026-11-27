@@ -20,6 +20,29 @@ CREATE FUNCTION nightjar_search_text(content text) RETURNS text
 LANGUAGE sql STABLE AS $$
   SELECT lower(unaccent(content))
 $$;--> statement-breakpoint
+CREATE FUNCTION nightjar_original_offset(content text, normalized_before int) RETURNS int
+LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  total int := length(content);
+  k int := least(normalized_before, total);
+  below int;
+  above int;
+BEGIN
+  FOR step IN 1..20 LOOP
+    below := length(nightjar_search_text(left(content, k)));
+    IF below > normalized_before THEN
+      k := greatest(0, k - greatest(1, below - normalized_before));
+    ELSIF k >= total THEN
+      EXIT;
+    ELSE
+      above := length(nightjar_search_text(left(content, k + 1)));
+      EXIT WHEN above > normalized_before;
+      k := least(total, k + greatest(1, normalized_before - below));
+    END IF;
+  END LOOP;
+  RETURN k;
+END
+$$;--> statement-breakpoint
 CREATE FUNCTION entry_search_text(entry uuid, body text) RETURNS text
 LANGUAGE sql STABLE AS $$
   SELECT nightjar_search_text(concat_ws(' ', body, (

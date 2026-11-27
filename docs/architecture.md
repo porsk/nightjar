@@ -162,7 +162,7 @@ int8 (D-20); the final pick comes after the owner's own clips.
 
 ## 7. Search
 
-Substring search (D-46): `entries.search_text` holds the lower-cased, unaccented text of the entry and all its transcripts, with a `pg_trgm` GIN index. `POST /api/v1/search` (words in the body, never in a URL) splits the query on whitespace, normalizes each word the same way, and ANDs one parameterized `LIKE '%word%'` per word (`\`, `%`, `_` escaped), so a word matches anywhere inside a word and accents and case do not matter. No stemming. Results are one per entry, newest first, at most 50.
+Substring search (D-46): `entries.search_text` holds the lower-cased, unaccented text of the entry and all its transcripts, with a `pg_trgm` GIN index. `POST /api/v1/search` (words in the body, never in a URL) splits the query on whitespace, normalizes each word the same way, and ANDs one parameterized `LIKE '%word%'` per word (`\`, `%`, `_` escaped), so a word matches anywhere inside a word and accents and case do not matter. No stemming. Words under 3 characters cannot use the trigram index and scan the user's entries, which is fine at household scale. Results are one per entry, newest first, at most 50.
 Snippets: the database cuts a 230 character window around the first match (typed text before transcripts) and returns it together with a per-character normalized copy, because `unaccent` can change lengths (ß becomes ss). The server finds every word in the normalized copy, maps each match back to the original characters through that per-character copy and marks them, so accents show as written. It escapes everything but `<mark>`.
 
 ## 8. AI and MCP (M3, opt-in)

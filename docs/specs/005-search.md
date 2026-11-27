@@ -18,7 +18,7 @@ In (screen names from `design/alkony/m1.html`):
   and when a recording is deleted. A GIN trigram index serves the `LIKE` matching. The migration creates `pg_trgm`, fills the
   column for existing rows and drops the old full-text column and functions.
 - The query is split on whitespace; an entry matches when every word appears somewhere in its text or transcripts.
-  `%`, `_` and `\` are plain characters. Matches are marked exactly where the words were found, with the accents as written.
+  Double quotes are ignored. `%`, `_` and `\` are plain characters. Matches are marked exactly where the words were found, with the accents as written.
 - API: `POST /api/v1/search` with the JSON body `{ "q": "…" }` → `{ total, results: [{ entryId, entryDate, createdAt, source, snippet }] }`,
   max 50 results. It is a POST on purpose: search words are journal text and must not appear in URLs, which reverse proxies
   write to their access logs (decision: owner, review of PR #45). `total` counts every match, the results are the newest 50.

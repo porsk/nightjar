@@ -45,7 +45,7 @@ Hungarian and English (recordings and UI) today, more languages possible later.
 | Offline transcription with Whisper, Hungarian and English, with live status | ✅ |
 | Editable transcripts and audio playback | ✅ |
 | Timeline and Home | ✅ |
-| Search across entries and transcripts, with Hungarian word endings and accent-free matching | ✅ |
+| Search across entries and transcripts, matching anywhere inside words, accents and case optional | ✅ |
 | Settings, Hungarian and English UI | ✅ |
 | Installable app (PWA) | ✅ |
 | Logs, health checks, Prometheus metrics, backup guide | ✅ |

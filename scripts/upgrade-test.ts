@@ -189,7 +189,13 @@ try {
       `entries changed by the upgrade\nbefore: ${JSON.stringify(before)}\nafter: ${JSON.stringify(after)}`,
     )
   }
-  console.log(`ok: ${String(after.length)} entries intact after the upgrade`)
+  const found = (
+    await api('/api/v1/search', { method: 'POST', body: { q: 'zturo' }, cookie: upgradedCookie })
+  ).json as { total: number; results: { snippet: string }[] }
+  if (found.total !== 1 || !found.results[0]?.snippet.includes('<mark>ztűrő</mark>')) {
+    throw new Error(`search after the upgrade did not find the old entry: ${JSON.stringify(found)}`)
+  }
+  console.log(`ok: ${String(after.length)} entries intact and searchable after the upgrade`)
 } catch (error) {
   console.error(error)
   saveLogs()

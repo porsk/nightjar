@@ -45,8 +45,9 @@ function findSpans(text: string, normalized: readonly string[], words: readonly 
     if (word === '') continue
     for (let at = flat.indexOf(word); at >= 0; at = flat.indexOf(word, at + 1)) {
       const first = owner[at]
-      const last = owner[at + word.length - 1]
+      let last = owner[at + word.length - 1]
       if (first === undefined || last === undefined) continue
+      while (normalized[last + 1] === '') last += 1
       found.push({ start: offsets[first] ?? 0, end: offsets[last + 1] ?? text.length })
     }
   }

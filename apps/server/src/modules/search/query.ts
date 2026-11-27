@@ -21,7 +21,8 @@ interface Row extends Record<string, unknown> {
 const likeEscape = (word: string) => word.replace(/[\\%_]/g, '\\$&')
 
 /** The words of a query, without quotes, one per run of non-space characters. */
-const splitWords = (terms: string) => terms.replaceAll('"', '').split(/\s+/).filter(Boolean)
+const splitWords = (terms: string) =>
+  terms.toWellFormed().replaceAll('"', '').replaceAll('\u0000', '').split(/\s+/).filter(Boolean)
 
 /** The words as the database stores text: lower case and without accents. */
 async function normalizeWords({ db }: Database, words: string[]) {
@@ -63,10 +64,10 @@ export async function searchEntries(
       LIMIT ${searchMaxResults}
     ),
     located AS (
-      SELECT hits.*, picked.source, picked.text, picked.found_at
+      SELECT hits.*, picked.source, picked.text, picked.found_at, picked.normalized_length
       FROM hits
       CROSS JOIN LATERAL (
-        SELECT candidate.source, candidate.text, found.hit_at AS found_at
+        SELECT candidate.source, candidate.text, found.hit_at AS found_at, found.normalized_length
         FROM (
           SELECT 0 AS position, NULL::timestamptz AS spoken_at, 'text' AS source,
                  hits.body_md AS text
@@ -79,8 +80,9 @@ export async function searchEntries(
           WHERE recordings.entry_id = hits.id AND recordings.user_id = ${userId}
         ) AS candidate
         CROSS JOIN LATERAL (
-          SELECT coalesce(min(strpos(normal.text, word)) FILTER (WHERE strpos(normal.text, word) > 0), 0) AS hit_at
-          FROM (SELECT nightjar_search_text(candidate.text) AS text) AS normal,
+          SELECT coalesce(min(strpos(normal.text, word)) FILTER (WHERE strpos(normal.text, word) > 0), 0) AS hit_at,
+                 max(length(normal.text)) AS normalized_length
+          FROM (SELECT nightjar_search_text(candidate.text) AS text OFFSET 0) AS normal,
                jsonb_array_elements_text(${wordsJson}::jsonb) AS word
         ) AS found
         ORDER BY found.hit_at > 0 DESC, candidate.text <> '' DESC, candidate.position, candidate.spoken_at
@@ -94,14 +96,16 @@ export async function searchEntries(
     ),
     windowed AS (
       SELECT cut.*,
-             cut.normalized_before
-               - greatest(0, length(nightjar_search_text(left(cut.text, cut.normalized_before))) - cut.normalized_before)
-               AS original_before
+             CASE WHEN cut.normalized_length = length(cut.text) THEN cut.normalized_before
+                  ELSE nightjar_original_offset(cut.text, cut.normalized_before) END AS original_before
       FROM cut
     ),
     snippets AS (
       SELECT windowed.*,
-             greatest(1, windowed.original_before + 1 - ${contextBefore}) AS window_start
+             least(
+               greatest(1, windowed.original_before + 1 - ${contextBefore}),
+               greatest(1, length(windowed.text) - ${windowLength} + 1)
+             ) AS window_start
       FROM windowed
     )
     SELECT snippets.id, snippets.entry_date, snippets.created_at, snippets.total, snippets.source,

@@ -68,6 +68,12 @@ describe('005-search: snippets', () => {
     expect(snippet('😀 éjjel 😀 jel', ['jel'])).toBe('😀 éj<mark>jel</mark> 😀 <mark>jel</mark>')
   })
 
+  it('AC-15: a mark includes the combining accents that follow the match', () => {
+    const text = 'x e̋ls̋o y'
+    const normalized = Array.from(text).map((char) => (char === '̋' ? '' : char))
+    expect(buildSnippet(text, normalized, ['els'], whole)).toBe('x <mark>e̋ls̋</mark>o y')
+  })
+
   it('AC-16: marks every word and merges overlapping matches', () => {
     expect(snippet('Alpha in the text, omega in the voice', ['omega', 'alpha'])).toBe(
       '<mark>Alpha</mark> in the text, <mark>omega</mark> in the voice',
