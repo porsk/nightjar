@@ -56,6 +56,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-21 | Public demo instance: log in and try it, sample data, reset on a schedule | backlog. Keep sample data as a seed script and allow a demo flag later |
 | S-22 | Ready-made Grafana dashboard file in the repo | backlog (owner: good for later) |
 | S-23 | Admin "System" page: queue length, transcription speed, recent errors | backlog (owner: good for later) |
+| S-24 | Transcribe all recordings again in bulk (for example after switching to Large-v3) | suggested (not in spec 009) |
+| S-25 | Check the host's free RAM and warn before switching to a heavy model like Large-v3 | suggested (not in spec 009) |
 
 ## Decided
 
@@ -99,6 +101,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-36 | 11-26 | Spec 001 engineering calls: auth secret generated on first start and stored in `instance_settings`; `NIGHTJAR_TRUST_PROXY` is a hop count for reverse proxies (the proxy must keep the Host header); global 300/min per-IP limit, 10/min on sign-in and setup; fonts bundled; only sign-in, sign-out and get-session exposed, sign-up off; setup code stored as a hash in `instance_settings`; the wizard's transcription-on saves the flag, the download comes with 003 | Orchestrator, owner informed |
 | D-37 | 11-26 | Logo: the minimalist mockup bird (option A), `design/logo/nightjar.svg` | Owner pick |
 | D-46 | 11-27 | Search matches anywhere inside words (`pg_trgm`), no stemming; owner chose B over word-start matching on 2026-11-27. Replaces the full-text part of P-04 | Owner: "egy" found but not highlighted, "beje" found nothing in 0.2.0 |
+| D-47 | 11-27 | Second transcription model: Whisper large-v3 int8 (sherpa-onnx) next to turbo; turbo stays the default. Instance-wide, admin-only model list in Settings > Transcription: download, use, delete. Picking a model that is not downloaded downloads it, then makes it active; downloaded models are kept when switching; the active one can't be deleted. A job uses the model active when it starts, switching never interrupts a running job, one model in memory at a time. Spec 009 | Owner's 4-core / 8 GB box, own Hungarian clips: large-v3 ~18% WER vs turbo ~26%, but RTF ~2.7 vs 0.4 and peak RAM ~4.7 GB vs 2.1 GB |
+| D-48 | 11-27 | "Transcribe again" per recording (entry owner, recording menu) with the active model: confirm first if the transcript was edited by hand, the old transcript stays until the new one arrives and stays on failure. Every transcript keeps the id of the model that wrote it and the card shows it quietly (existing transcripts are turbo). Bulk re-transcribe and RAM checks are not in scope (S-24, S-25). Spec 009 | Owner: redo old recordings with the better model and compare |
 
 ## Proposed (approved together with the plan)
 
