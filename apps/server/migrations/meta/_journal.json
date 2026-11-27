@@ -50,6 +50,13 @@
       "when": 1795773107984,
       "tag": "0006_username_login",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795798494329,
+      "tag": "0007_search_partial",
+      "breakpoints": true
     }
   ]
 }

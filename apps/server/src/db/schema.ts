@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm'
 import {
   boolean,
   check,
-  customType,
   date,
   index,
   integer,
@@ -11,8 +10,6 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core'
-
-const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' })
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 const updatedAt = () =>
@@ -105,9 +102,7 @@ export const entries = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     entryDate: date('entry_date', { mode: 'string' }).notNull(),
     bodyMd: text('body_md').notNull().default(''),
-    searchVector: tsvector('search_vector')
-      .notNull()
-      .default(sql`''`),
+    searchText: text('search_text').notNull().default(''),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -118,7 +113,7 @@ export const entries = pgTable(
       table.createdAt.desc(),
       table.id,
     ),
-    index('entries_search_idx').using('gin', table.searchVector),
+    index('entries_search_idx').using('gin', table.searchText.op('gin_trgm_ops')),
   ],
 )
 

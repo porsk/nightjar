@@ -115,13 +115,14 @@ describe('005-search: search API against a real Postgres', () => {
     return recording.id
   }
 
-  it('AC-1: word endings do not matter in Hungarian', async () => {
+  it('AC-1: a word start finds every ending in Hungarian', async () => {
     const app = await launch()
     const a = await addEntry(app.alice.id, 'Holnap kezdődik a költözésről szóló beszélgetés.')
     const b = await addEntry(app.alice.id, 'A költözéshez dobozok kellenek.')
     const c = await addEntry(app.alice.id, 'Megint a költözés jár a fejemben.')
     await addEntry(app.alice.id, 'Semmi köze hozzá.')
     expect(await app.ids(app.alice, 'költözés')).toEqual([a, b, c].sort())
+    expect(await app.ids(app.alice, 'költöz')).toEqual([a, b, c].sort())
   })
 
   it('AC-2: accents in the query are optional', async () => {
@@ -129,18 +130,21 @@ describe('005-search: search API against a real Postgres', () => {
     const move = await addEntry(app.alice.id, 'A költözés napja')
     const diary = await addEntry(app.alice.id, 'Írtam a naplóba')
     expect(await app.ids(app.alice, 'koltozes')).toEqual([move])
+    expect(await app.ids(app.alice, 'KOLTOZES')).toEqual([move])
+    expect(await app.ids(app.alice, 'KÖLTÖZÉS')).toEqual([move])
     expect(await app.ids(app.alice, 'naplo')).toEqual([diary])
     expect(await app.ids(app.alice, 'napló')).toEqual([diary])
     const stretched = await addEntry(app.alice.id, 'Hosszú költözésről beszéltünk')
     expect(await app.ids(app.alice, 'koltozes')).toEqual([move, stretched].sort())
   })
 
-  it('AC-3: word endings do not matter in English', async () => {
+  it('AC-3: a word start finds every ending in English', async () => {
     const app = await launch()
     const walked = await addEntry(app.alice.id, 'I walked by the river')
     const walks = await addEntry(app.alice.id, 'She walks to work')
+    const walking = await addEntry(app.alice.id, 'Walking home')
     await addEntry(app.alice.id, 'Sat at home')
-    expect(await app.ids(app.alice, 'walking')).toEqual([walked, walks].sort())
+    expect(await app.ids(app.alice, 'walk')).toEqual([walked, walks, walking].sort())
   })
 
   it('AC-4: says whether the match is in the typed text or in a transcript', async () => {
@@ -209,11 +213,9 @@ describe('005-search: search API against a real Postgres', () => {
   it('AC-5: the next search finds rows the index was rebuilt for, as the migration does for old rows', async () => {
     const app = await launch()
     const id = await addEntry(app.alice.id, 'Old entry about a lighthouse')
-    await database.db.execute(sql`update entries set search_vector = ''`)
+    await database.db.execute(sql`update entries set search_text = ''`)
     expect(await app.ids(app.alice, 'lighthouse')).toEqual([])
-    await database.db.execute(
-      sql`update entries set search_vector = entry_search_vector(id, body_md)`,
-    )
+    await database.db.execute(sql`update entries set search_text = entry_search_text(id, body_md)`)
     expect(await app.ids(app.alice, 'lighthouse')).toEqual([id])
   })
 
@@ -253,10 +255,8 @@ describe('005-search: search API against a real Postgres', () => {
   it('AC-5: the migration backfill copes with rows that hold look-alike apostrophes', async () => {
     const app = await launch()
     const id = await addEntry(app.alice.id, `Hawaiʻi ${lookAlikes.join(' ')} lighthouse`)
-    await database.db.execute(sql`update entries set search_vector = ''`)
-    await database.db.execute(
-      sql`update entries set search_vector = entry_search_vector(id, body_md)`,
-    )
+    await database.db.execute(sql`update entries set search_text = ''`)
+    await database.db.execute(sql`update entries set search_text = entry_search_text(id, body_md)`)
     expect(await app.ids(app.alice, 'lighthouse')).toEqual([id])
   })
 
@@ -278,9 +278,21 @@ describe('005-search: search API against a real Postgres', () => {
     }
   })
 
-  it('AC-6: one card per entry, ranked, then newest first, at most 50, with the full count', async () => {
+  it('AC-6: 20 short words in 100 KB entries still answer in time', async () => {
     const app = await launch()
-    const strong = await addEntry(app.alice.id, 'owl owl owl owl owl', {
+    const words = ['szél', 'folyó', 'reggel', 'költözés', 'napló', 'walk', 'river', 'dobozok']
+    const filler = Array.from({ length: 7_500 }, (_, at) => words[at % words.length]).join(' ')
+    for (let at = 0; at < 50; at += 1) await addEntry(app.alice.id, `${filler} heron`)
+    const query = 'sz zé fo ly re gg ko lt na pl wa lk ri iv do bo oz el er ok'
+    const started = performance.now()
+    const found = await app.search(app.alice, query)
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(found.results).toHaveLength(50)
+  })
+
+  it('AC-6: one card per entry, newest first, at most 50, with the full count', async () => {
+    const app = await launch()
+    await addEntry(app.alice.id, 'owl owl owl owl owl', {
       entryDate: '2026-01-01',
       createdAt: '2026-01-01T10:00:00Z',
     })
@@ -298,17 +310,26 @@ describe('005-search: search API against a real Postgres', () => {
     expect(found.total).toBe(60)
     expect(found.results).toHaveLength(50)
     expect(new Set(found.results.map((hit) => hit.entryId)).size).toBe(50)
-    expect(found.results[0]?.entryId).toBe(strong)
-    const rest = found.results.slice(1)
-    const sortedNewestFirst = [...rest].sort(
+    const sortedNewestFirst = [...found.results].sort(
       (a, b) => b.entryDate.localeCompare(a.entryDate) || b.createdAt.localeCompare(a.createdAt),
     )
-    expect(rest.map((hit) => hit.entryId)).toEqual(sortedNewestFirst.map((hit) => hit.entryId))
-    expect(found.results[0]).toMatchObject({
-      entryDate: '2026-01-01',
-      createdAt: '2026-01-01T10:00:00.000Z',
-      source: 'text',
+    expect(found.results.map((hit) => hit.entryId)).toEqual(
+      sortedNewestFirst.map((hit) => hit.entryId),
+    )
+    expect(found.results[0]?.entryDate).toBe('2026-02-28')
+    expect(found.results.every((hit) => hit.source === 'text')).toBe(true)
+  })
+
+  it('AC-6: the same day is ordered by created time, newest first', async () => {
+    const app = await launch()
+    const early = await addEntry(app.alice.id, 'heron at dawn', {
+      createdAt: '2026-11-26T06:00:00Z',
     })
+    const late = await addEntry(app.alice.id, 'heron at dusk', {
+      createdAt: '2026-11-26T20:00:00Z',
+    })
+    const found = await app.search(app.alice, 'heron')
+    expect(found.results.map((hit) => hit.entryId)).toEqual([late, early])
   })
 
   it('AC-6: the snippet marks matches and escapes everything else', async () => {
@@ -324,7 +345,7 @@ describe('005-search: search API against a real Postgres', () => {
     const app = await launch()
     await addEntry(app.alice.id, 'Annával a költözésről beszélgettünk')
     const found = await app.search(app.alice, 'koltozes')
-    expect(found.results[0]?.snippet).toBe('Annával a <mark>költözésről</mark> beszélgettünk')
+    expect(found.results[0]?.snippet).toBe('Annával a <mark>költözés</mark>ről beszélgettünk')
   })
 
   it('AC-7: rejects a missing query with 400 and finds nothing for an unknown word', async () => {
@@ -366,12 +387,105 @@ describe('005-search: search API against a real Postgres', () => {
       ...lookAlikes,
       ...lookAlikes.map((char) => `a${char}b & x`),
       'Hawaiʻi',
+      '%',
+      '_',
+      '%%',
+      '\\%',
+      'a_b',
+      '100%',
+      '   ',
+      'a\ud800b',
+      'a\u0000b',
+      '\u0000',
     ]
     for (const query of odd) {
       const response = await app.call(app.alice, 'POST', '/api/v1/search', { q: query })
       expect(response.statusCode, query).toBe(200)
       expect(response.json<Found>().results, query).toBeInstanceOf(Array)
     }
+  })
+
+  it('AC-10: %, _ and a backslash match literally, never as wildcards', async () => {
+    const app = await launch()
+    const percent = await addEntry(app.alice.id, 'Saved 100% of it')
+    const under = await addEntry(app.alice.id, 'the snake_case name')
+    const slash = await addEntry(app.alice.id, 'path C:\\temp here')
+    await addEntry(app.alice.id, 'Saved 100 of it, the snakeXcase name')
+    expect(await app.ids(app.alice, '%')).toEqual([percent])
+    expect(await app.ids(app.alice, '100%')).toEqual([percent])
+    expect(await app.ids(app.alice, 'snake_case')).toEqual([under])
+    expect(await app.ids(app.alice, '_')).toEqual([under])
+    expect(await app.ids(app.alice, '\\')).toEqual([slash])
+    expect(await app.ids(app.alice, '%%')).toEqual([])
+  })
+
+  it('AC-14: finds a word from the middle, accents and case aside', async () => {
+    const app = await launch()
+    const hello = await addEntry(app.alice.id, 'Hello, ez egy első bejegyzés.')
+    const birthday = await addEntry(app.alice.id, 'Jó születésnap volt')
+    await addEntry(app.alice.id, 'Semmi köze hozzá.')
+    for (const query of ['beje', 'jegy', 'egyz', 'BEJEGYZÉS', 'elso bejegyzes']) {
+      expect(await app.ids(app.alice, query), query).toEqual([hello])
+    }
+    expect(await app.ids(app.alice, 'nap')).toEqual([birthday])
+  })
+
+  it('AC-15: marks every occurrence of the word, also inside a longer word', async () => {
+    const app = await launch()
+    await addEntry(app.alice.id, 'Hello, ez egy első bejegyzés.')
+    const found = await app.search(app.alice, 'egy')
+    expect(found.results[0]?.snippet).toBe(
+      'Hello, ez <mark>egy</mark> első bej<mark>egy</mark>zés.',
+    )
+    const accented = await app.search(app.alice, 'elso')
+    expect(accented.results[0]?.snippet).toBe('Hello, ez egy <mark>első</mark> bejegyzés.')
+  })
+
+  it('AC-15: marks the right characters after text where unaccent changes the length', async () => {
+    const app = await launch()
+    const filler = 'Die Straße und Æther '.repeat(30)
+    await addEntry(app.alice.id, `${filler}und dann der Hirsch am Waldrand ${filler}`)
+    const found = await app.search(app.alice, 'hirsch')
+    expect(found.results[0]?.snippet).toContain('der <mark>Hirsch</mark> am Waldrand')
+  })
+
+  it('AC-15: finds the window when unaccent makes the text longer before the match', async () => {
+    const app = await launch()
+    await addEntry(app.alice.id, '„Jó” mondta… '.repeat(60) + 'aztán hazamentünk a kutyával')
+    const found = await app.search(app.alice, 'kutya')
+    expect(found.results[0]?.snippet).toContain('<mark>kutyá</mark>val')
+  })
+
+  it('AC-15: finds the window when combining accents shrink to nothing before the match', async () => {
+    const app = await launch()
+    const filler = 'Ma este első alkalommal írtam a naplóba, és örültem. '
+      .normalize('NFD')
+      .repeat(30)
+    await addEntry(app.alice.id, `${filler}Holnap jön Zsuzsa.`)
+    const found = await app.search(app.alice, 'zsuzsa')
+    expect(found.results[0]?.snippet).toContain('<mark>Zsuzsa</mark>')
+  })
+
+  it('AC-16: every word must be there, in any order, and each one is marked', async () => {
+    const app = await launch()
+    const both = await addEntry(app.alice.id, 'Zsuzsa hozott egy lámpát a költözéshez')
+    await addEntry(app.alice.id, 'Csak lámpa volt itt')
+    await addEntry(app.alice.id, 'Csak Zsuzsa volt itt')
+    expect(await app.ids(app.alice, 'zsuzsa lampa')).toEqual([both])
+    expect(await app.ids(app.alice, 'lámpát   ZSUZSA')).toEqual([both])
+    expect(await app.ids(app.alice, 'zsuzsa nincsilyen')).toEqual([])
+    const found = await app.search(app.alice, 'költöz zsuzsa')
+    expect(found.results[0]?.snippet).toBe(
+      '<mark>Zsuzsa</mark> hozott egy lámpát a <mark>költöz</mark>éshez',
+    )
+  })
+
+  it('AC-16: the words may be spread over the typed text and a transcript', async () => {
+    const app = await launch()
+    const id = await addEntry(app.alice.id, 'Alpha in the text')
+    await addTranscript(app.alice.id, id, 'and omega in the voice')
+    await addEntry(app.alice.id, 'Only alpha here')
+    expect(await app.ids(app.alice, 'omega alpha')).toEqual([id])
   })
 
   it('AC-12: the search term and the journal text never reach the logs', async () => {

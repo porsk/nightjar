@@ -98,6 +98,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-35 | 11-26 | M1 build order with parallel rounds: 001, then a small fix so each e2e run picks its own free ports, then 002 ∥ 006, 003 ∥ 004, 005 ∥ 008. Each spec its own worktree, PR, review, merge | Owner OK |
 | D-36 | 11-26 | Spec 001 engineering calls: auth secret generated on first start and stored in `instance_settings`; `NIGHTJAR_TRUST_PROXY` is a hop count for reverse proxies (the proxy must keep the Host header); global 300/min per-IP limit, 10/min on sign-in and setup; fonts bundled; only sign-in, sign-out and get-session exposed, sign-up off; setup code stored as a hash in `instance_settings`; the wizard's transcription-on saves the flag, the download comes with 003 | Orchestrator, owner informed |
 | D-37 | 11-26 | Logo: the minimalist mockup bird (option A), `design/logo/nightjar.svg` | Owner pick |
+| D-46 | 11-27 | Search matches anywhere inside words (`pg_trgm`), no stemming; owner chose B over word-start matching on 2026-11-27. Replaces the full-text part of P-04 | Owner: "egy" found but not highlighted, "beje" found nothing in 0.2.0 |
 
 ## Proposed (approved together with the plan)
 
@@ -106,7 +107,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | P-01 | One Node process (Fastify + pg-boss jobs) + Postgres 19, one Docker image | Simplest thing that works for a household. Heavy work runs in a child process |
 | P-02 | Fastify + Zod, schemas shared with the web app | Light, fast, one source of truth for types |
 | P-03 | React + Vite PWA, React Router, TanStack Query | No SSR needed behind a login, PWA is simpler as an SPA |
-| P-04 | Postgres full-text search with `hungarian`/`english` + `unaccent` | Hungarian stemming built in, no extra search service |
+| P-04 | Postgres search with `pg_trgm` + `unaccent` (substring matching, D-46) | No extra search service |
 | P-05 | Speech recognition: decided after the M0 eval (O-5). Leading candidate: sherpa-onnx in Node (free, offline) | Avoids Python at runtime. Not locked in until the owner picks
 | P-06 | Drizzle ORM, Better Auth | Typed SQL without magic; auth we don't write ourselves |
 | P-07 | AI: Claude (default `claude-opus-5-5`), Ollama, or off. The admin sets provider and API key in Settings, the key is stored encrypted (D-24) | Easier than env vars for the owner |

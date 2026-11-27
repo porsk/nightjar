@@ -13,7 +13,7 @@ Postgres, or Playwright e2e). Transcription is faked in normal tests; the real m
 | [002 Text entries](002-text-entries.md) | Writer with autosave, plain Markdown (rendered when reading, no raw HTML), entry date dialog, edit, delete with files | 13 | e2e: write → reload → text kept; API: 23:30 UTC = next day in Budapest |
 | [003 Voice entries](003-voice-entries.md) | Recorder, audio upload, background transcription with live status, edit transcript, retry, confirm before discarding, transcription off by default + model download with progress + "transcribe old recordings", one job at a time, model in memory only while working | 31 | e2e: HU and EN clips through the fake mic → "Átírás folyamatban…" → transcript appears |
 | [004 Timeline](004-timeline.md) | Timeline by day with badges and infinite scroll, Home with today's entries, tab bar / sidebar | 12 | API: 75 entries paged with no gaps or duplicates; e2e: time zone switch keeps the day |
-| [005 Search](005-search.md) | Full-text search over text + transcripts, Hungarian and English word endings, accents optional, highlighted snippets | 12 | API on real Postgres: "költözés" finds "költözésről", "naplo" finds "napló" |
+| [005 Search](005-search.md) | Substring search over text + transcripts, matches inside words, accents and case optional, highlighted snippets | 16 | API on real Postgres: "költöz" finds "költözésről", "naplo" finds "napló" |
 | [006 Settings + HU/EN](006-settings.md) | UI language (English default), default recording language, time zone, account; every string in `hu` + `en`; system light/dark; installable PWA | 15 | e2e: walk every screen in `en`, no Hungarian text left (and the other way round) |
 | [007 Logs, health, metrics](007-observability.md) | JSON logs with redaction, `/healthz`, `/readyz`, migrations on start, Prometheus `/metrics` on a separate internal port | 9 | API: test-only routes carry marker text through every log path; each other spec repeats the check for its real flows |
 | [008 Backup guide](008-backup-guide.md) | `docs/backup.md`: back up, restore, before upgrading, Postgres major upgrade | 4 | nightly: run the guide's commands, wipe, restore, entry + audio are back |
@@ -74,7 +74,7 @@ Audio: `/data/media/<user_id>/recordings/`. Model: `/data/models/`.
 | 2 | Journals in M1 | A: none; the M2 migration creates a default journal per user |
 | 3 | Entry title | A: no title in M1 |
 | 4 | Language per recording | A: the recorder uses your default recording language |
-| 5 | Search stemming | A: index and search with both Hungarian and English |
+| 5 | Search stemming | A: index and search with both Hungarian and English (replaced by D-46: no stemming, matches anywhere inside words) |
 | 6 | Home greeting | A: by time of day |
 | 7 | Discard on the recorder | B: confirm dialog (003 AC-4) |
 | 8 | "Most nem" on the backlog question | A: hides it until Settings is opened again |

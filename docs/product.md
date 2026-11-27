@@ -76,7 +76,7 @@ audio, and the entry page shows typed text and recordings together. Search and A
 | Feature | Milestone |
 |---|---|
 | Timeline (grouped by day, infinite scroll) | M1 |
-| Full-text search across text + transcripts, Hungarian- and English-aware (word endings, accents) | M1 |
+| Search across text + transcripts: matches anywhere inside words, accents and case optional | M1 |
 | Mood | M2 |
 | Manual tags + filters (tag, mood, journal, date range, has audio/photos) | M2 |
 | Multiple journals, favourites | M2 |

@@ -53,7 +53,9 @@ test.describe('005-search: search screen', () => {
     await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible()
   })
 
-  test('AC-1: searching "költözés" shows every form of the word, highlighted', async ({ page }) => {
+  test('AC-1: searching "költözés" finds every form of the word and highlights the match', async ({
+    page,
+  }) => {
     await seedTimelineEntry({
       bodyMd: 'Annával a költözésről beszélgettünk.',
       entryDate: '2026-11-14',
@@ -73,7 +75,7 @@ test.describe('005-search: search screen', () => {
     await searchBox(page).fill('költözés')
     await expect(results(page)).toHaveCount(2)
     await expect(page.getByRole('status')).toHaveText('2 results')
-    await expect(results(page).first().locator('mark')).toHaveText('költözéshez')
+    await expect(results(page).first().locator('mark')).toHaveText('költözés')
     await expect(results(page).first()).toContainText('Nov 23, 2026')
     await expect(results(page).first()).toContainText('text')
     await expectLayout(page, 'search')

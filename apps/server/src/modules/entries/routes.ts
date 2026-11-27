@@ -33,7 +33,7 @@ const entryColumns = {
   updatedAt: entries.updatedAt,
 }
 
-type EntryRow = Omit<typeof entries.$inferSelect, 'searchVector'>
+type EntryRow = Omit<typeof entries.$inferSelect, 'searchText'>
 
 const toEntry = (row: EntryRow): Entry =>
   entryResponseSchema.parse({
