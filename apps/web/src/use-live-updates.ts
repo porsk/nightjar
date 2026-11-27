@@ -15,17 +15,16 @@ export function useLiveUpdates() {
     let retryMs = firstRetryMs
     let connectedBefore = false
     const refresh = () => {
-      void queryClient.invalidateQueries({ queryKey: ['timeline'] })
-      void queryClient.invalidateQueries({ queryKey: ['entries'] })
+      void queryClient.invalidateQueries({
+        predicate: ({ queryKey }) => queryKey[0] === 'timeline' || queryKey[0] === 'entries',
+      })
     }
     const connect = () => {
       const current = new EventSource('/api/v1/events')
       source = current
       current.addEventListener('recording.updated', refresh)
       current.addEventListener('model.updated', (message) => {
-        const parsed = liveEventSchema.safeParse(
-          JSON.parse((message as MessageEvent<string>).data),
-        )
+        const parsed = liveEventSchema.safeParse(JSON.parse((message as MessageEvent<string>).data))
         if (!parsed.success || parsed.data.type !== 'model.updated') return
         const { state, downloadedBytes, totalBytes } = parsed.data
         queryClient.setQueryData(transcriptionQuery.queryKey, (previous) =>
