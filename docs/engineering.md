@@ -109,6 +109,7 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 - **Layout checks:** every UI spec calls `expectLayout(page, 'screen name')` from `e2e/support/layout.ts` on each screen state at 390 and 1280 px width. It fails on sideways scroll, visible content outside the viewport, and overlapping buttons, links or inputs.
 - **Side-by-side review:** after each round of screens, take Hungarian screenshots from the Docker image, write the differences in `design/review-notes/<round>.json` and run `node scripts/review-page.ts <notes> <mockup-dir> <real-dir>`. It builds `design/review/<round>.html` (git-ignored, too big to commit) for the owner.
 - **Upgrade test (D-29):** `docker build -f docker/Dockerfile -t nightjar-local:test . && node scripts/upgrade-test.ts nightjar-local:test`.
+  The script seeds data through the *previous release* API. When a PR changes setup or login, keep the seeding on the old shape until that change is released, then update the script right after the release (or CI on `main` goes red).
   It needs Docker and the `gh` CLI (finds the latest release). Pass a second argument to use a specific previous image. Logs land in `upgrade-logs/` on failure.
 - **Backup test (spec 008):** `docker build -f docker/Dockerfile -t nightjar-backup:test . && BACKUP_TEST_IMAGE=nightjar-backup:test pnpm --filter @nightjar/server test:backup`.
   It runs the `sh backup` and `sh restore` blocks of `docs/backup.md` as written against a copy of `docker/compose.yaml`, so the guide and the test cannot drift.
