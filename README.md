@@ -62,7 +62,7 @@ docker compose up -d
 
 Until the first release exists there is no `latest` tag. Until then, change the image in `docker/compose.yaml` to `porsk/nightjar:edge`.
 
-Then open http://localhost:3000. Putting it on a domain behind Traefik and Cloudflare? See the [self-hosting guide](docs/self-hosting.md). Data lives in the `nightjar-data` and `nightjar-db` volumes.
+Then open http://localhost:3000. Putting it on a domain behind Traefik and Cloudflare? See the [self-hosting guide](docs/self-hosting.md). Data lives in the `nightjar-data` and `nightjar-db` volumes. Back them up: see the [backup guide](docs/backup.md).
 
 ## Docs
 

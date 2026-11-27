@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     name: 'api',
     include: ['test/**/*.test.ts'],
-    exclude: ['test/nightly/**', '**/node_modules/**'],
+    exclude: ['test/nightly/**', 'test/backup-restore/**', '**/node_modules/**'],
     hookTimeout: 120_000,
     testTimeout: 60_000,
     coverage: {

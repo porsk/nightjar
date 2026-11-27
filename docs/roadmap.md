@@ -47,7 +47,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [ ] 005 Search (Hungarian + English aware)
 - [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
 - [x] 007 Logs, health, metrics
-- [ ] 008 Backup guide (docs only: `pg_dump` + `/data` volume)
+- [x] 008 Backup guide (docs only: `pg_dump` + `/data` volume)
 - [x] CI upgrade test: previous release to new image on the same database (right after the first release, D-29)
 
 Done when: the owner journals daily for a week on phone + desktop.
