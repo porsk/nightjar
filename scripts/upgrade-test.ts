@@ -48,9 +48,14 @@ function startApp(name: string, image: string) {
   )
 }
 
-async function waitFor(what: string, check: () => Promise<boolean>) {
+async function waitFor(what: string, check: () => boolean | Promise<boolean>) {
   for (let attempt = 0; attempt < 90; attempt++) {
-    if (await check().catch(() => false)) return
+    if (
+      await Promise.resolve()
+        .then(check)
+        .catch(() => false)
+    )
+      return
     await new Promise((resolve) => setTimeout(resolve, 1000))
   }
   throw new Error(`timed out waiting for ${what}`)
@@ -135,7 +140,7 @@ try {
   )
   await waitFor(
     'postgres',
-    async () => docker('inspect', '-f', '{{.State.Health.Status}}', `${run}-db`) === 'healthy',
+    () => docker('inspect', '-f', '{{.State.Health.Status}}', `${run}-db`) === 'healthy',
   )
 
   startApp(`${run}-old`, oldImage)
