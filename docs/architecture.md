@@ -112,14 +112,14 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 |---|---|---|
 | `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
 | `instance_settings` | id (always 1), `transcription_enabled` (default false), `auth_secret`, `setup_code_hash`, updated_at | The only instance-wide table, so no `user_id`. `auth_secret` is made on first start and signs session cookies. `setup_code_hash` holds the hash of the current setup code until the first account exists |
-| `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector, added by the search spec 005), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
+| `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector, kept by database triggers), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
 | `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
 | `transcripts` | id (uuid), user_id, recording_id (unique), `model`, `language` (`hu`/`en`, detected), `text`, `is_user_edited`, created_at, updated_at | One per recording. User edits are never overwritten |
 
 - Indexes: `entries (user_id, entry_date desc, created_at desc, id)`, GIN on `entries.search_vector`,
   `recordings (entry_id)`, `recordings (status)`.
 - Every query filters by the signed-in user's `user_id`. Another user's row answers 404, never 403, so ids don't leak.
-- `entries.search_vector` is rebuilt in the same transaction whenever the body or a transcript of the entry changes.
+- `entries.search_vector` is rebuilt by database triggers in the same transaction whenever the body of the entry changes, a transcript is created, edited or deleted, or a recording is deleted. The migration creates the `unaccent` extension and fills the column for existing rows.
 - Files: `/data/media/<user_id>/recordings/<recording_id>.<ext>` (original upload, as is) and
   `/data/models/<model_id>/`. Only the storage module builds these paths.
 - Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
@@ -158,8 +158,9 @@ int8 (D-20); the final pick comes after the owner's own clips.
 
 ## 7. Search
 
-Postgres full-text search: `search_vector` per entry from title + text + transcripts (+ tags), built with the `hungarian` or `english` configuration (stemming: "kutyámmal" finds "kutya") plus
-`unaccent` ("naplo" finds "napló"). Ranked results with highlighted snippets.
+Postgres full-text search: `search_vector` per entry from text + transcripts, built with both the `hungarian` and the `english` configuration (stemming: "költözésről" finds "költözés", "walked" finds "walking"). Accents are optional:
+the vector holds each stem with and without accents, and the query is built the same way ("naplo" finds "napló"). `GET /api/v1/search?q=` uses `websearch_to_tsquery`, so odd input never fails. Results are ranked,
+one per entry, at most 50. Snippets come from `ts_headline` over the unaccented text; the server moves the marks onto the original text and escapes everything but `<mark>`.
 
 ## 8. AI and MCP (M3, opt-in)
 

@@ -1,6 +1,6 @@
 # 005 Search
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why

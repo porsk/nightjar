@@ -17,6 +17,7 @@ export default defineConfig({
         'src/modules/entries/*.ts',
         'src/modules/events/*.ts',
         'src/modules/recordings/*.ts',
+        'src/modules/search/*.ts',
         'src/modules/transcription/*.ts',
         'src/events.ts',
         'src/jobs.ts',

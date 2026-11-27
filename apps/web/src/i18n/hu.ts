@@ -92,6 +92,18 @@ export const hu = {
     off: 'Nincs átírva',
     failed: 'Nem sikerült',
   },
+  search: {
+    title: 'Keresés',
+    label: 'Keresés',
+    clear: 'Törlés',
+    count_one: '{{count}} találat',
+    count_other: '{{count}} találat',
+    source: { text: 'szöveg', transcript: 'átirat' },
+    empty: {
+      title: 'Nincs találat',
+      hint: 'Próbálj rövidebb vagy más szót. Az ékezetek nem számítanak.',
+    },
+  },
   a11y: {
     icon: {
       voice: 'Hangfelvétel',

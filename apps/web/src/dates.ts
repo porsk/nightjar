@@ -14,6 +14,10 @@ export const addDays = (day: string, amount: number) => {
 const format = (day: string, language: string, options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat(language, { ...options, timeZone: 'UTC' }).format(parseDay(day))
 
+/** "Nov 26, 2026" or "2026. nov. 26." */
+export const shortDate = (day: string, language: string) =>
+  format(day, language, { year: 'numeric', month: 'short', day: 'numeric' })
+
 /** "Thursday, November 26, 2026" */
 export const longDate = (day: string, language: string) =>
   formatDate(parseDay(day), language as Language, 'UTC')
