@@ -14,9 +14,9 @@
 [![Docker image size](https://img.shields.io/docker/image-size/porsk/nightjar/edge)](https://hub.docker.com/r/porsk/nightjar)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
-![Nightjar home screen, dark theme](https://raw.githubusercontent.com/porsk/nightjar/main/design/alkony/screenshots/readme-home-dark-1280.png)
+![Nightjar home screen, dark theme](https://raw.githubusercontent.com/porsk/nightjar/main/design/screenshots/home-dark-1280.png)
 
-*Design preview.*
+*Nightjar 0.2.0*
 
 - **Speak or type.** One tap to record in the browser, or just write. Hungarian and English.
 - **Transcribed offline on your server.** Whisper speech to text runs in your own container. No cloud needed.
@@ -28,8 +28,9 @@ The nightjar is a bird that wakes up at dusk and sings through the night, the ho
 over the day. A jar is where you keep good things safe, like your own words. *Verba volant, scripta manent*: what you
 say flies away, what you write stays. Nightjar keeps it, on your own server.
 
-> **Status: early development.** Nothing is usable yet. The app only shows a hello page so far. The screenshot above
-> is the approved design, not the running app. Follow the [roadmap](docs/roadmap.md).
+> **Status: early but usable.** Latest release is [0.2.0](https://github.com/porsk/nightjar/releases). It is pre-1.0,
+> so expect changes. Back up your data before you upgrade, see the [backup guide](docs/backup.md). Follow the
+> [roadmap](docs/roadmap.md).
 
 ## Features
 
@@ -38,11 +39,16 @@ Hungarian and English (recordings and UI) today, more languages possible later.
 
 | Feature | Status |
 |---|---|
-| Record in the browser, type, or upload an audio file | planned (M1) |
-| Offline transcription with Whisper, editable, Hungarian and English | planned (M1) |
-| Timeline and search that understands Hungarian word endings | planned (M1) |
-| Setup, login, settings, light and dark theme | planned (M1) |
-| Logs, health checks, Prometheus metrics | ✅ server side |
+| Setup and sign-in with a username | ✅ |
+| Text entries with Markdown | ✅ |
+| Record in the browser, or upload an audio file (up to 3 hours) | ✅ |
+| Offline transcription with Whisper, Hungarian and English, with live status | ✅ |
+| Editable transcripts and audio playback | ✅ |
+| Timeline and Home | ✅ |
+| Search across entries and transcripts, with Hungarian word endings and accent-free matching | ✅ |
+| Settings, Hungarian and English UI | ✅ |
+| Installable app (PWA) | ✅ |
+| Logs, health checks, Prometheus metrics, backup guide | ✅ |
 | Photos, mood, tags and filters | planned (M2) |
 | Multiple journals, favourites, calendar and gentle stats | planned (M2) |
 | Prompts and look-backs ("on this day") | planned (M2) |
@@ -52,7 +58,8 @@ Hungarian and English (recordings and UI) today, more languages possible later.
 
 ## Quick start
 
-You need Docker. Releases are published to Docker Hub as `porsk/nightjar` (`edge` is the latest main build).
+You need Docker. It runs fine on a small home server. Transcription needs about 2 GB of RAM while it works.
+Releases are published to Docker Hub as `porsk/nightjar`.
 
 ```
 cd docker
@@ -60,9 +67,15 @@ cp .env.example .env     # set POSTGRES_PASSWORD
 docker compose up -d
 ```
 
-Until the first release exists there is no `latest` tag. Until then, change the image in `docker/compose.yaml` to `porsk/nightjar:edge`.
+`docker/compose.yaml` uses `porsk/nightjar:latest`. To upgrade only when you choose, pin a version such as
+`porsk/nightjar:0.2.0`.
 
-Then open http://localhost:3000. Putting it on a domain behind Traefik and Cloudflare? See the [self-hosting guide](docs/self-hosting.md). Data lives in the `nightjar-data` and `nightjar-db` volumes. Back them up: see the [backup guide](docs/backup.md).
+1. Open http://localhost:3000.
+2. The first start prints a setup code. Get it with `docker compose logs nightjar`.
+3. Create your account, then turn on transcription in Settings. That downloads the speech model (about 560 MB) once.
+
+Putting it on a domain behind Traefik and Cloudflare? See the [self-hosting guide](docs/self-hosting.md). Data lives in
+the `nightjar-data` and `nightjar-db` volumes. Back them up: see the [backup guide](docs/backup.md).
 
 ## Docs
 
