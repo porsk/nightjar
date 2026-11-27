@@ -6,6 +6,6 @@ RUN apt-get update \
 WORKDIR /eval
 COPY package.json ./
 RUN pnpm install
-COPY run.ts score.ts ./
+COPY run.ts score.ts cloud.ts ./
 ENTRYPOINT ["node", "run.ts"]
 CMD ["public"]

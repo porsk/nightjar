@@ -4,9 +4,10 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import os from 'node:os';
 import { basename, extname, join } from 'node:path';
 import sherpa from 'sherpa-onnx-node';
+import { CLOUD_VENDORS, estimateCost, transcribeClip, type CloudVendor } from './cloud.ts';
 import { scoreClip, totals, type ClipScore, type Language } from './score.ts';
 
-type Clip = { id: string; language: Language; wavPath: string; reference: string };
+type Clip = { id: string; language: Language; wavPath: string; sourcePath?: string; reference: string };
 type Engine = {
   id: string;
   label: string;
@@ -14,8 +15,9 @@ type Engine = {
   languages?: Language[];
   downloadNote?: string;
   archiveUrl?: string;
-  modelDir: string;
-  config: (dir: string, language: Language) => object;
+  modelDir?: string;
+  config?: (dir: string, language: Language) => object;
+  cloud?: CloudVendor;
 };
 type ClipResult = {
   id: string;
@@ -25,6 +27,8 @@ type ClipResult = {
   audioSeconds: number;
   loopPieces: number;
   loopLeft: boolean;
+  cost?: number;
+  deleteProblems?: string[];
 };
 type RunResult = {
   engine: string;
@@ -34,6 +38,7 @@ type RunResult = {
   peakRamMb: number;
   clips: ClipResult[];
   vadClips: number;
+  currency?: string;
 };
 
 const CACHE = '.cache';
@@ -128,6 +133,9 @@ const ENGINES: Engine[] = [
   },
 ];
 
+const CLOUD_ENGINES: Engine[] = CLOUD_VENDORS.map((vendor) => ({ id: vendor.id, label: vendor.label, license: 'cloud', languages: ['hu', 'en'], cloud: vendor }));
+ENGINES.push(...CLOUD_ENGINES);
+
 const run = (command: string, args: string[]) => {
   const result = spawnSync(command, args, { stdio: ['ignore', 'inherit', 'inherit'] });
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed`);
@@ -213,7 +221,7 @@ const loadOwnClips = (): Clip[] =>
         if (!existsSync(referencePath)) throw new Error(`${dir}/${file}: missing ${name}.txt`);
         const wavPath = `${CACHE}/wav/own/${language}/${name}.wav`;
         convertToWav(`${dir}/${file}`, wavPath);
-        return { id: name, language, wavPath, reference: readFileSync(referencePath, 'utf8') };
+        return { id: name, language, wavPath, sourcePath: `${dir}/${file}`, reference: readFileSync(referencePath, 'utf8') };
       });
   });
 
@@ -321,7 +329,7 @@ const worker = (engineId: string, language: Language, clips: Clip[], variantId: 
   const variant = VARIANTS.find((candidate) => candidate.id === variantId)!;
   const whisper = engineId.startsWith('whisper');
   const loadStart = performance.now();
-  const recognizer = new sherpa.OfflineRecognizer(engine.config(`${CACHE}/models/${engine.modelDir}`, language));
+  const recognizer = new sherpa.OfflineRecognizer(engine.config!(`${CACHE}/models/${engine.modelDir}`, language));
   const loadSeconds = (performance.now() - loadStart) / 1000;
 
   let loopPieces = 0;
@@ -363,6 +371,36 @@ const worker = (engineId: string, language: Language, clips: Clip[], variantId: 
     clips: results,
     vadClips,
   };
+};
+
+/** Returns undefined when the vendor's key is missing, so the engine is skipped. */
+const runCloud = async (engine: Engine, language: Language, clips: Clip[]): Promise<RunResult | undefined> => {
+  const vendor = engine.cloud!;
+  const key = process.env[vendor.keyEnv];
+  if (!key) {
+    console.error(`skipping ${engine.id}: ${vendor.keyEnv} is not set (see README, "Cloud engines")`);
+    return undefined;
+  }
+  const results: ClipResult[] = [];
+  for (const [index, clip] of clips.entries()) {
+    console.error(`${engine.id} ${language} clip ${index + 1}/${clips.length}`);
+    const audioSeconds = sherpa.readWave(clip.wavPath).samples.length / SAMPLE_RATE;
+    const outcome = await transcribeClip(vendor, key, clip.sourcePath!, language);
+    if (outcome.deleteProblems.length > 0) console.error(`WARNING ${engine.id} clip ${index + 1}: data may still be at the vendor: ${outcome.deleteProblems.join('; ')}`);
+    const loop = isLoop(outcome.text);
+    results.push({
+      id: clip.id,
+      reference: clip.reference,
+      hypothesis: outcome.text,
+      seconds: outcome.seconds,
+      audioSeconds,
+      loopPieces: loop ? 1 : 0,
+      loopLeft: loop,
+      cost: estimateCost(audioSeconds, vendor.price),
+      deleteProblems: outcome.deleteProblems,
+    });
+  }
+  return { engine: engine.id, variant: 'P0', language, loadSeconds: 0, peakRamMb: 0, clips: results, vadClips: 0, currency: vendor.price.currency };
 };
 
 const runWorker = (engineId: string, language: Language, clips: Clip[], clipsFile: string, variantId: string): RunResult => {
@@ -458,29 +496,32 @@ const buildOwnReport = (results: RunResult[]) => {
     const decodeSeconds = result.clips.reduce((sum, clip) => sum + clip.seconds, 0);
     const loopPieces = result.clips.reduce((sum, clip) => sum + clip.loopPieces, 0);
     const loopLeft = result.clips.filter((clip) => clip.loopLeft).length;
+    const cost = result.clips.some((clip) => clip.cost !== undefined) ? `${result.clips.reduce((sum, clip) => sum + (clip.cost ?? 0), 0).toFixed(4)} ${result.currency}` : '-';
+    const deleteFailures = result.clips.filter((clip) => clip.deleteProblems?.length).length;
+    const cloud = result.currency !== undefined;
     const perClip = scores.map((score) => pct(score.wordErrors / score.referenceWords)).join(' | ');
     const label = VARIANTS.find((variant) => variant.id === result.variant)?.label ?? result.variant;
-    return `| ${result.engine} | ${result.variant} ${label} | ${pct(t.wer)} | ${pct(t.cer)} | ${loopPieces} / ${loopLeft} | ${(decodeSeconds / audio).toFixed(2)} | ${result.peakRamMb.toFixed(0)} MB | ${perClip} |`;
+    return `| ${result.engine} | ${result.variant} ${label} | ${pct(t.wer)} | ${pct(t.cer)} | ${loopPieces} / ${loopLeft} | ${(decodeSeconds / audio).toFixed(2)} | ${decodeSeconds.toFixed(0)} s | ${cloud ? '-' : `${result.peakRamMb.toFixed(0)} MB`} | ${cost} | ${cloud ? deleteFailures : '-'} | ${perClip} |`;
   });
   return [
     '# Own clips',
     '',
-    `Date: ${new Date().toISOString().slice(0, 10)}. Loops: pieces flagged on first decode / clips still flagged in the final text.`,
+    `Date: ${new Date().toISOString().slice(0, 10)}. Loops: pieces flagged on first decode / clips still flagged in the final text. For cloud engines Wall is upload to transcript (RTF uses it), Cost is the list price estimate, Delete fails counts clips where a vendor delete call failed.`,
     '',
-    `| Engine | Variant | WER | CER | Loops | RTF | Peak RAM | ${clipLabels.join(' | ')} |`,
-    `|---|---|---|---|---|---|---|${clipLabels.map(() => '---').join('|')}|`,
+    `| Engine | Variant | WER | CER | Loops | RTF | Wall | Peak RAM | Cost | Delete fails | ${clipLabels.join(' | ')} |`,
+    `|---|---|---|---|---|---|---|---|---|---|${clipLabels.map(() => '---').join('|')}|`,
     ...rows,
   ].join('\n');
 };
 
-const evaluate = (set: string) => {
+const evaluate = async (set: string) => {
   const reportOnly = set === 'report';
   const resultsSet = set === 'own' ? 'own' : 'public-round2';
   const requested = process.env.ENGINES?.split(',');
-  const engines = ENGINES.filter((engine) => !requested || requested.includes(engine.id));
+  const engines = ENGINES.filter((engine) => (!requested || requested.includes(engine.id)) && (set === 'own' || !engine.cloud));
   if (!reportOnly) {
     download(`${RELEASES}/silero_vad.onnx`, VAD_MODEL);
-    for (const engine of engines) ensureModel(engine);
+    for (const engine of engines) if (!engine.cloud) ensureModel(engine);
   }
 
   const clips = set === 'own' ? loadOwnClips() : [...loadFleursClips('hu'), ...loadFleursClips('en')];
@@ -506,7 +547,10 @@ const evaluate = (set: string) => {
       if (reportOnly) continue;
       console.error(`${engine.id} ${language} ${variant.id}`);
       try {
-        const result = runWorker(engine.id, language, languageClips, `${resultsDir}/clips-${language}.json`, variant.id);
+        const result = engine.cloud
+          ? await runCloud(engine, language, languageClips)
+          : runWorker(engine.id, language, languageClips, `${resultsDir}/clips-${language}.json`, variant.id);
+        if (!result) continue;
         writeFileSync(resultFile, JSON.stringify(result, null, 2));
         results.push(result);
       } catch (error) {
@@ -534,5 +578,5 @@ if (mode === 'worker') {
   const [engineId, language, clipsFile, variantId] = args;
   console.log(JSON.stringify(worker(engineId, language as Language, JSON.parse(readFileSync(clipsFile, 'utf8')), variantId)));
 } else {
-  evaluate(mode ?? 'public');
+  await evaluate(mode ?? 'public');
 }

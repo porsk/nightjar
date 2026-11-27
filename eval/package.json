@@ -4,5 +4,8 @@
   "type": "module",
   "dependencies": {
     "sherpa-onnx-node": "2.0.3"
+  },
+  "scripts": {
+    "test": "node --test cloud.test.ts"
   }
 }
