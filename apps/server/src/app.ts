@@ -107,6 +107,10 @@ export async function buildApp({
       },
     },
   })
+  // A client that hung up has no address any more, and nobody is left to answer.
+  app.addHook('onRequest', async (request, reply) => {
+    if (!request.ip) return reply.hijack()
+  })
   await app.register(rateLimit, {
     max: rateLimitMax ?? 300,
     timeWindow: '1 minute',
