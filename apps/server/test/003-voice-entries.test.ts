@@ -750,6 +750,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         'the model to be ready',
       )
       const total = Object.values(modelFiles).reduce((sum, data) => sum + data.length, 0)
+      await waitFor(() => {
+        const last = admin.at(-1)
+        return last?.type === 'model.updated' && last.state === 'ready'
+      }, 'the ready event')
       const progress = admin.filter((event) => event.type === 'model.updated')
       expect(
         progress.some(

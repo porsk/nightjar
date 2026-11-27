@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -259,6 +259,8 @@ describe('002-text-entries: writer', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete entry' }))
     await user.click(screen.getByRole('button', { name: 'Delete' }))
     expect(calls.some((call) => call.key === 'DELETE /api/v1/entries/e1')).toBe(true)
-    expect(screen.queryByLabelText('Entry text')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Entry text')).not.toBeInTheDocument()
+    })
   })
 })
