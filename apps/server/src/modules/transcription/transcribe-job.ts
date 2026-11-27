@@ -10,6 +10,7 @@ import type { TranscribeJob } from '../../jobs.ts'
 import type { Logger } from '../../logger.ts'
 import type { Metrics } from '../../metrics.ts'
 import type { Storage } from '../../storage.ts'
+import { modelById, type ModelList } from './models.ts'
 import type { Transcriber, TranscriberFactory } from './transcriber.ts'
 
 interface Dependencies {
@@ -19,6 +20,7 @@ interface Dependencies {
   metrics: Metrics
   logger: Logger
   createTranscriber: TranscriberFactory
+  models: ModelList
   /** Tells whether more jobs are waiting, so the model can be released when none are. */
   hasQueuedJobs: () => Promise<boolean>
 }
@@ -38,6 +40,7 @@ export function createTranscribeHandler({
   metrics,
   logger,
   createTranscriber,
+  models,
   hasQueuedJobs,
 }: Dependencies) {
   const { db } = database
@@ -76,12 +79,17 @@ export function createTranscribeHandler({
     if (!recording || !waiting.includes(recording.status)) return 'skipped'
 
     const [settings] = await db
-      .select({ enabled: instanceSettings.transcriptionEnabled })
+      .select({
+        enabled: instanceSettings.transcriptionEnabled,
+        activeModel: instanceSettings.activeModel,
+      })
       .from(instanceSettings)
     if (!settings?.enabled) {
       await setStatus(recording, 'skipped')
       return 'skipped'
     }
+    const model = modelById(models, settings.activeModel)
+    if (transcriber && transcriber.modelId !== model.id) await dropModel()
 
     await setStatus(recording, 'transcribing')
     const wav = await storage.tempFile('wav')
@@ -91,34 +99,37 @@ export function createTranscribeHandler({
         wav.path,
         ffmpegFormatFor(extname(recording.filePath).slice(1)) ?? '',
       )
-      transcriber ??= createTranscriber()
+      transcriber ??= createTranscriber(model)
+      const modelId = transcriber.modelId
       const startedAt = performance.now()
       const result = await transcriber.transcribe(wav.path, recording.language)
       const seconds = (performance.now() - startedAt) / 1000
       if (recording.durationMs > 0) {
         metrics.transcriptionRtf
-          .labels({ model: transcriber.modelId })
+          .labels({ model: modelId })
           .observe(seconds / (recording.durationMs / 1000))
       }
 
+      const replaceEdited = job.data.replaceEdited === true
       await db.transaction(async (tx) => {
         await tx
           .insert(transcripts)
           .values({
             userId,
             recordingId,
-            model: transcriber?.modelId ?? 'unknown',
+            model: modelId,
             language: result.language,
             text: result.text,
           })
           .onConflictDoUpdate({
             target: transcripts.recordingId,
             set: {
-              model: transcriber?.modelId ?? 'unknown',
+              model: modelId,
               language: result.language,
               text: result.text,
+              ...(replaceEdited ? { isUserEdited: false } : {}),
             },
-            setWhere: eq(transcripts.isUserEdited, false),
+            ...(replaceEdited ? {} : { setWhere: eq(transcripts.isUserEdited, false) }),
           })
         await tx.update(recordings).set({ status: 'done' }).where(eq(recordings.id, recordingId))
       })

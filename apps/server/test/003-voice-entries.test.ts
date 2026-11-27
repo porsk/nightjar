@@ -6,72 +6,27 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql'
-import { liveEventSchema, maxUploadBytes, type LiveEvent } from '@nightjar/shared/recordings'
+import { maxUploadBytes, type LiveEvent } from '@nightjar/shared/recordings'
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createDatabase, type Database } from '../src/database.ts'
 import { entries, instanceSettings, recordings, transcripts } from '../src/db/schema.ts'
-import { createEvents } from '../src/events.ts'
-import { createJobs, transcribeQueue } from '../src/jobs.ts'
+import { transcribeQueue } from '../src/jobs.ts'
 import { createLogger } from '../src/logger.ts'
-import { createAuth } from '../src/modules/auth/auth.ts'
-import {
-  createFakeTranscriber,
-  fakeTexts,
-  type FakeTranscriberOptions,
-} from '../src/modules/transcription/fake-transcriber.ts'
-import { createTranscriptionService } from '../src/modules/transcription/service.ts'
-import { createTranscribeHandler } from '../src/modules/transcription/transcribe-job.ts'
-import { createStorage } from '../src/storage.ts'
-import { startWorker } from '../src/worker.ts'
-import { captureLogs, expectNoMarkersInLogs } from './support/log-capture.ts'
-import {
-  modelFiles,
-  startModelServer,
-  testModelId,
-  type ModelServer,
-} from './support/model-server.ts'
+import { fakeTexts } from '../src/modules/transcription/fake-transcriber.ts'
+import { expectNoMarkersInLogs } from './support/log-capture.ts'
+import { modelFiles, startModelServer, testModelId } from './support/model-server.ts'
 import { startPostgres } from './support/postgres.ts'
-import { buildTestApp } from './support/test-app.ts'
-import { createUserWithSession, signInExistingUser } from './support/users.ts'
+import {
+  createVoiceHarness,
+  resetInstanceSettings,
+  enWav,
+  huWav,
+  waitFor,
+  wavSeconds,
+} from './support/voice-harness.ts'
 
-const fixtures = join(import.meta.dirname, '../../../e2e/fixtures')
-const enWav = readFileSync(join(fixtures, 'en-sample.wav'))
-const huWav = readFileSync(join(fixtures, 'hu-sample.wav'))
-const wavSeconds = (wav: Buffer) => (wav.length - 44) / 32000
 const marker = 'ZQX-PRIVATE-7781'
-
-function multipart(fields: Record<string, string>, file: { data: Buffer; name: string }) {
-  const boundary = `----nightjar${randomUUID()}`
-  const text = Object.entries(fields)
-    .map(
-      ([key, value]) =>
-        `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`,
-    )
-    .join('')
-  const head = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.name}"\r\nContent-Type: audio/mp4\r\n\r\n`
-  return {
-    payload: Buffer.concat([
-      Buffer.from(text + head),
-      file.data,
-      Buffer.from(`\r\n--${boundary}--\r\n`),
-    ]),
-    headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
-  }
-}
-
-async function waitFor<T>(
-  check: () => Promise<T | false | undefined> | T | false | undefined,
-  what: string,
-) {
-  const deadline = Date.now() + 20_000
-  for (;;) {
-    const value = await check()
-    if (value !== false && value !== undefined) return value
-    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`)
-    await new Promise((resolve) => setTimeout(resolve, 50))
-  }
-}
 
 function makeAudio(extension: string, codec: string) {
   const folder = mkdtempSync(join(tmpdir(), 'nightjar-audio-'))
@@ -109,7 +64,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
 
   beforeEach(async () => {
     await database.db.execute(sql`truncate users cascade`)
-    await database.db.update(instanceSettings).set({ transcriptionEnabled: false })
+    await resetInstanceSettings(database)
     await database.db.execute(sql`drop schema if exists pgboss cascade`)
   })
 
@@ -117,249 +72,11 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   })
 
-  interface LaunchOptions {
-    fake?: FakeTranscriberOptions
-    maxUploadBytes?: number
-    dataDir?: string
-    modelServer?: ModelServer
-    now?: Date
-    sameUsers?: boolean
-  }
-
-  async function launch(options: LaunchOptions = {}) {
-    const capture = captureLogs()
-    const logger = createLogger({ level: 'debug', stream: capture.stream })
-    const dataDir = options.dataDir ?? (await mkdtemp(join(tmpdir(), 'nightjar-data-')))
-    const storage = createStorage(dataDir)
-    const url = postgres.getConnectionUri()
-    const events = createEvents({ databaseUrl: url, database, logger })
-    const jobs = createJobs(url, logger, { retryDelaySeconds: 1, pollingIntervalSeconds: 0.5 })
-    const modelServer = options.modelServer ?? (await startModelServer())
-    const transcription = createTranscriptionService({
-      database,
-      storage,
-      jobs,
-      events,
-      logger,
-      models: modelServer.list,
-    })
-    const fake = createFakeTranscriber(options.fake)
-    const auth = await createAuth(database)
-    const test = await buildTestApp({
-      database,
-      auth,
-      storage,
-      events,
-      transcription,
-      capture,
-      maxUploadBytes: options.maxUploadBytes,
-      now: () => options.now ?? new Date('2026-11-26T20:30:00Z'),
-    })
-    test.readiness.markMigrated()
-    const handler = createTranscribeHandler({
-      database,
-      storage,
-      events,
-      metrics: test.metrics,
-      logger: test.logger,
-      createTranscriber: fake.factory,
-      hasQueuedJobs: jobs.hasQueuedJobs,
-    })
-    await events.start()
-    const worker = await startWorker({
-      logger: test.logger,
-      jobs,
-      metrics: test.metrics,
-      transcribe: handler,
-    })
-    await test.app.ready()
-    await transcription.resume()
-
-    const alice = options.sameUsers
-      ? await signInExistingUser(database, auth, 'alice')
-      : await createUserWithSession(database, auth, {
-          username: 'alice',
-          timeZone: 'Europe/Budapest',
-          isAdmin: true,
-        })
-    const bob = options.sameUsers
-      ? await signInExistingUser(database, auth, 'bob')
-      : await createUserWithSession(database, auth, {
-          username: 'bob',
-          timeZone: 'Europe/Budapest',
-        })
-    const streams: AbortController[] = []
-    let closed = false
-    const shutdown = async () => {
-      if (closed) return
-      closed = true
-      for (const stream of streams) stream.abort()
-      await test.app.close()
-      await worker.stop()
-      await events.stop()
-      if (!options.modelServer) await modelServer.close()
-    }
-    cleanups.push(shutdown)
-
-    const call = (
-      user: { cookie: string } | null,
-      method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-      path: string,
-      payload?: object,
-      headers: Record<string, string> = {},
-    ) =>
-      test.app.inject({
-        method,
-        url: path,
-        headers: { ...(user ? { cookie: user.cookie } : {}), ...headers },
-        ...(payload ? { payload } : {}),
-      })
-
-    const upload = (
-      user: { cookie: string },
-      fields: Record<string, string>,
-      file: { data: Buffer; name: string } = { data: enWav, name: 'memo.wav' },
-    ) => {
-      const { payload, headers } = multipart(fields, file)
-      return test.app.inject({
-        method: 'POST',
-        url: '/api/v1/recordings',
-        headers: { cookie: user.cookie, ...headers },
-        payload,
-      })
-    }
-
-    const uploadVoice = async (
-      user: { cookie: string },
-      fields: Record<string, string> = { language: 'en', entryDate: '2026-11-26' },
-      file?: { data: Buffer; name: string },
-    ) => {
-      const response = await upload(user, fields, file)
-      expect(response.statusCode).toBe(201)
-      return response.json<{ id: string; entryId: string; status: string }>()
-    }
-
-    const seedModel = async () => {
-      const folder = join(dataDir, 'models', testModelId)
-      await mkdir(folder, { recursive: true })
-      for (const [name, data] of Object.entries(modelFiles)) {
-        await writeFile(join(folder, name), data)
-      }
-    }
-
-    const statusOf = async (id: string) =>
-      (await database.db.select().from(recordings).where(eq(recordings.id, id)))[0]?.status
-
-    const hubEvents = (userId: string, isAdmin = false) => {
-      const seen: LiveEvent[] = []
-      const stop = events.subscribe({
-        userId,
-        isAdmin,
-        send: (event) => seen.push(event),
-        end: () => undefined,
-      })
-      cleanups.push(() => {
-        stop()
-        return Promise.resolve()
-      })
-      return seen
-    }
-
-    const openStream = async (user: { cookie: string }) => {
-      const address = await test.app.listen({ port: 0, host: '127.0.0.1' }).catch(() => undefined)
-      const base =
-        address ??
-        `http://127.0.0.1:${String((test.app.server.address() as { port: number }).port)}`
-      const controller = new AbortController()
-      streams.push(controller)
-      const response = await fetch(`${base}/api/v1/events`, {
-        headers: { cookie: user.cookie },
-        signal: controller.signal,
-      })
-      const seen: LiveEvent[] = []
-      const state = { ended: false }
-      void (async () => {
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-        try {
-          for (;;) {
-            const next = await reader?.read()
-            if (!next || next.done) {
-              state.ended = true
-              return
-            }
-            buffer += decoder.decode(next.value, { stream: true })
-            for (const block of buffer.split('\n\n').slice(0, -1)) {
-              const data = block.split('\n').find((line) => line.startsWith('data: '))
-              if (data) seen.push(liveEventSchema.parse(JSON.parse(data.slice(6))))
-            }
-            buffer = buffer.slice(buffer.lastIndexOf('\n\n') + 2)
-          }
-        } catch {
-          // the test closed the stream
-        }
-      })()
-      return {
-        seen,
-        state,
-        status: response.status,
-        contentType: response.headers.get('content-type'),
-      }
-    }
-
-    return {
-      ...test,
-      alice,
-      bob,
-      call,
-      upload,
-      uploadVoice,
-      seedModel,
-      statusOf,
-      hubEvents,
-      openStream,
-      fake,
-      jobs,
-      transcription,
-      events,
-      modelServer,
-      dataDir,
-      storage,
-      shutdown,
-    }
-  }
-
-  const launchAgain = async (previous: Awaited<ReturnType<typeof launch>>) => {
-    await previous.shutdown()
-    return launch({
-      dataDir: previous.dataDir,
-      modelServer: previous.modelServer,
-      sameUsers: true,
-    })
-  }
-
-  const enableTranscription = async (app: Awaited<ReturnType<typeof launch>>) => {
-    await app.seedModel()
-    const modelEvents = app.hubEvents(app.alice.id, true)
-    const response = await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', {
-      enabled: true,
-    })
-    expect(response.statusCode).toBe(200)
-    await waitFor(
-      async () =>
-        (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{ state: string }>()
-          .state === 'ready',
-      'ready model',
-    )
-    await waitFor(
-      () => modelEvents.some((event) => event.type === 'model.updated' && event.state === 'ready'),
-      'the ready event',
-    )
-  }
-
-  const doneStatus = (app: Awaited<ReturnType<typeof launch>>, id: string) =>
-    waitFor(async () => (await app.statusOf(id)) === 'done', 'done recording')
+  const { launch, launchAgain, enableTranscription, doneStatus } = createVoiceHarness({
+    postgres: () => postgres,
+    database: () => database,
+    cleanups,
+  })
 
   describe('uploading and storing audio', () => {
     it('AC-9: accepts webm, ogg, m4a, mp3, wav and flac by content', async () => {
@@ -566,7 +283,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         .from(transcripts)
         .where(eq(transcripts.recordingId, saved.id))
       expect(transcript).toMatchObject({
-        model: 'fake',
+        model: 'whisper-large-v3-turbo-int8',
         language: 'hu',
         text: fakeTexts.hu,
         isUserEdited: false,
@@ -911,7 +628,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       )
       const folder = join(app.dataDir, 'models')
       expect(readdirSync(folder).filter((name) => name.endsWith('.part'))).toEqual([])
-      expect(readdirSync(join(folder, testModelId))).toEqual([])
+      expect(existsSync(join(folder, testModelId))).toBe(false)
 
       const waiting = await app.uploadVoice(app.alice)
       expect(waiting.status).toBe('pending')
@@ -1231,7 +948,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       expect(text).toMatch(
         /nightjar_job_duration_seconds_count\{(?=[^}]*queue="transcribe")(?=[^}]*outcome="completed")[^}]*\} 1/,
       )
-      expect(text).toMatch(/nightjar_transcription_rtf_count\{model="fake"\} 1/)
+      expect(text).toMatch(
+        /nightjar_transcription_rtf_count\{model="whisper-large-v3-turbo-int8"\} 1/,
+      )
       expect(text).toMatch(/nightjar_queue_depth\{queue="transcribe"\} \d+/)
       const ours = text
         .split('\n')

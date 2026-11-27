@@ -57,6 +57,13 @@
       "when": 1795798494329,
       "tag": "0007_search_partial",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795814104592,
+      "tag": "0008_transcription_models",
+      "breakpoints": true
     }
   ]
 }

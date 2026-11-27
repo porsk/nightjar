@@ -10,12 +10,13 @@ import {
   maxUploadBytes as defaultMaxUploadBytes,
   recordingSchema,
   recordingsResponseSchema,
+  retranscribeSchema,
   updateTranscriptSchema,
   type Recording,
   type RecordingStatus,
   type Transcript,
 } from '@nightjar/shared/recordings'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { UnreadableAudioError, measureDurationMs } from '../../audio/ffmpeg.ts'
@@ -34,7 +35,7 @@ interface Dependencies {
   database: Database
   storage: Storage
   events: Events
-  transcription: Pick<TranscriptionService, 'initialStatus' | 'schedule'>
+  transcription: Pick<TranscriptionService, 'initialStatus' | 'schedule' | 'availability'>
   now: () => Date
   maxUploadBytes?: number | undefined
 }
@@ -293,6 +294,36 @@ export function registerRecordingRoutes(
     await announce(updated, status)
     await transcription.schedule(updated, request.id)
     return toRecording(updated, null)
+  })
+
+  app.post('/api/v1/recordings/:id/retranscribe', async (request) => {
+    const user = me(request)
+    const row = await findOwned(user.id, idParam(request, 'recording_not_found'))
+    const parsed = retranscribeSchema.safeParse(request.body ?? {})
+    if (!parsed.success) throw new AppError(400, 'invalid_request')
+    const replaceEdited = parsed.data.replaceEdited === true
+    if ((await transcription.availability()).state !== 'ready') {
+      throw new AppError(409, 'model_not_ready')
+    }
+    if (row.status === 'pending' || row.status === 'transcribing') {
+      throw new AppError(409, 'already_transcribing')
+    }
+    const [transcript] = await db
+      .select()
+      .from(transcripts)
+      .where(eq(transcripts.recordingId, row.id))
+    if (transcript?.isUserEdited && !replaceEdited) throw new AppError(409, 'transcript_edited')
+    const [updated] = await db
+      .update(recordings)
+      .set({ status: 'pending' })
+      .where(
+        and(eq(recordings.id, row.id), inArray(recordings.status, ['done', 'failed', 'skipped'])),
+      )
+      .returning()
+    if (!updated) throw new AppError(409, 'already_transcribing')
+    await announce(updated, 'pending')
+    await transcription.schedule(updated, request.id, replaceEdited)
+    return toRecording(updated, transcript)
   })
 
   app.get('/api/v1/entries/:id/recordings', async (request) => {

@@ -88,6 +88,10 @@ export const instanceSettings = pgTable('instance_settings', {
     .notNull()
     .default('idle'),
   modelDownloadedBytes: integer('model_downloaded_bytes').notNull().default(0),
+  activeModel: text('active_model').notNull().default('whisper-large-v3-turbo-int8'),
+  modelDownloadId: text('model_download_id'),
+  modelDownloadUse: boolean('model_download_use').notNull().default(false),
+  modelDownloadError: text('model_download_error', { enum: ['download_failed', 'disk_full'] }),
   authSecret: text('auth_secret').notNull(),
   setupCodeHash: text('setup_code_hash'),
   updatedAt: updatedAt(),

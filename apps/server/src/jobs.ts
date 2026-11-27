@@ -12,6 +12,8 @@ export interface TranscribeJobData {
   recordingId: string
   /** The request that queued the job, so its log lines can be followed into the worker. */
   requestId?: string | undefined
+  /** Replace the transcript even when the user edited it. */
+  replaceEdited?: boolean
 }
 
 export type TranscribeJob = JobWithMetadata<TranscribeJobData>

@@ -1,4 +1,5 @@
 import type { EntryLanguage, Language } from '@nightjar/shared'
+import type { ModelInfo } from './models.ts'
 
 export interface TranscriptResult {
   text: string
@@ -14,5 +15,5 @@ export interface Transcriber {
   dispose(): Promise<void>
 }
 
-/** Makes a transcriber, which loads the model. Called when work arrives, not at startup. */
-export type TranscriberFactory = () => Transcriber
+/** Makes a transcriber for a model, which loads it. Called when work arrives, not at startup. */
+export type TranscriberFactory = (model: ModelInfo) => Transcriber

@@ -43,16 +43,49 @@ export const updateTranscriptSchema = z.object({ text: z.string().max(bodyMaxLen
 export const transcriptionStateSchema = z.enum(['off', 'downloading', 'ready', 'failed'])
 export type TranscriptionState = z.infer<typeof transcriptionStateSchema>
 
+export const modelStateSchema = z.enum(['not_downloaded', 'downloading', 'downloaded', 'failed'])
+export type ModelState = z.infer<typeof modelStateSchema>
+
+export const modelStatusSchema = z.object({
+  id: z.string(),
+  state: modelStateSchema,
+  /** Size of the download. */
+  downloadBytes: z.number().int().nonnegative(),
+  /** Sum of the model files, what deleting frees. */
+  diskBytes: z.number().int().nonnegative(),
+  /** Progress while downloading, else 0. */
+  downloadedBytes: z.number().int().nonnegative(),
+  /** The running or failed download makes the model active when it is done. */
+  useWhenReady: z.boolean(),
+  /** Set when the state is `failed`. */
+  error: z.enum(['download_failed', 'disk_full']).nullable(),
+})
+export type ModelStatus = z.infer<typeof modelStatusSchema>
+
+const modelListFields = {
+  activeModel: z.string(),
+  /** In the order of the model list. */
+  models: z.array(modelStatusSchema),
+}
+
 export const transcriptionStatusSchema = z.object({
   enabled: z.boolean(),
   state: transcriptionStateSchema,
   downloadedBytes: z.number().int().nonnegative(),
   totalBytes: z.number().int().nonnegative(),
   backlogCount: z.number().int().nonnegative(),
+  ...modelListFields,
 })
 export type TranscriptionStatus = z.infer<typeof transcriptionStatusSchema>
 
 export const setTranscriptionSchema = z.strictObject({ enabled: z.boolean() })
+
+export const retranscribeSchema = z.strictObject({ replaceEdited: z.boolean().optional() })
+
+export const transcriptionAvailabilitySchema = z.object({
+  state: z.enum(['off', 'not_ready', 'ready']),
+})
+export type TranscriptionAvailability = z.infer<typeof transcriptionAvailabilitySchema>
 
 export const liveEventSchema = z.discriminatedUnion('type', [
   z.object({
@@ -66,6 +99,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
     state: transcriptionStateSchema,
     downloadedBytes: z.number().int().nonnegative(),
     totalBytes: z.number().int().nonnegative(),
+    ...modelListFields,
   }),
 ])
 export type LiveEvent = z.infer<typeof liveEventSchema>

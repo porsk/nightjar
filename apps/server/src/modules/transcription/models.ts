@@ -33,6 +33,14 @@ export function defaultModel(list: ModelList): ModelInfo {
   return model
 }
 
+/** The model with this id, or the default one when the list no longer has it. */
+export function modelById(list: ModelList, id: string): ModelInfo {
+  return list.models.find((candidate) => candidate.id === id) ?? defaultModel(list)
+}
+
+export const diskBytes = (model: ModelInfo) =>
+  model.files.reduce((sum, file) => sum + file.bytes, 0)
+
 export const downloadBytes = (model: ModelInfo) =>
   model.downloads.reduce((sum, item) => sum + item.bytes, 0)
 
