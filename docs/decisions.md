@@ -1,3 +1,6 @@
+| D-40 | 11-27 | Maximum recording length 3 hours (recorder and uploads), file size limit stays 200 MB. Keeps transcription RAM around 3 GB peak on an 8 GB box. Behind Cloudflare proxy, uploads above 100 MB fail at Cloudflare | Owner has a 1.5 h recording |
+| D-41 | 11-27 | No Hungarian word-error check in the nightly real-model run (one short clip is too noisy). English check stays | Owner |
+| D-42 | 11-27 | Release 0.2.0 (voice + search) after a smoke test of the real image | Owner OK |
 | D-38 | 11-26 | Visual checks: a side-by-side page (mockup vs real app, phone + desktop, dark + light, with a list of differences) for the owner after each round of screens; once the owner approves the real screens, Playwright reference screenshots (toHaveScreenshot) guard them against unintended changes | Owner |
 | D-39 | 11-26 | Replaces the reference-screenshot part of D-38: no pixel reference images (too much churn while the UI grows). Instead, e2e has automatic layout checks (no sideways scroll, nothing clipped or overlapping) at phone and desktop width, and the owner reviews the side-by-side page after each round of screens | Owner |
 # Decisions
@@ -9,7 +12,6 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 | # | Question | Options |
 |---|---|---|
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
-| O-7 | 003 nightly check: spec says word error rate under 30% on each fixture clip | Measured with the real model (turbo int8, greedy): `en-sample.wav` 0%, `hu-sample.wav` 38.5% (the foreign name and a few single letters). Options: A keep 30% (the Hungarian check fails every night), B 40% for Hungarian only, C add more Hungarian clips and judge the average. Lean: C |
 
 ## Requirements the owner asked for
 
