@@ -10,7 +10,7 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 | Capture | Photos | M2 |
 | Capture | Offline recording queue | M4 |
 | Transcription | Offline, background, editable, HU / EN / auto | M1 |
-| Find | Timeline, search that understands Hungarian word endings | M1 |
+| Find | Timeline, search that finds any part of a word, accents optional | M1 |
 | Find | Mood, manual tags, filters, multiple journals, favourites, calendar | M2 |
 | Reflect | Prompts, look-backs, gentle stats | M2 |
 | AI (opt-in) | Claude or Ollama suggest summary, tags, people, places | M3 |
@@ -37,7 +37,7 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 | Server | Node 26 (runs `.ts` directly), Fastify, Zod, Drizzle, pg-boss (jobs in Postgres), Better Auth |
 | Web | React 19, Vite, React Router, TanStack Query, i18next, PWA. Follows system light/dark |
 | Speech | Whisper large-v3-turbo (int8, sherpa-onnx), off by default; you turn it on in Settings and the model downloads then. Final pick after your own clips (D-20, D-23) |
-| Search | Postgres full-text, Hungarian + English stemming |
+| Search | Postgres `pg_trgm` substring search, accents and case ignored (D-46) |
 | AI | Claude (official SDK) or Ollama, provider and key set in Settings (stored encrypted, M3), off by default |
 | Observability | pino JSON logs, `/healthz`, `/readyz`, Prometheus `/metrics` |
 | Tests | Vitest, Testcontainers, Playwright (fake mic plays real HU/EN audio) |

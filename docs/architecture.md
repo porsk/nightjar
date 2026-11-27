@@ -83,7 +83,7 @@ users          id, username, email (nullable), name, locale, time_zone, created_
 access_tokens  id, user_id, name, token_hash, can_write, last_used_at, revoked_at
 journals       id, user_id, name, is_default, created_at
 entries        id, journal_id, entry_date (date), time_zone, title, body_md, language,
-               mood (1-5), is_favourite, search_vector, created_at, updated_at
+               mood (1-5), is_favourite, search_text, created_at, updated_at
 recordings     id, entry_id, file_path, mime_type, duration_ms, status, created_at
 transcripts    id, recording_id, model, language, text, is_user_edited, updated_at
 photos         id, entry_id, file_path, thumb_path, taken_at, created_at
@@ -112,14 +112,14 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 |---|---|---|
 | `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, `username` (unique, lowercase, 3 to 32 of `a-z 0-9 . - _`), `email` (nullable, unique, unused until OAuth or a hosted version), `name` (what we call the user), `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
 | `instance_settings` | id (always 1), `transcription_enabled` (default false), `auth_secret`, `setup_code_hash`, updated_at | The only instance-wide table, so no `user_id`. `auth_secret` is made on first start and signs session cookies. `setup_code_hash` holds the hash of the current setup code until the first account exists |
-| `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector, kept by database triggers), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
+| `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_text` (text: lower + unaccent of body and transcripts, kept by database triggers), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
 | `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
 | `transcripts` | id (uuid), user_id, recording_id (unique), `model`, `language` (`hu`/`en`, detected), `text`, `is_user_edited`, created_at, updated_at | One per recording. User edits are never overwritten |
 
-- Indexes: `entries (user_id, entry_date desc, created_at desc, id)`, GIN on `entries.search_vector`,
+- Indexes: `entries (user_id, entry_date desc, created_at desc, id)`, GIN `gin_trgm_ops` on `entries.search_text`,
   `recordings (entry_id)`, `recordings (status)`.
 - Every query filters by the signed-in user's `user_id`. Another user's row answers 404, never 403, so ids don't leak.
-- `entries.search_vector` is rebuilt by database triggers in the same transaction whenever the body of the entry changes, a transcript is created, edited or deleted, or a recording is deleted. The migration creates the `unaccent` extension and fills the column for existing rows.
+- `entries.search_text` is rebuilt by database triggers in the same transaction whenever the body of the entry changes, a transcript is created, edited or deleted, or a recording is deleted. The migration creates the `pg_trgm` extension and fills the column for existing rows.
 - Files: `/data/media/<user_id>/recordings/<recording_id>.<ext>` (original upload, as is) and
   `/data/models/<model_id>/`. Only the storage module builds these paths.
 - Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
@@ -162,9 +162,8 @@ int8 (D-20); the final pick comes after the owner's own clips.
 
 ## 7. Search
 
-Postgres full-text search: `search_vector` per entry from text + transcripts, built with both the `hungarian` and the `english` configuration (stemming: "költözésről" finds "költözés", "walked" finds "walking"). Accents are optional:
-the vector holds each stem with and without accents, and the query is built the same way ("naplo" finds "napló"). `POST /api/v1/search` (words in the body, never in a URL) uses `websearch_to_tsquery`, so odd input never fails. Results are ranked,
-one per entry, at most 50. Snippets are cut in the database (a 230 character window around the first match, `ts_headline` on the unaccented window); the server moves the marks onto the original text and escapes everything but `<mark>`. Lexemes are rewritten one by one (never in the serialized vector text), because `unaccent` turns some look-alike apostrophes into the quote character.
+Substring search (D-46): `entries.search_text` holds the lower-cased, unaccented text of the entry and all its transcripts, with a `pg_trgm` GIN index. `POST /api/v1/search` (words in the body, never in a URL) splits the query on whitespace, normalizes each word the same way, and ANDs one parameterized `LIKE '%word%'` per word (`\`, `%`, `_` escaped), so a word matches anywhere inside a word and accents and case do not matter. No stemming. Results are one per entry, newest first, at most 50.
+Snippets: the database cuts a 230 character window around the first match (typed text before transcripts) and returns it together with a per-character normalized copy, because `unaccent` can change lengths (ß becomes ss). The server finds every word in the normalized copy, maps each match back to the original characters through that per-character copy and marks them, so accents show as written. It escapes everything but `<mark>`.
 
 ## 8. AI and MCP (M3, opt-in)
 
