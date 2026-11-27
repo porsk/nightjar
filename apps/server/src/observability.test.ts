@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdtempSync, writeFileSync } from 'node:fs'
+import type { IncomingMessage } from 'node:http'
+import { connect } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -73,6 +75,24 @@ describe('007-observability: logs, health, metrics', () => {
     const lines = capture.lines()
     expect(lines.length).toBeGreaterThanOrEqual(2)
     for (const line of lines) expect(line['reqId']).toBe(id)
+  })
+
+  it('AC-1: a request whose client address is already gone is dropped without an error', async () => {
+    const { app, capture, readiness } = await buildTestApp()
+    readiness.markMigrated()
+    addTestRoutes(app)
+    app.server.prependListener('request', (request: IncomingMessage) => {
+      Object.defineProperty(request.socket, 'remoteAddress', { value: undefined })
+    })
+    await app.listen({ port: 0, host: '127.0.0.1' })
+    const { port } = app.server.address() as { port: number }
+    const socket = connect(port, '127.0.0.1')
+    socket.on('error', () => undefined)
+    socket.write('GET /api/v1/test-items/1 HTTP/1.1\r\nhost: x\r\n\r\n')
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    socket.destroy()
+    await app.close()
+    expect(capture.lines().filter((line) => line['level'] === 'error')).toEqual([])
   })
 
   it('AC-1: hides info lines when the level is warn', async () => {

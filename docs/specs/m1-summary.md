@@ -3,7 +3,7 @@
 Status: approved by the owner (D-30, D-31), 2026-11-26. Reading time: about 6 minutes.
 
 M1 "Speak and keep" in 8 specs, 115 acceptance criteria. Every AC has an automated test (unit, component, API on real
-Postgres, or Playwright e2e). Transcription is faked in normal tests; the real model runs only nightly.
+Postgres, or Playwright e2e). Transcription is faked in normal tests; the real model runs only in the release smoke test.
 
 ## The specs
 
@@ -64,7 +64,7 @@ Audio: `/data/media/<user_id>/recordings/`. Model: `/data/models/`.
 | First account's recording language | same as the UI language picked in setup (English by default) |
 | Setup code | 8 random characters, new on every start while no account exists, printed to the container log |
 | Metrics port | 9464 (`NIGHTJAR_METRICS_PORT`), not published |
-| Nightly real-model check | word error rate under 30% on each fixture clip |
+| Nightly real-model check | word error rate under 30% on the English clip; language auto-detect on both |
 
 ## Answers (D-30)
 

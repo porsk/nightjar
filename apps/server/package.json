@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "node --watch src/main.ts",
     "typecheck": "tsc",
-    "test:nightly": "vitest run --config vitest.nightly.config.ts",
     "test:backup": "vitest run --config vitest.backup.config.ts",
     "test:api": "vitest run --config vitest.api.config.ts --coverage",
     "test": "vitest run --coverage",

@@ -1,7 +1,7 @@
 # Roadmap
 
-**Now:** M1 features all merged (001 to 008, upgrade test, layout checks). 0.1.0 released. Next release 0.2.0 (voice + search) waits on a smoke test of the image and the owner OK. Username sign-in + name for the greeting (D-43) is built on branch feat/username-login (specs 001, 004, 006).
-**Next:** smoke test + round 2 review page, release 0.2.0, owner journals for a week (M1 done-when). Open: O-7 Hungarian nightly threshold, 60 min recording cap (built as 60). Follow-up: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load.
+**Now:** M1 features all merged (001 to 008, upgrade test, layout checks), plus username sign-in (D-43). 0.1.0 released. The image smoke test passed (model download, three transcriptions in a row with the model released in between, upload, search, timeline). Next release 0.2.0 (voice + search) waits on the owner OK.
+**Next:** release 0.2.0, owner journals for a week (M1 done-when). Recording cap is 3 h (D-40). Follow-up: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
@@ -16,7 +16,7 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with some
       traces, axe), `pnpm verify`, AC traceability check, each proven with a sample test
 - [x] Docker image + compose files
 - [x] CI: lint, typecheck, tests, e2e, publish `edge` to Docker Hub (`porsk/nightjar`)
-- [ ] Follow-up: run e2e against the Docker image instead of `vite preview`; nightly workflow once real-model tests exist
+- [ ] Follow-up: run e2e against the Docker image instead of `vite preview`
 - [x] Design direction + M1 mockups approved
 - [x] M1 specs approved
 
@@ -79,7 +79,7 @@ Tests: fake AI provider in normal tests, real providers in nightly. API tests fo
 - [ ] 1.0 release
 
 Done when: a recording made with no connection uploads and transcribes once the phone is back online, and 1.0 is published.
-Tests: e2e with the network switched off and on, queue survives a reload. Full `pnpm verify` and the nightly real-model run are green on the release build.
+Tests: e2e with the network switched off and on, queue survives a reload. Full `pnpm verify` and the release smoke test are green on the release build.
 
 ## Backlog (not planned)
 S-2, S-3, S-10 to S-18 in `decisions.md`: export zip and backups, imports, share target and widgets, word-highlight playback,

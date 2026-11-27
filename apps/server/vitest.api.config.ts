@@ -27,7 +27,7 @@ export default defineConfig({
       exclude: [
         '**/*.test.ts',
         'src/modules/transcription/sherpa-transcriber.ts',
-        'src/modules/transcription/sherpa-worker.ts',
+        'src/modules/transcription/sherpa-child.ts',
       ],
       reportsDirectory: 'coverage-api',
       reporter: ['text', 'html'],

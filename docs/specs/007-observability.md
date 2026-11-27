@@ -21,7 +21,7 @@ Out (not now): tracing, log shipping, dashboards, alerts, an admin UI for logs.
 
 ## Acceptance criteria
 
-- **AC-1** Given the server runs, then every log line on stdout is one JSON object with `level`, `time`, `msg`, and `reqId` for lines that belong to a request; `LOG_LEVEL=warn` hides `info` lines.
+- **AC-1** Given the server runs, then every log line on stdout is one JSON object with `level`, `time`, `msg`, and `reqId` for lines that belong to a request; `LOG_LEVEL=warn` hides `info` lines. A request whose client already hung up is dropped without an error log or a 500.
 - **AC-2** Given routes that exist only in the test (they take a marker string like `ZQX-PRIVATE-7781` in the body, query string, URL parameter, `cookie` and `authorization` headers, an upload file name, invalid JSON, a failing validation and a thrown error message), then none of the markers appear anywhere in the captured log output. The shared test helper `apps/server/test/support/log-capture.ts` (capture logs, assert marker absent) is reused by the log ACs in 001, 002, 003 and 005, which run the real flows.
 - **AC-3** Given any request (tested on a test-only route with a parameter), then its log line has method, route template (`/api/v1/test-items/:id`, not the real id), status code and duration, and has no query string, no request or response body, and no `cookie` or `authorization` header.
 - **AC-4** Given the process is running, when `/healthz` is called, then it answers 200 `{ "status": "ok" }`, without auth, even while the database is down.
@@ -38,7 +38,7 @@ Logs are captured by giving the app a pino destination stream in API tests (no s
 
 | AC | Unit | Component / UI | API (integration) | E2E | Notes (fixtures, fakes, edge cases) |
 |---|---|---|---|---|---|
-| AC-1 | logger config (level, JSON) | | lines parse as JSON, `reqId` present | | |
+| AC-1 | logger config (level, JSON) | | lines parse as JSON, `reqId` present; a request without a client address logs no error | | |
 | AC-2 | one test, every marker path, assert no marker in captured logs | | | | marker `ZQX-PRIVATE-7781`; test-only routes; helper reused by 001, 002, 003, 005 |
 | AC-3 | log line of a test-only route with query, body, cookie | | | | |
 | AC-4 | | | 200 with DB container stopped | | |

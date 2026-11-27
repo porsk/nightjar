@@ -1,5 +1,6 @@
 declare module 'sherpa-onnx-node' {
   interface OfflineStream {
+    setOption(key: string, value: string): void
     acceptWaveform(input: { sampleRate: number; samples: Float32Array }): void
   }
 

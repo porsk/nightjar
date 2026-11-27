@@ -68,7 +68,7 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 | Unit | Vitest | Pure logic, services with fakes, React components (Testing Library + jsdom), i18n completeness (every key in both `hu` and `en`) |
 | Integration | Vitest + Testcontainers | API routes through `fastify.inject()` against a real Postgres 19 container. One container per test run, tables truncated between tests |
 | End-to-end | Playwright | The production Docker image + Postgres via compose. Chromium with a fake microphone fed from WAV fixtures (Hungarian and English). Accessibility checks with axe on key pages |
-| Nightly | Vitest + Playwright | Real transcription model on a few public sample clips, plus the eval report |
+| Nightly | Vitest | Backup and restore against the built image. The real model is exercised by the release smoke test, not nightly |
 
 - Transcription and AI use fakes in normal tests (`NIGHTJAR_TRANSCRIBER=fake` returns fixture text), so tests are fast
   and don't need models.
@@ -202,7 +202,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 | `ci.yml` `upgrade` job | every PR and push to `main` | `scripts/upgrade-test.ts`: starts Postgres and the latest released image, sets up an account, writes two entries, then starts the image built from this commit on the same database and checks `/readyz` and that the entries are unchanged. Container logs upload on failure |
 | `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
 | `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
-| `nightly.yml` | nightly (schedule only) | downloads the real model with the app's own download code (checksum, unpacking) and transcribes `hu-sample.wav` and `en-sample.wav`: word error rate under 30% each, and `auto` detects both languages (`pnpm --filter @nightjar/server test:nightly`). A second job, `backup-restore`, builds the image and runs the backup test above |
+| `nightly.yml` | nightly (schedule only) | `backup-restore` builds the image and runs the backup test above |
 
 - PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
   the release PR (or switch to a PAT) if the checks do not show up.
