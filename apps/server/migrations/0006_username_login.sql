@@ -16,4 +16,5 @@ UPDATE "users" SET "username" = CASE
 END
 FROM ranked WHERE "users".id = ranked.id;--> statement-breakpoint
 UPDATE "users" SET "name" = "username";--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_username_unique" UNIQUE("username");
+ALTER TABLE "users" ADD CONSTRAINT "users_username_unique" UNIQUE("username");--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_username_lowercase" CHECK ("users"."username" = lower("users"."username"));

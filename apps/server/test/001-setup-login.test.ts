@@ -380,6 +380,13 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     expect(user?.name).toBe('Árvíztűrő Tükörfúrógép')
   })
 
+  it('AC-20: the database refuses a username that is not lowercase', async () => {
+    await launch()
+    await expect(
+      database.db.insert(users).values({ name: 'x', username: 'Owner' }),
+    ).rejects.toThrow()
+  })
+
   it('AC-21: no email is stored and the email sign-in route gives no session', async () => {
     const { setup, request } = await launch()
     await setup()
@@ -441,6 +448,6 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     await request('POST', '/api/v1/auth/sign-in/username', { payload: { username: marker } })
     await request('POST', '/api/v1/auth/sign-out', { cookie })
     await request('GET', `/api/v1/me?q=${marker}`, { cookie })
-    expectNoMarkersInLogs(capture, [marker])
+    expectNoMarkersInLogs(capture, [marker, marker.toLowerCase()])
   })
 })
