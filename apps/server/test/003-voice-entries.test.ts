@@ -12,7 +12,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { createDatabase, type Database } from '../src/database.ts'
 import { entries, instanceSettings, recordings, transcripts } from '../src/db/schema.ts'
 import { createEvents } from '../src/events.ts'
-import { createJobs } from '../src/jobs.ts'
+import { createJobs, transcribeQueue } from '../src/jobs.ts'
 import { createLogger } from '../src/logger.ts'
 import { createAuth } from '../src/modules/auth/auth.ts'
 import {
@@ -341,6 +341,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
 
   const enableTranscription = async (app: Awaited<ReturnType<typeof launch>>) => {
     await app.seedModel()
+    const modelEvents = app.hubEvents(app.alice.id, true)
     const response = await app.call(app.alice, 'PUT', '/api/v1/admin/transcription', {
       enabled: true,
     })
@@ -350,6 +351,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{ state: string }>()
           .state === 'ready',
       'ready model',
+    )
+    await waitFor(
+      () => modelEvents.some((event) => event.type === 'model.updated' && event.state === 'ready'),
+      'the ready event',
     )
   }
 
@@ -548,6 +553,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       )
       expect(saved.status).toBe('pending')
       await doneStatus(app, saved.id)
+      await waitFor(
+        () => seen.some((event) => event.type === 'recording.updated' && event.status === 'done'),
+        'the done event',
+      )
       const statuses = seen
         .filter((event) => event.type === 'recording.updated')
         .map((event) => event.status)
@@ -602,10 +611,12 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       release()
       await Promise.all(ids.map((id) => doneStatus(app, id)))
       expect(app.fake.state.maxParallel).toBe(1)
-      const finished = seen.flatMap((event) =>
-        event.type === 'recording.updated' && event.status === 'done' ? [event.recordingId] : [],
-      )
-      expect(finished).toEqual(ids)
+      const finished = () =>
+        seen.flatMap((event) =>
+          event.type === 'recording.updated' && event.status === 'done' ? [event.recordingId] : [],
+        )
+      await waitFor(() => finished().length === ids.length, 'the done events')
+      expect(finished()).toEqual(ids)
     })
 
     it('AC-14: the model is created when work starts and released when the queue is empty', async () => {
@@ -722,11 +733,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       await doneStatus(app, saved.id)
       const calls = app.fake.state.calls.length
       await app.jobs.enqueueTranscription({ userId: app.alice.id, recordingId: saved.id }, 1000)
-      await waitFor(
-        async () => ((await app.jobs.queueDepths())['transcribe'] ?? 0) === 0,
-        'the queue to drain',
-      )
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      await waitFor(async () => {
+        const duplicates = await app.jobs.boss.findJobs(transcribeQueue, { key: saved.id })
+        return duplicates.length === 2 && duplicates.every((job) => job.state === 'completed')
+      }, 'the duplicate job to finish')
       expect(app.fake.state.calls).toHaveLength(calls)
     })
   })
@@ -1052,7 +1062,10 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       expect(owners(alice.seen).size).toBe(1)
       expect(owners(bob.seen).size).toBe(1)
       expect([...owners(alice.seen)][0]).not.toBe([...owners(bob.seen)][0])
-      expect(alice.seen.some((event) => event.type === 'model.updated')).toBe(true)
+      await waitFor(
+        () => alice.seen.some((event) => event.type === 'model.updated'),
+        'alice to see the model event',
+      )
       expect(bob.seen.some((event) => event.type === 'model.updated')).toBe(false)
     })
   })
