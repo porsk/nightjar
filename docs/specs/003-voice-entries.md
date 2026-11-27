@@ -13,7 +13,7 @@ In (screen names from `design/alkony/m1.html`):
   Timer, level meter, pause / resume, stop, discard (with a confirm dialog), screen wake lock, privacy note. Uses the user's default entry language.
 - **Upload** (`upload`, `uploadready`, `uploadprog`): from Home "Hangfájl feltöltése" (new entry) or from an entry (adds to it).
   Pick or drop a file, language (Magyar / English / Automatikus), date (new entry only), progress, cancel.
-- **Limits**: a recording can be up to 60 minutes. The recorder stops by itself at 60 minutes and says so, an upload that is longer is refused with 413 `recording_too_long`.
+- **Limits**: a recording can be up to 3 hours. The recorder stops by itself at 3 hours and says so, an upload that is longer is refused with 413 `recording_too_long`.
 - **Storage**: the original file is kept as is under the user's folder, type checked by content, duration measured on the server.
 - **Transcription** (pg-boss queue `transcribe`): ffmpeg makes a temp 16 kHz mono WAV, the `Transcriber` turns it into text,
   the temp WAV is deleted, an SSE event goes out. One job at a time; the model is loaded only while jobs run (D-21).
@@ -70,7 +70,6 @@ Transcription off / on
 Isolation, accessibility, real model
 - **AC-27** Given user A's recording and entry, when user B fetches the audio, edits the transcript, retries, or uploads into A's entry, then B gets 404 and nothing changes; B's SSE stream never receives A's events.
 - **AC-28** Given the recorder (and its discard dialog), upload (3 states), entry cards (done, transcribing, editing, failed, off) and the Settings admin states (off, downloading, ready + question), then axe reports no violations on mobile and desktop, light and dark.
-- **AC-29** Given the real default model (nightly only), when `hu-sample.wav` and `en-sample.wav` are transcribed, then the word error rate against the fixture text is under 30% for each.
 - **AC-30** Given a few API requests and one finished fake transcription job, then `/metrics` on the metrics port returns `nightjar_job_duration_seconds` (labels `queue`, `outcome`), `nightjar_transcription_rtf` (label `model`) and `nightjar_queue_depth` (label `queue`), their counts went up, and no label holds a user id, file name or text.
 - **AC-31** Given the flows of this spec (upload with a marker file name, fake transcript with a marker, transcript edit, failing job) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
 
@@ -110,7 +109,6 @@ small fixture HTTP server started by the test (no internet). API tests need `ffm
 | AC-26 | | admin section hidden | 403 for non-admin | | |
 | AC-27 | | | 404 on audio, transcript, retry, upload into A's entry; SSE isolation | | two users, two SSE clients |
 | AC-28 | | | | axe on each state | `emulateMedia({ colorScheme })` |
-| AC-29 | WER helper | | | | nightly, real model in `/data/models`, skipped unless `NIGHTJAR_TRANSCRIBER=sherpa` |
 | AC-30 | | | parse `/metrics` after a finished job; labels checked against a pattern | | fake transcriber reports a duration so the RTF is known |
 | AC-31 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 

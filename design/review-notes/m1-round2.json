@@ -1,0 +1,142 @@
+[
+  {
+    "key": "recorder",
+    "title": "Recorder (recording, 5 s in)",
+    "verdict": "small differences",
+    "differences": [
+      "On desktop the real recorder is centred on the whole window, not on the content area next to the sidebar, so it sits about 100 px to the left of where the mockup puts it. It also sits higher on the page.",
+      "The level meter in the real app is all bright bars and starts as a row of flat dots that fills from the left. The mockup shows a full wave with the older half faded out.",
+      "The real recorder has the privacy line (\"A hang a saját szervereden marad.\") under the buttons as well as in the sidebar. The mockup has it only in the sidebar.",
+      "The discard confirmation (real: bottom sheet \"Elveted a felvételt?\" with \"Felvétel folytatása\" and a red \"Elvetés\") has no mockup, so it is not compared here. It looks consistent with the delete dialog."
+    ]
+  },
+  {
+    "key": "upload",
+    "title": "Upload: choose a file",
+    "verdict": "small differences",
+    "differences": [
+      "No item is highlighted in the sidebar on the real upload page. The mockup highlights \"Ma\".",
+      "The sidebar button says \"Új felvétel\" in the real app and \"Felvétel indítása\" in the mockup (same on every desktop screen).",
+      "The real content starts about 8 px lower."
+    ]
+  },
+  {
+    "key": "uploadready",
+    "title": "Upload: file chosen",
+    "verdict": "small differences",
+    "differences": [
+      "Same sidebar differences as the empty upload page.",
+      "The real file is a 5 s test clip (en-sample.wav) and the date is today, so names, size and date differ from the mockup. The layout is the same."
+    ]
+  },
+  {
+    "key": "uploadprog",
+    "title": "Upload: in progress",
+    "verdict": "matches",
+    "differences": [
+      "Only content differs (file name, 38% instead of 64%). The real upload was slowed down to catch this state."
+    ]
+  },
+  {
+    "key": "entry",
+    "title": "Entry with a finished transcript",
+    "verdict": "small differences",
+    "differences": [
+      "The audio position bar is the browser's dark grey in both themes. In light mode it is a dark bar on a white card, where the mockup uses a pale lavender track.",
+      "The real entry is a single recording with no typed text and no \"transcribing\" skeleton card, so only the finished-card part of the mockup can be compared. The \"transcribing\" state was seen live and worked (text appeared after about 10 s).",
+      "Fonts, spacing, buttons and the edit/delete icons match."
+    ]
+  },
+  {
+    "key": "entryedit",
+    "title": "Entry: editing a transcript",
+    "verdict": "matches",
+    "differences": [
+      "Text box, \"Mentés\" and \"Mégse\" buttons and the note about edits being kept all match. The audio bar colour is the same small difference as on the entry screen."
+    ]
+  },
+  {
+    "key": "entryfail",
+    "title": "Entry: transcription failed",
+    "verdict": "small differences",
+    "differences": [
+      "The retry icon turns the other way round (counter-clockwise in the real app).",
+      "The audio bar is the browser's grey, as on the entry screen.",
+      "The failure here is real (see the bug list in the PR), not a seeded one."
+    ]
+  },
+  {
+    "key": "entryoff",
+    "title": "Entry: not transcribed (transcription off)",
+    "verdict": "small differences",
+    "differences": [
+      "In the list column the real row shows a \"Nincs átírva\" badge and the placeholder \"Hangfelvétel, szöveg nélkül\" in italics. The mockup row has no badge and no italics.",
+      "The real card also shows the recording language next to the time (\"Magyar 10:25\"). The mockup shows only the time.",
+      "The audio bar is the browser's grey, as on the entry screen."
+    ]
+  },
+  {
+    "key": "settings",
+    "title": "Settings: transcription off",
+    "verdict": "small differences",
+    "differences": [
+      "On the phone the real Settings page has the Nightjar logo row at the top. The mockup has no logo on this screen.",
+      "On desktop the sidebar in the real full-page capture ends at the window height (800 px) while the page is longer. This is how the capture works (fixed sidebar), not what you see when scrolling."
+    ]
+  },
+  {
+    "key": "settingsdl",
+    "title": "Settings: model downloading",
+    "verdict": "matches",
+    "differences": [
+      "Real size is 564 MB, the mockup says 560 MB. Progress bar, label and layout match. The model was downloaded for real (about 2 minutes here)."
+    ]
+  },
+  {
+    "key": "settingsready",
+    "title": "Settings: model ready, backfill prompt",
+    "verdict": "small differences",
+    "differences": [
+      "Same text and layout as the mockup (real: \"2 felvételt még nem írtunk át. Átírjuk most?\" with \"Átírás most\" and \"Most nem\").",
+      "On the phone the bottom tab bar covers part of the prompt in the full-page capture because the bar is fixed to the window. Same Nightjar logo row difference as on Settings."
+    ]
+  },
+  {
+    "key": "timeline",
+    "title": "Timeline with voice and text entries",
+    "verdict": "small differences",
+    "differences": [
+      "Rows with no transcript text show \"Hangfelvétel, szöveg nélkül\" in italics in the real app. The mockup shows it upright.",
+      "Real data has no \"Átírás folyamatban\" badge here because every job had finished when the screen was captured. The badge itself was seen working.",
+      "Dates and texts are different, as expected. Card sizes, badges and spacing match."
+    ]
+  },
+  {
+    "key": "home",
+    "title": "Home with entries today",
+    "verdict": "small differences",
+    "differences": [
+      "The greeting depends on the time of day (real: \"Jó napot\", mockup: \"Jó estét\").",
+      "On the phone the real tab bar is fixed to the window, so it appears in the middle of the tall full-page capture.",
+      "The list of today's entries is longer in the real run. Cards look the same."
+    ]
+  },
+  {
+    "key": "search",
+    "title": "Search: results",
+    "verdict": "small differences",
+    "differences": [
+      "The real search box shows two clear buttons: the browser's own small \"x\" and the app's round one. The mockup has only the round one. Likely the browser's built-in clear button on a search-type input.",
+      "The real highlight covers the exact word typed. The mockup highlights the whole word form (költözés, költözésről).",
+      "Result cards, date line and the \"átirat\" / \"szöveg\" labels match."
+    ]
+  },
+  {
+    "key": "searchempty",
+    "title": "Search: no results",
+    "verdict": "small differences",
+    "differences": [
+      "Same double clear button in the search box as on the results screen. Message and hint text match."
+    ]
+  }
+]

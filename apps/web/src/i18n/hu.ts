@@ -28,7 +28,7 @@ export const hu = {
     body_too_long: 'A szöveg túl hosszú.',
     unsupported_audio: 'Ezt a fájlt nem tudjuk hangként kezelni.',
     file_too_large: 'A fájl túl nagy (legfeljebb 200 MB).',
-    recording_too_long: 'A felvétel hosszabb 60 percnél.',
+    recording_too_long: 'A felvétel hosszabb 3 óránál.',
     recording_not_found: 'A felvétel nem található.',
   },
   setup: {
@@ -128,7 +128,7 @@ export const hu = {
     elapsed: 'Eltelt idő',
     micBlocked: 'A mikrofon nem érhető el. Engedélyezd a böngésző beállításaiban, és próbáld újra.',
     uploadFailed: 'A felvételt nem sikerült elmenteni. A hang még megvan, próbáld újra.',
-    limitReached: 'A felvétel elérte a 60 percet, ezért leállt.',
+    limitReached: 'A felvétel elérte a 3 órát, ezért leállt.',
   },
   upload: {
     title: 'Hangfájl feltöltése',

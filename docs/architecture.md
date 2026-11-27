@@ -132,7 +132,7 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 - Data folder: `media/<user_id>/recordings/<id>.<ext>` (original), `models/<model_id>/` (model files),
   `models/<model_id>.<n>.part` (download in progress), `tmp/` (uploads and WAVs while a job runs, emptied after).
 - The model download state (idle, downloading, failed) and its progress are saved in `instance_settings` (about once a second) and announced with `NOTIFY`, so any process can read them.
-- Limits: uploads up to 200 MB and recordings up to 60 minutes (one constant, `maxRecordingMs`), so a recording is never too big to hold in memory while it is transcribed. A job that runs longer than 5 times the audio length (at least 10 minutes) counts as stuck and is retried; on start, recordings left in `transcribing` are queued again.
+- Limits: uploads up to 200 MB and recordings up to 3 hours (one constant, `maxRecordingMs`), so a recording is never too big to hold in memory while it is transcribed. A job that runs longer than 5 times the audio length (at least 10 minutes) counts as stuck and is retried; on start, recordings left in `transcribing` are queued again.
 - Not in M1: journals, title, mood, favourites, tags, photos, prompts, suggestions, access tokens, `entries.time_zone`
   (journals and title are open questions in `docs/specs/m1-summary.md`).
 

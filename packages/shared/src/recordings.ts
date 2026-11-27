@@ -4,7 +4,7 @@ import { bodyMaxLength, entryLanguageSchema, languageSchema } from './index.ts'
 export const maxUploadBytes = 200 * 1024 * 1024
 
 /** The longest recording, in milliseconds. A longer one is too much to hold in memory while it is transcribed. */
-export const maxRecordingMs = 60 * 60 * 1000
+export const maxRecordingMs = 3 * 60 * 60 * 1000
 
 export const recordingStatusSchema = z.enum([
   'pending',

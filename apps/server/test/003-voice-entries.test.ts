@@ -1110,7 +1110,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       await waitFor(() => app.fake.state.liveInstances === 0, 'all models to be released')
     })
 
-    it('AC-9: audio over 60 minutes is refused with 413 and leaves nothing behind', async () => {
+    it('AC-9: audio over 3 hours is refused with 413 and leaves nothing behind', async () => {
       const app = await launch()
       const folder = mkdtempSync(join(tmpdir(), 'nightjar-long-'))
       const path = join(folder, 'long.wav')
@@ -1122,7 +1122,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         '-i',
         'anullsrc=r=8000:cl=mono',
         '-t',
-        '3700',
+        '10900',
         '-c:a',
         'pcm_u8',
         path,
