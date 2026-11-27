@@ -11,9 +11,10 @@ import { SettingsPage } from './routes/settings.tsx'
 import { SetupPage } from './routes/setup.tsx'
 import { TimelinePage } from './routes/timeline.tsx'
 import { WriterPage } from './routes/writer.tsx'
+import { ErrorNotice } from './components/error-notice.tsx'
 
 function RequireAuth() {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
   const location = useLocation()
   const me = useQuery(meQuery)
 
@@ -25,7 +26,7 @@ function RequireAuth() {
   if (me.error instanceof ApiError && me.error.status === 401) {
     return <Navigate to="/login" replace state={{ next: location.pathname + location.search }} />
   }
-  if (me.isError) return <p role="alert">{t('error.generic')}</p>
+  if (me.isError) return <ErrorNotice bare />
   return <Shell />
 }
 
@@ -34,7 +35,7 @@ export function App() {
   const setup = useQuery(setupStatusQuery)
 
   if (setup.isPending) return null
-  if (setup.isError) return <p role="alert">{t('error.generic')}</p>
+  if (setup.isError) return <ErrorNotice bare />
 
   if (setup.data.needed) {
     return (

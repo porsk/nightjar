@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { expectLayout } from './support/layout.ts'
 import { adminEmail, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
 
 const viewports = { 390: { width: 390, height: 844 }, 1280: { width: 1280, height: 800 } }
@@ -39,6 +40,7 @@ test.describe('006-settings: Settings is accessible and looks right', () => {
 
             const results = await new AxeBuilder({ page }).analyze()
             expect(results.violations, tag).toEqual([])
+            await expectLayout(page, `settings ${tag}`)
             const file = `settings-${tag}.png`
             await page.screenshot({ path: testInfo.outputPath(file), fullPage: true })
             await testInfo.attach(file, {

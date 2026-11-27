@@ -29,3 +29,6 @@ __pycache__/
 *.tar.bz2
 *.wav
 !**/fixtures/*.wav
+
+# generated review pages (scripts/review-page.ts)
+design/review/

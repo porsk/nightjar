@@ -7,6 +7,7 @@ import { dayHeading } from '../dates.ts'
 import { rememberScroll, takeScroll } from '../timeline-scroll.ts'
 import { EntryCard } from './entry-card.tsx'
 import { Icon } from './icon.tsx'
+import { ErrorNotice } from './error-notice.tsx'
 
 interface TimelineListProps {
   /** `card` on its own screen, `row` beside the reading pane. */
@@ -42,7 +43,7 @@ export function TimelineList({ variant, currentId, restoreScroll = false }: Time
     }
   }, [hasNextPage, isFetchingNextPage, items.length, fetchNextPage])
 
-  if (timeline.isError) return <p role="alert">{t('error.generic')}</p>
+  if (timeline.isError) return <ErrorNotice />
 
   return (
     <section className={variant === 'row' ? 'list' : 'timeline'} aria-label={t('timeline.title')}>

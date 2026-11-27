@@ -1,0 +1,116 @@
+[
+  {
+    "key": "setup1",
+    "title": "Setup step 1: account",
+    "verdict": "small differences",
+    "differences": [
+      "Real has an extra \"Telepítési kód\" (setup code) field with a hint above the email. The mockup has no such field, so the real form is one field longer.",
+      "In the real app this step is always English until the language is picked on step 2; this capture goes back to step 1 after choosing Magyar so the text compares."
+    ]
+  },
+  {
+    "key": "setup2",
+    "title": "Setup step 2: language and time zone",
+    "verdict": "matches",
+    "differences": []
+  },
+  {
+    "key": "setup3",
+    "title": "Setup step 3: transcription (Most nem selected)",
+    "verdict": "matches",
+    "differences": []
+  },
+  {
+    "key": "setup3on",
+    "title": "Setup step 3: transcription on",
+    "verdict": "matches",
+    "differences": []
+  },
+  {
+    "key": "login",
+    "title": "Login",
+    "verdict": "small differences",
+    "differences": [
+      "Mockup shows the email filled in and a \"Jelszó\" placeholder in the password field. Real fields are empty with no placeholder text (this capture is the untouched screen)."
+    ]
+  },
+  {
+    "key": "loginerr",
+    "title": "Login, wrong password",
+    "verdict": "matches",
+    "differences": [
+      "Same alert text, icon and red border. Password dot count differs only because of the typed test value."
+    ]
+  },
+  {
+    "key": "settings",
+    "title": "Settings",
+    "verdict": "small differences",
+    "differences": [
+      "Missing: the \"Rendszergazda\" / \"Átírás\" section with the toggle (spec 003).",
+      "Desktop sidebar button says \"Új felvétel\", the mockup says \"Felvétel indítása\". Phone: real shows the Nightjar brand row above the \"Beállítások\" title, the mockup has none on this screen.",
+      "Default recording language is highlighted as English in the real capture (the account default), Magyar in the mockup. Data, not layout."
+    ]
+  },
+  {
+    "key": "write",
+    "title": "Typed entry: new",
+    "verdict": "small differences",
+    "differences": [
+      "Phone matches. Desktop: \"Idővonal\" is highlighted in the sidebar, the mockup highlights \"Ma\". Sidebar button says \"Új felvétel\" instead of \"Felvétel indítása\".",
+      "Desktop page title and content sit about 8 px lower than in the mockup."
+    ]
+  },
+  {
+    "key": "edit",
+    "title": "Typed entry: edit",
+    "verdict": "small differences",
+    "differences": [
+      "Date chip says \"Ma, november 26.\" in the real app; the mockup shows the long form \"2026. november 26., csütörtök\" here.",
+      "\"Mentve 21:32\" is not shown right after opening an existing entry (it appears after the first save); the mockup shows it. Sidebar button label as on the new-entry screen."
+    ]
+  },
+  {
+    "key": "date",
+    "title": "Change date dialog",
+    "verdict": "small differences",
+    "differences": [
+      "Real has 26 (today) selected and days after today greyed out with the next-month arrow disabled. The mockup has 25 selected and 26 outlined, and no disabled days. The real behaviour is the intended one (no future dates)."
+    ]
+  },
+  {
+    "key": "delete",
+    "title": "Delete confirmation",
+    "verdict": "matches",
+    "differences": [
+      "The dialog itself matches. The page behind it differs only by the missing audio block, see \"Entry\"."
+    ]
+  },
+  {
+    "key": "entry",
+    "title": "Entry view",
+    "verdict": "small differences",
+    "differences": [
+      "Missing \"Hangfelvételek\" block with the audio players, \"Újabb felvétel\" and \"Hangfájl feltöltése\" (spec 003). Date, chip, body text and the edit and delete icons match.",
+      "Desktop list column is there now. Its excerpts are cut with \"…\" after two lines and have no duration (typed entries only in this capture); the sidebar button label differs as above."
+    ]
+  },
+  {
+    "key": "home",
+    "title": "Home",
+    "verdict": "small differences",
+    "differences": [
+      "Layout and sections match (greeting, record button, \"Inkább írok\", \"Hangfájl feltöltése\", \"Mai bejegyzések\"). The excerpts are cut with \"…\" in the real app, the mockup shows the text in full.",
+      "Phone: the greeting and record button sit a little higher and the \"Felvétel indítása\" label is tighter to the glow ring than in the mockup. Typed-only entries here, so no voice icon or duration on the cards."
+    ]
+  },
+  {
+    "key": "timeline",
+    "title": "Timeline",
+    "verdict": "small differences",
+    "differences": [
+      "Structure matches (day headings, cards, tab bar). The mockup shows voice entries with \"Átírás folyamatban\", \"Nincs átírva\" and \"Nem sikerült\" badges and a loading skeleton; this capture has typed entries only, so none of those states appear.",
+      "Desktop: real excerpts run to two lines, the mockup keeps one line. Sidebar button says \"Új felvétel\", the mockup \"Felvétel indítása\". The card times are one hour off because of how the test entries were seeded (not an app issue)."
+    ]
+  }
+]

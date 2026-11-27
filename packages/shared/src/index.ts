@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Zod's code generation calls Function(''), which the page's Content-Security-Policy blocks
+z.config({ jitless: true })
+
 export const healthResponseSchema = z.object({ status: z.literal('ok') })
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>
