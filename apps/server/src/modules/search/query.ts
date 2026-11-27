@@ -13,35 +13,58 @@ interface Row extends Record<string, unknown> {
   total: string
   source: 'text' | 'transcript'
   snippet_text: string
-  highlighted: string
+  normalized: string[]
   cut_before: boolean
   cut_after: boolean
 }
 
+const likeEscape = (word: string) => word.replace(/[\\%_]/g, '\\$&')
+
+/** The words of a query, without quotes, one per run of non-space characters. */
+const splitWords = (terms: string) => terms.replaceAll('"', '').split(/\s+/).filter(Boolean)
+
+/** The words as the database stores text: lower case and without accents. */
+async function normalizeWords({ db }: Database, words: string[]) {
+  const { rows } = await db.execute<{ word: string }>(sql`
+    SELECT nightjar_search_text(word) AS word
+    FROM jsonb_array_elements_text(${JSON.stringify(words)}::jsonb) WITH ORDINALITY AS words(word, position)
+    ORDER BY position
+  `)
+  return [...new Set(rows.map((row) => row.word).filter((word) => word !== ''))]
+}
+
 /**
- * The signed-in user's entries that match `terms` in their text or transcripts, best match first.
- * Each entry shows a window of the text where the words were found, the typed text before a transcript.
- * Only that window is cut out in the database, so long entries do not travel to the server.
+ * The signed-in user's entries whose text or transcripts contain every word of `terms` anywhere
+ * inside a word, newest first. Each entry shows a window of the text around the first match, the typed
+ * text before a transcript. Only that window is cut out in the database, so long entries do not travel
+ * to the server.
  */
 export async function searchEntries(
-  { db }: Database,
+  database: Database,
   userId: string,
   terms: string,
 ): Promise<SearchResponse> {
-  const { rows } = await db.execute<Row>(sql`
-    WITH query AS (SELECT nightjar_tsquery(${terms}::text) AS tsq),
-    hits AS (
+  const words = await normalizeWords(database, splitWords(terms))
+  if (words.length === 0) return { total: 0, results: [] }
+
+  const wordsJson = JSON.stringify(words)
+  const matchesAll = sql.join(
+    words.map((word) => sql`entries.search_text LIKE ${`%${likeEscape(word)}%`}`),
+    sql` AND `,
+  )
+
+  const { rows } = await database.db.execute<Row>(sql`
+    WITH hits AS (
       SELECT entries.id, entries.entry_date::text AS entry_date, entries.created_at, entries.body_md,
-             ts_rank(entries.search_vector, query.tsq) AS rank,
              count(*) OVER () AS total
-      FROM entries, query
-      WHERE entries.user_id = ${userId} AND entries.search_vector @@ query.tsq
-      ORDER BY rank DESC, entries.entry_date DESC, entries.created_at DESC, entries.id
+      FROM entries
+      WHERE entries.user_id = ${userId} AND ${matchesAll}
+      ORDER BY entries.entry_date DESC, entries.created_at DESC, entries.id
       LIMIT ${searchMaxResults}
     ),
     located AS (
       SELECT hits.*, picked.source, picked.text, picked.found_at
-      FROM hits, query
+      FROM hits
       CROSS JOIN LATERAL (
         SELECT candidate.source, candidate.text, found.hit_at AS found_at
         FROM (
@@ -56,36 +79,43 @@ export async function searchEntries(
           WHERE recordings.entry_id = hits.id AND recordings.user_id = ${userId}
         ) AS candidate
         CROSS JOIN LATERAL (
-          SELECT coalesce(
-            nullif(regexp_instr(candidate.text, pattern.regex, 1, 1, 0, 'i'), 0),
-            regexp_instr(unaccent(candidate.text), pattern.regex, 1, 1, 0, 'i'),
-            0
-          ) AS hit_at
-          FROM (SELECT nightjar_highlight_pattern(query.tsq) AS regex) AS pattern
-          OFFSET 0
+          SELECT coalesce(min(strpos(normal.text, word)) FILTER (WHERE strpos(normal.text, word) > 0), 0) AS hit_at
+          FROM (SELECT nightjar_search_text(candidate.text) AS text) AS normal,
+               jsonb_array_elements_text(${wordsJson}::jsonb) AS word
         ) AS found
         ORDER BY found.hit_at > 0 DESC, candidate.text <> '' DESC, candidate.position, candidate.spoken_at
         LIMIT 1
       ) AS picked
     ),
     cut AS (
-      SELECT located.*, greatest(1, located.found_at - ${contextBefore}) AS window_start
+      SELECT located.*,
+             greatest(located.found_at - 1, 0) AS normalized_before
       FROM located
     ),
     windowed AS (
-      SELECT cut.*, translate(substr(cut.text, cut.window_start, ${windowLength}), chr(1) || chr(2), '  ') AS snippet_text
+      SELECT cut.*,
+             cut.normalized_before
+               - greatest(0, length(nightjar_search_text(left(cut.text, cut.normalized_before))) - cut.normalized_before)
+               AS original_before
       FROM cut
+    ),
+    snippets AS (
+      SELECT windowed.*,
+             greatest(1, windowed.original_before + 1 - ${contextBefore}) AS window_start
+      FROM windowed
     )
-    SELECT windowed.id, windowed.entry_date, windowed.created_at, windowed.total, windowed.source,
-           windowed.snippet_text,
-           windowed.window_start > 1 AS cut_before,
-           windowed.window_start + ${windowLength} - 1 < length(windowed.text) AS cut_after,
-           ts_headline(
-             'simple', unaccent(windowed.snippet_text), nightjar_prefix_tsquery(query.tsq),
-             'HighlightAll=true, StartSel=' || chr(1) || ', StopSel=' || chr(2)
-           ) AS highlighted
-    FROM windowed, query
-    ORDER BY windowed.rank DESC, windowed.entry_date DESC, windowed.created_at DESC, windowed.id
+    SELECT snippets.id, snippets.entry_date, snippets.created_at, snippets.total, snippets.source,
+           substr(snippets.text, snippets.window_start, ${windowLength}) AS snippet_text,
+           snippets.window_start > 1 AS cut_before,
+           snippets.window_start + ${windowLength} - 1 < length(snippets.text) AS cut_after,
+           ARRAY(
+             SELECT nightjar_search_text(letter)
+             FROM unnest(regexp_split_to_array(substr(snippets.text, snippets.window_start, ${windowLength}), ''))
+               WITH ORDINALITY AS letters(letter, position)
+             ORDER BY position
+           ) AS normalized
+    FROM snippets
+    ORDER BY snippets.entry_date DESC, snippets.created_at DESC, snippets.id
   `)
   return {
     total: Number(rows[0]?.total ?? 0),
@@ -94,7 +124,7 @@ export async function searchEntries(
       entryDate: row.entry_date,
       createdAt: new Date(row.created_at).toISOString(),
       source: row.source,
-      snippet: buildSnippet(row.snippet_text, row.highlighted, {
+      snippet: buildSnippet(row.snippet_text, row.normalized, words, {
         before: row.cut_before,
         after: row.cut_after,
       }),
