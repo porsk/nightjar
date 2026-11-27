@@ -54,7 +54,7 @@ Transcription
 - **AC-14** Given the queue was empty, when a job starts, then one transcriber (model) is created, and once no job is left it is disposed; with an empty queue no model is in memory.
 - **AC-15** Given a recording with language `hu` or `en`, then that language is passed to the transcriber; with `auto`, the detected language is stored on the transcript; the card shows "Magyar" or "English".
 - **AC-16** Given the transcriber fails, then the job is retried 2 more times, then the status is `failed` and the card shows "Az átírás nem sikerült." with "Újrapróbálás"; retry sets it back to `pending` and a success shows the transcript; the audio stays playable the whole time.
-- **AC-17** (the search part is checked against the stored text for now, the real search check lands with spec 005) Given a done transcript, when the user presses "Átirat szerkesztése", edits and presses "Mentés", then the text is saved with `is_user_edited = true` and search finds the new words; "Mégse" restores the old text.
+- **AC-17** Given a done transcript, when the user presses "Átirat szerkesztése", edits and presses "Mentés", then the text is saved with `is_user_edited = true` and search finds the new words; "Mégse" restores the old text.
 - **AC-18** Given a transcript with `is_user_edited = true`, when a transcribe job for that recording runs again (for example a duplicate delivery), then the user's text is unchanged.
 - **AC-19** Given a recording, when the player plays it, then `GET /api/v1/recordings/:id/audio` returns the original bytes with the stored `Content-Type` and supports Range requests (206), and the player shows position / duration.
 

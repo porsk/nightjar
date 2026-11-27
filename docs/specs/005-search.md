@@ -1,6 +1,6 @@
 # 005 Search
 
-Status: approved
+Status: done
 Milestone: M1
 
 ## Why
@@ -12,9 +12,13 @@ In (screen names from `design/alkony/m1.html`):
 - **Search** (`search`, `searchempty`): search box with clear button, result count, result cards (date + time, source
   "szöveg" / "átirat", snippet with highlighted matches), no-results state.
 - Postgres full-text search over entry body + all transcripts of the entry, Hungarian and English stemming,
-  accent-insensitive (`unaccent`). `entries.search_vector` (architecture.md, "M1 data model") is kept current by the
-  entry and transcript services.
-- API: `GET /api/v1/search?q=…` → `{ total, results: [{ entryId, entryDate, createdAt, source, snippet }] }`, max 50 results.
+  accent-insensitive (`unaccent`). `entries.search_vector` (architecture.md, "M1 data model") is kept current by database
+  triggers, so no service has to remember it: they fire when an entry is inserted or its body changes, when a transcript is
+  created, edited or deleted, and when a recording is deleted. The migration creates `unaccent` and fills the column for
+  existing rows.
+- API: `POST /api/v1/search` with the JSON body `{ "q": "…" }` → `{ total, results: [{ entryId, entryDate, createdAt, source, snippet }] }`,
+  max 50 results. It is a POST on purpose: search words are journal text and must not appear in URLs, which reverse proxies
+  write to their access logs (decision: owner, review of PR #45). `total` counts every match, the results are the best 50.
 
 Out (not now): filters (M2), semantic search / "ask your journal" (backlog), search history, prefix or fuzzy matching.
 
@@ -43,12 +47,12 @@ Search tests run on real Postgres 19 (Testcontainers), since stemming and `unacc
 | AC-2 | | | unaccented queries match | | |
 | AC-3 | | | English stems match | | EN fixture entries |
 | AC-4 | | source label | `source` field per match | transcript-only hit after fake transcription | fake transcriber text |
-| AC-5 | | | each change then search | | |
-| AC-6 | snippet escaping, only `<mark>` survives | card render | order, max 50, total | | 60 matching entries, XSS body |
+| AC-5 | | | each change then search; look-alike apostrophes in an entry, a transcript and the upgrade backfill | | |
+| AC-6 | snippet escaping, only `<mark>` survives | card render | order, max 50, total; 50 hits in 100 KB entries answer in under 1 s | | 60 matching entries, XSS body |
 | AC-7 | | empty and short query: no fetch | | no-results screen | |
 | AC-8 | | debounce with fake timers, clear button | | type → results → open entry | |
 | AC-9 | | | two users, same word | | |
-| AC-10 | | | each odd query → 200 | | `websearch_to_tsquery`, no raw `to_tsquery` |
+| AC-10 | | | each odd query → 200, including look-alike apostrophes (`ʻ ʼ ʹ ʽ ˈ ′ ŉ`) | | `websearch_to_tsquery`, no raw `to_tsquery` |
 | AC-11 | | | | axe on both states | `emulateMedia({ colorScheme })` |
 | AC-12 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
 
@@ -66,7 +70,7 @@ New keys, in both `hu` and `en`.
 
 ## Privacy & data
 - The search vector lives in the `entries` row. Queries are not stored.
-- The query string is journal text: it is never logged (request logs drop query strings, spec 007).
+- The search words are journal text: they travel in the request body, never in a URL or a log line.
 
 ## Open questions
 None. Every entry is indexed with both Hungarian and English stemming and search uses both (D-30 Q5).

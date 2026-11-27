@@ -25,6 +25,8 @@ export default defineConfig({
         'src/worker.ts',
         'src/modules/events/routes.ts',
         'src/modules/recordings/routes.ts',
+        'src/modules/search/routes.ts',
+        'src/modules/search/query.ts',
         'src/modules/transcription/fake-transcriber.ts',
         'src/modules/transcription/routes.ts',
         'src/modules/transcription/service.ts',

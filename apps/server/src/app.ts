@@ -15,6 +15,7 @@ import { registerSettingsRoutes } from './modules/settings/routes.ts'
 import { registerEntryRoutes } from './modules/entries/routes.ts'
 import { registerEventRoutes } from './modules/events/routes.ts'
 import { registerRecordingRoutes } from './modules/recordings/routes.ts'
+import { registerSearchRoutes } from './modules/search/routes.ts'
 import { registerTranscriptionRoutes } from './modules/transcription/routes.ts'
 import type { TranscriptionService } from './modules/transcription/service.ts'
 import type { Readiness } from './readiness.ts'
@@ -124,6 +125,7 @@ export async function buildApp({
     now: clock,
     maxUploadBytes,
   })
+  registerSearchRoutes(app, { database })
   registerTranscriptionRoutes(app, { transcription })
   registerEventRoutes(app, { events })
 

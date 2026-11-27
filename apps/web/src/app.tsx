@@ -8,6 +8,7 @@ import { EntryPage } from './routes/entry.tsx'
 import { HomePage } from './routes/home.tsx'
 import { LoginPage } from './routes/login.tsx'
 import { RecorderPage } from './routes/recorder.tsx'
+import { SearchPage } from './routes/search.tsx'
 import { SettingsPage } from './routes/settings.tsx'
 import { SetupPage } from './routes/setup.tsx'
 import { TimelinePage } from './routes/timeline.tsx'
@@ -55,6 +56,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route index element={<HomePage />} />
         <Route path="timeline" element={<TimelinePage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="write" element={<WriterPage />} />
         <Route path="record" element={<RecorderPage />} />

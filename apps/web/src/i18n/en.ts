@@ -94,6 +94,18 @@ export const en: typeof hu = {
     off: 'Not transcribed',
     failed: 'Failed',
   },
+  search: {
+    title: 'Search',
+    label: 'Search',
+    clear: 'Clear',
+    count_one: '{{count}} result',
+    count_other: '{{count}} results',
+    source: { text: 'text', transcript: 'transcript' },
+    empty: {
+      title: 'No results',
+      hint: "Try a shorter or different word. Accents don't matter.",
+    },
+  },
   a11y: {
     icon: {
       voice: 'Voice entry',

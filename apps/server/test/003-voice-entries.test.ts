@@ -692,10 +692,13 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       )
       expect(edited.statusCode).toBe(200)
       expect(edited.json()).toMatchObject({ text: 'Zebrafinch morning walk', isUserEdited: true })
-      const found = await database.db.execute(
-        sql`select count(*)::int as total from transcripts where to_tsvector('english', text) @@ plainto_tsquery('english', 'zebrafinch')`,
-      )
-      expect(found.rows[0]).toMatchObject({ total: 1 })
+      const found = await app.call(app.alice, 'POST', '/api/v1/search', {
+        q: 'zebrafinch',
+      })
+      expect(found.json()).toMatchObject({
+        total: 1,
+        results: [{ entryId: saved.entryId, source: 'transcript' }],
+      })
       expect(
         (
           await app.call(app.alice, 'PATCH', `/api/v1/recordings/${saved.id}/transcript`, {

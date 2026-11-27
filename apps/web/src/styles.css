@@ -19,6 +19,7 @@
   --danger: #ff8a8a;
   --on-danger: #2d0b0b;
   --scrim: #08070fb3;
+  --mark: #6a5048;
   --serif: 'Fraunces Variable', Georgia, serif;
   --sans: 'Figtree Variable', system-ui, sans-serif;
 }
@@ -41,6 +42,7 @@
     --danger: #b3261e;
     --on-danger: #ffffff;
     --scrim: #231f4573;
+    --mark: #ffd98a;
   }
 }
 
@@ -1053,10 +1055,58 @@ svg.icon {
   }
 }
 
+.sbox {
+  margin-bottom: 6px;
+}
+
+.sbox .inp {
+  border-radius: 26px;
+}
+
+.sbox .x {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface2);
+}
+
+.count {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 12px 4px;
+}
+
+mark {
+  background: var(--mark);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.hit .src {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hit .ex {
+  -webkit-line-clamp: 3;
+}
+
 .empty {
   text-align: center;
   padding: 48px 16px;
   color: var(--muted);
+}
+
+.empty h2 {
+  font: 600 20px var(--serif);
+  color: var(--text);
+  margin-bottom: 8px;
 }
 
 .empty svg {

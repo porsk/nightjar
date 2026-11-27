@@ -22,6 +22,7 @@ import {
   type Transcript,
   type TranscriptionStatus,
 } from '@nightjar/shared/recordings'
+import { searchResponseSchema, type SearchResponse } from '@nightjar/shared/search'
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
 export class ApiError extends Error {
@@ -109,6 +110,14 @@ export const timelineQuery = infiniteQueryOptions({
   initialPageParam: '',
   getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 })
+
+export const searchQuery = (terms: string) =>
+  queryOptions({
+    queryKey: ['search', terms],
+    queryFn: async (): Promise<SearchResponse> =>
+      parse(searchResponseSchema, await request('POST', '/api/v1/search', { q: terms })),
+    staleTime: 0,
+  })
 
 export const dayEntriesQuery = (day: string) =>
   queryOptions({

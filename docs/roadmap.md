@@ -44,7 +44,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [x] 002 Text entries (write, edit, delete, entry date)
 - [x] 003 Voice entries (record, upload an existing audio file, background transcription, live status, edit transcript)
 - [x] 004 Timeline
-- [ ] 005 Search (Hungarian + English aware)
+- [x] 005 Search (Hungarian + English aware)
 - [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
 - [x] 007 Logs, health, metrics
 - [x] 008 Backup guide (docs only: `pg_dump` + `/data` volume)

@@ -24,7 +24,16 @@ type App = FastifyInstance<Server, IncomingMessage, ServerResponse, Logger>
 const entriesPath = '/api/v1/entries'
 const idSchema = z.uuid()
 
-type EntryRow = typeof entries.$inferSelect
+const entryColumns = {
+  id: entries.id,
+  userId: entries.userId,
+  entryDate: entries.entryDate,
+  bodyMd: entries.bodyMd,
+  createdAt: entries.createdAt,
+  updatedAt: entries.updatedAt,
+}
+
+type EntryRow = Omit<typeof entries.$inferSelect, 'searchVector'>
 
 const toEntry = (row: EntryRow): Entry =>
   entryResponseSchema.parse({
@@ -83,7 +92,7 @@ export function registerEntryRoutes(
         entryDate: parsed.data.entryDate ?? todayIn(user.timeZone, now()),
         bodyMd: parsed.data.bodyMd ?? '',
       })
-      .returning()
+      .returning(entryColumns)
     if (!row) throw new Error('entry was not created')
     return reply.code(201).send(toEntry(row))
   })
@@ -106,7 +115,7 @@ export function registerEntryRoutes(
   app.get(`${entriesPath}/:id`, async (request) => {
     const user = me(request)
     const [row] = await db
-      .select()
+      .select(entryColumns)
       .from(entries)
       .where(ownedBy(user.id, entryId(request.params)))
     if (!row) throw new AppError(404, 'entry_not_found')
@@ -127,7 +136,7 @@ export function registerEntryRoutes(
         ...(parsed.data.entryDate !== undefined ? { entryDate: parsed.data.entryDate } : {}),
       })
       .where(ownedBy(user.id, id))
-      .returning()
+      .returning(entryColumns)
     if (!row) throw new AppError(404, 'entry_not_found')
     return toEntry(row)
   })
