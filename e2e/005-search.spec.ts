@@ -40,6 +40,19 @@ async function openSearch(page: Page) {
 }
 
 test.describe('005-search: search screen', () => {
+  test('AC-13: the browser own clear button is hidden, only the app one is left', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'reads a Chromium-only pseudo element')
+    await openSearch(page)
+    await searchBox(page).fill('x')
+    const appearance = await searchBox(page).evaluate(
+      (input) => getComputedStyle(input, '::-webkit-search-cancel-button').appearance,
+    )
+    expect(appearance).toBe('none')
+    await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible()
+  })
+
   test('AC-1: searching "költözés" shows every form of the word, highlighted', async ({ page }) => {
     await seedTimelineEntry({
       bodyMd: 'Annával a költözésről beszélgettünk.',

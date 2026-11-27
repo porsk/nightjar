@@ -62,7 +62,7 @@
     "differences": [
       "The retry icon turns the other way round (counter-clockwise in the real app).",
       "The audio bar is the browser's grey, as on the entry screen.",
-      "The failure here is real (see the bug list in the PR), not a seeded one."
+      "The failed card is from the first run, before the fix for the transcription process bug, so the failure is real and not seeded. It no longer happens in the rebuilt image."
     ]
   },
   {
@@ -126,7 +126,6 @@
     "title": "Search: results",
     "verdict": "small differences",
     "differences": [
-      "The real search box shows two clear buttons: the browser's own small \"x\" and the app's round one. The mockup has only the round one. Likely the browser's built-in clear button on a search-type input.",
       "The real highlight covers the exact word typed. The mockup highlights the whole word form (költözés, költözésről).",
       "Result cards, date line and the \"átirat\" / \"szöveg\" labels match."
     ]
@@ -134,9 +133,7 @@
   {
     "key": "searchempty",
     "title": "Search: no results",
-    "verdict": "small differences",
-    "differences": [
-      "Same double clear button in the search box as on the results screen. Message and hint text match."
-    ]
+    "verdict": "matches",
+    "differences": []
   }
 ]
