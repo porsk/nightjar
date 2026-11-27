@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
-  adminEmail,
+  adminName,
+  adminUsername,
   createAdmin,
   password,
   readTranscriptionFlag,
@@ -19,14 +20,15 @@ test.beforeEach(async ({ context }) => {
 
 async function fillAccount(page: Page, code = setupCodeFromLog()) {
   await page.getByLabel('Setup code').fill(code)
-  await page.getByLabel('Email', { exact: true }).fill(adminEmail)
+  await page.getByLabel('Username', { exact: true }).fill(adminUsername)
+  await page.getByLabel('What should we call you?').fill(adminName)
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByLabel('Password again').fill(password)
   await page.getByRole('button', { name: 'Next' }).click()
 }
 
 async function login(page: Page, pass = password) {
-  await page.getByLabel('Email').fill(adminEmail)
+  await page.getByLabel('Username').fill(adminUsername)
   await page.getByLabel('Password').fill(pass)
   await page.getByRole('button', { name: 'Sign in' }).click()
 }
@@ -107,16 +109,16 @@ test.describe('001-setup-login: setup wizard and login', () => {
     await page.goto('/login')
     await login(page, 'not the password')
     await expect(page.getByRole('alert')).toHaveText(
-      'Wrong email or password. Check them and try again.',
+      'Wrong username or password. Check them and try again.',
     )
   })
 
   test('AC-11: after 10 failed logins the screen asks to wait', async ({ page, request }) => {
     await createAdmin(headers)
     for (let attempt = 0; attempt < 10; attempt++) {
-      const response = await request.post('/api/v1/auth/sign-in/email', {
+      const response = await request.post('/api/v1/auth/sign-in/username', {
         headers,
-        data: { email: adminEmail, password: 'wrong password' },
+        data: { username: adminUsername, password: 'wrong password' },
       })
       expect(response.status()).toBe(401)
     }

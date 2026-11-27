@@ -43,6 +43,13 @@
       "when": 1795755066215,
       "tag": "0005_search",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795773107984,
+      "tag": "0006_username_login",
+      "breakpoints": true
     }
   ]
 }

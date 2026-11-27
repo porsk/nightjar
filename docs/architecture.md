@@ -79,7 +79,7 @@ files go to the local filesystem (no storage interface), events are an in-proces
 ## 4. Data model
 
 ```
-users          id, email, display_name, locale, time_zone, created_at     (+ auth library's session tables)
+users          id, username, email (nullable), name, locale, time_zone, created_at     (+ auth library's session tables)
 access_tokens  id, user_id, name, token_hash, can_write, last_used_at, revoked_at
 journals       id, user_id, name, is_default, created_at
 entries        id, journal_id, entry_date (date), time_zone, title, body_md, language,
@@ -110,7 +110,7 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, email, name, `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
+| `users` (+ Better Auth `sessions`, `accounts`, `verifications`) | id, `username` (unique, lowercase, 3 to 32 of `a-z 0-9 . - _`), `email` (nullable, unique, unused until OAuth or a hosted version), `name` (what we call the user), `is_admin`, `ui_language` (`hu`/`en`, default `en`), `entry_language` (`hu`/`en`/`auto`, starts equal to `ui_language`), `time_zone` (IANA), created_at | Per-user settings live on the user row. First account is the admin |
 | `instance_settings` | id (always 1), `transcription_enabled` (default false), `auth_secret`, `setup_code_hash`, updated_at | The only instance-wide table, so no `user_id`. `auth_secret` is made on first start and signs session cookies. `setup_code_hash` holds the hash of the current setup code until the first account exists |
 | `entries` | id (uuid), user_id, `entry_date` (date), `body_md` (text, may be empty), `search_vector` (tsvector, kept by database triggers), created_at, updated_at | Many entries per day. `entry_date` is the day it is about, never recomputed |
 | `recordings` | id (uuid), user_id, entry_id, `file_path` (relative), mime_type, size_bytes, duration_ms, `language` (`hu`/`en`/`auto`, what was asked), `status`, created_at, updated_at | `status`: `pending`, `transcribing`, `done`, `failed`, `skipped` (transcription was off) |
@@ -179,7 +179,7 @@ WCAG 2.2 AA. The app follows the system light/dark theme. Offline recording queu
 
 ## 10. Security, privacy, operations
 
-- Auth via Better Auth (MIT): email + password (Argon2id), httpOnly SameSite cookies.
+- Auth via Better Auth (MIT): username + password (Argon2id, username plugin), httpOnly SameSite cookies.
 - `@fastify/helmet` (CSP, headers), `@fastify/rate-limit` on login/uploads.
 - Non-root container; only `/data` writable. No telemetry; outbound traffic only for model downloads and opt-in AI.
 - pino logs with redaction - never log journal text, transcripts or file names.

@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { username } from 'better-auth/plugins'
+import { usernameMaxLength, usernameMinLength, usernamePattern } from '@nightjar/shared'
 import { eq } from 'drizzle-orm'
 import type { Database } from '../../database.ts'
 import { accounts, instanceSettings, sessions, users, verifications } from '../../db/schema.ts'
@@ -35,6 +37,14 @@ export async function createAuth(database: Database) {
       enabled: true,
       password: { hash: hashPassword, verify: verifyPassword },
     },
+    plugins: [
+      username({
+        displayUsername: false,
+        minUsernameLength: usernameMinLength,
+        maxUsernameLength: usernameMaxLength,
+        usernameValidator: (value) => usernamePattern.test(value),
+      }),
+    ],
     user: {
       additionalFields: {
         isAdmin: { type: 'boolean', input: false },

@@ -79,8 +79,8 @@ export const createAccount = async (input: SetupRequest): Promise<Me> =>
 export const updateSettings = async (patch: SettingsPatch): Promise<Me> =>
   parse(meResponseSchema, await request('PATCH', '/api/v1/me/settings', patch))
 
-export const signIn = async (credentials: { email: string; password: string }) => {
-  await request('POST', '/api/v1/auth/sign-in/email', credentials)
+export const signIn = async (credentials: { username: string; password: string }) => {
+  await request('POST', '/api/v1/auth/sign-in/username', credentials)
 }
 
 export const signOut = async () => {

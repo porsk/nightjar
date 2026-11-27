@@ -11,7 +11,8 @@ import { greetingPeriod, hourIn } from '../format.ts'
 export function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const timeZone = useQuery(meQuery).data?.timeZone ?? 'UTC'
+  const me = useQuery(meQuery).data
+  const timeZone = me?.timeZone ?? 'UTC'
   const now = new Date()
   const today = todayIn(timeZone, now)
   const entriesToday = useQuery(dayEntriesQuery(today))
@@ -21,7 +22,9 @@ export function HomePage() {
     <div className="home">
       <section className="hero">
         <TodayDate full />
-        <h1 className="greet">{t(`home.greeting.${greetingPeriod(hourIn(now, timeZone))}`)}</h1>
+        <h1 className="greet">
+          {t(`home.greeting.${greetingPeriod(hourIn(now, timeZone))}`, { name: me?.name ?? '' })}
+        </h1>
         <div className="rec-wrap">
           <Link to="/record" className="rec" aria-label={t('home.record')}>
             <Icon name="mic" />

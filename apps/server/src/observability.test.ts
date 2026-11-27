@@ -86,12 +86,14 @@ describe('007-observability: logs, health, metrics', () => {
     app.log.info(
       {
         password: 'ZQX-pw',
-        email: 'a@b.hu',
+        username: 'zqx.user',
+        body: { name: 'ZQX Név' },
+        user: { name: 'ZQX Név2' },
         req: { headers: { cookie: 'ZQX-c', authorization: 'ZQX-a' } },
       },
       'oops',
     )
-    expectNoMarkersInLogs(capture, ['ZQX-pw', 'a@b.hu', 'ZQX-c', 'ZQX-a'])
+    expectNoMarkersInLogs(capture, ['ZQX-pw', 'zqx.user', 'ZQX Név', 'ZQX Név2', 'ZQX-c', 'ZQX-a'])
     expect(createLogger({ level: 'info' }).level).toBe('info')
   })
 

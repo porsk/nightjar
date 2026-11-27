@@ -9,32 +9,36 @@ The owner needs a first account on a fresh install, and the journal must stay pr
 ## Scope
 In:
 - Setup wizard, 3 steps (mockups `setup1`, `setup2`, `setup3`, `setup3on` in `design/alkony/m1.html`):
-  1. account: setup code, email, password, password again
+  1. account: setup code, username, name ("Hogyan szólíthatunk?"), password, password again
   2. UI language (English / Magyar, English preselected, D-31) + time zone prefilled from the browser
   3. transcription: "Most nem" (default) or "Átírás bekapcsolása" (download starts after setup, progress in Settings, spec 003)
 - The wizard starts in English; picking Magyar on step 2 switches it.
 - The first account is the admin. Its `entry_language` starts equal to the chosen UI language.
 - Setup code (D-30 Q1): on start, while no account exists, the server prints a random one-time code to the container log
   (`docker compose logs nightjar`). Step 1 asks for it. It stops working once the first account exists.
+- Sign in with username + password (D-43). No email is collected, because the server cannot send mail. The username is
+  3 to 32 characters (`a-z`, `0-9`, `.`, `-`, `_`), stored lowercase, unique; capitals typed at setup or login are folded to
+  lowercase. The name is 1 to 60 characters, any letters, and is used in the Home greeting (spec 004).
 - Login (`login`, `loginerr`), logout (button in Settings > Fiók), redirect to login when the session is gone.
 - Rate limit on login.
 - API: `GET /api/v1/setup` (`{ needed }`), `POST /api/v1/setup` (needs `setupCode`; creates the admin, settings, transcription flag, signs in),
-  Better Auth routes for sign-in / sign-out / session. Data model: `users`, `instance_settings` (architecture.md, "M1 data model").
+  Better Auth routes for sign-in (`POST /api/v1/auth/sign-in/username`) / sign-out / session (username plugin; `users.email` is nullable, so
+  OAuth providers and real emails can be added later). Data model: `users`, `instance_settings` (architecture.md, "M1 data model").
 
 Out (not now): more accounts or sign-up, password change or reset, OAuth, passkeys, email verification, user management.
 
 ## Acceptance criteria
 
 - **AC-1** Given an empty database, when anyone opens any app URL, then they land on setup step 1, and the login page is not reachable.
-- **AC-2** Given setup step 1, when the setup code is empty, the email is not valid, the password is shorter than 8 characters, or the two passwords differ, then that field shows an error and "Tovább" stays on step 1.
+- **AC-2** Given setup step 1, when the setup code is empty, the username is not 3 to 32 characters of `a-z 0-9 . - _` (after lowercasing), the name is empty or longer than 60 characters, the password is shorter than 8 characters, or the two passwords differ, then that field shows an error and "Tovább" stays on step 1.
 - **AC-3** Given setup step 2, then the wizard is in English whatever the browser language, the UI language is preselected as English and the time zone from `Intl.DateTimeFormat().resolvedOptions().timeZone`; picking Magyar re-renders the wizard in Hungarian right away.
-- **AC-4** Given the wizard finished with "Most nem", then exactly one user exists with `is_admin = true`, the chosen `ui_language` and `time_zone`, `entry_language` equal to `ui_language`, `instance_settings.transcription_enabled = false`, and the browser is signed in and on Home.
+- **AC-4** Given the wizard finished with "Most nem", then exactly one user exists with `is_admin = true`, the chosen `username` and `name`, the chosen `ui_language` and `time_zone`, `entry_language` equal to `ui_language`, `instance_settings.transcription_enabled = false`, and the browser is signed in and on Home.
 - **AC-5** Given the wizard finished with "Átírás bekapcsolása", then `transcription_enabled = true` and the model download has started (Settings shows the progress state from spec 003).
 - **AC-6** Given a user already exists, when `POST /api/v1/setup` is called, then it answers 409 `setup_done` and creates nothing; opening `/setup` in the browser redirects to login.
 - **AC-7** Given an empty database, when two setup requests arrive at the same time, then exactly one succeeds and the other gets 409.
 - **AC-8** Given any state, when Better Auth's own sign-up endpoint is called, then it answers 403 and creates no user.
-- **AC-9** Given the admin account, when the correct email and password are submitted on the login screen, then the user lands on Home and the session cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` when served over https.
-- **AC-10** Given a wrong password or an unknown email, then the login screen shows the same alert ("Hibás e-mail cím vagy jelszó…", `role="alert"`) and the API returns the same error code and status for both cases.
+- **AC-9** Given the admin account, when the correct username and password are submitted on the login screen, then the user lands on Home and the session cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` when served over https.
+- **AC-10** Given a wrong password, an unknown username or a username that is not valid, then the login screen shows the same alert ("Hibás felhasználónév vagy jelszó…", `role="alert"`) and the API returns the same error code and status for all cases.
 - **AC-11** Given 10 failed logins from one IP within a minute, when an 11th is tried, then the API answers 429 and the login screen shows a "too many attempts, wait a minute" message.
 - **AC-12** Given a signed-in user, when they press "Kijelentkezés" in Settings, then the session is deleted on the server, the browser shows the login screen, and the old cookie gets 401 from the API.
 - **AC-13** Given no valid session, when the browser opens an app page or calls any `/api/v1` route except setup, sign-in, `/healthz` and `/readyz`, then the API answers 401 and the UI shows login; after signing in, the user lands on the page they asked for.
@@ -43,14 +47,17 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 - **AC-16** Given an empty database, when the server starts, then it logs one line with a random setup code (8 characters); given at least one user, then no setup code is generated or logged.
 - **AC-17** Given an empty database, when `POST /api/v1/setup` has a missing or wrong `setupCode`, then it answers 403 `invalid_setup_code`, creates nothing, and step 1 shows "Hibás telepítési kód." next to the code field; the right code works.
 - **AC-18** Given the first account was created with the right code, when the same code is sent again, then it answers 409 `setup_done` and creates nothing; a restart with a user prints no code.
-- **AC-19** Given the flows of this spec (setup, login, wrong password, logout) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
+- **AC-19** Given the flows of this spec (setup, login, wrong password, logout) run in a test with marker text (like `ZQX-PRIVATE-7781`) in every field (username, name, password) and file name, then the marker appears nowhere in the captured log output (helper `apps/server/test/support/log-capture.ts`, spec 007).
+- **AC-20** Given a username typed with capitals or spaces around it, then it is stored trimmed and lowercase and login works with any capitalisation; given a username that is too short, too long or has other characters (space, `@`, accents), or a name that is empty, blank, over 60 characters, then `POST /api/v1/setup` answers 400 and creates nothing; a name with Hungarian accents is stored as typed.
+- **AC-21** Given an account made by setup, then `users.email` is null and the old email sign-in route gives no session.
+- **AC-22** Given accounts of a 0.1.0 install (email only), when the migration runs, then each user gets `username` = the part of the email before `@`, lowercased, characters outside `a-z 0-9 . - _` replaced by `_`, padded to 3 and cut to 32 characters, made unique with `-2`, `-3` for repeats, and `name` = that username. The CI upgrade test signs in to the new image with the derived username and finds the same entries.
 
 ## Test plan
 
 | AC | Unit | Component / UI | API (integration) | E2E | Notes (fixtures, fakes, edge cases) |
 |---|---|---|---|---|---|
 | AC-1 | | | `GET /setup` says needed on empty DB | fresh DB: `/`, `/timeline`, `/login` all show step 1 | |
-| AC-2 | email / password / code Zod schema | step 1 shows one error per bad field, stays on step | | | 7 vs 8 chars, mismatch, `a@b`, empty code |
+| AC-2 | username / name / password / code Zod schema | step 1 shows one error per bad field, stays on step | | | 7 vs 8 chars, mismatch, `ab`, `owner name`, `a@b.hu`, empty or 61-character name, empty code |
 | AC-3 | | switching language re-renders step 2 | | Playwright `locale: 'hu-HU'` and `'en-US'` both start in English, `timezoneId: 'Europe/Budapest'` | |
 | AC-4 | | | DB row after setup | full wizard → Home, both languages | fake transcriber; the e2e helper reads the setup code from the captured server log |
 | AC-5 | | | flag true, download job started | wizard with transcription on → Settings shows progress | test model server (spec 003) |
@@ -58,7 +65,7 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 | AC-7 | | | two parallel `POST /setup` → one 200, one 409, one user | | |
 | AC-8 | | | sign-up route → 403, no row | | |
 | AC-9 | | | cookie flags in `Set-Cookie` | login → Home | `Secure` checked with `x-forwarded-proto: https` and trust proxy on |
-| AC-10 | | alert rendered with `role="alert"` | same status + code for both | wrong password shows alert | |
+| AC-10 | | alert rendered with `role="alert"` | same status + code for wrong password, unknown and malformed username | wrong password shows alert | |
 | AC-11 | | 429 → message | 11th attempt → 429 | | real limit (10 per minute per IP), counted per test IP |
 | AC-12 | | | session row gone, old cookie → 401 | logout → login screen | |
 | AC-13 | | | each protected route → 401 | deep link `/timeline` → login → `/timeline` | public routes listed in the AC |
@@ -68,6 +75,9 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 | AC-17 | | code error shown | missing / wrong code → 403, no rows; right code → 200 | wrong code on step 1 → error → right code works | |
 | AC-18 | | | second request with the used code → 409; restart with a user → no code logged | | |
 | AC-19 | | | marker through this spec's flows, assert absent from captured logs | | helper from spec 007 |
+| AC-20 | trim + lowercase, accents kept | | capitals, bad usernames, bad names → 400, no rows | | |
+| AC-21 | | | `email` is null, email route gives no session | | |
+| AC-22 | | | backfill statements of the migration on rows made from emails (repeats, odd characters, short, long) | CI upgrade test: set up on the previous release, sign in to the new image with the derived username, same entries | `scripts/upgrade-test.ts` |
 
 Also covered: both languages (`hu` + `en`) on every screen, mobile + desktop, Playwright screenshots of all 6 states.
 
@@ -91,18 +101,20 @@ New keys, in both `hu` and `en`.
 | `setup.finish` / `setup.finishAndDownload` | Befejezés / Befejezés és letöltés indítása | Finish / Finish and start download |
 | `login.title` / `login.lead` | Üdv újra. / Jelentkezz be a naplódba. | Welcome back. / Sign in to your journal. |
 | `login.submit` | Belépés | Sign in |
-| `login.error.invalid` | Hibás e-mail cím vagy jelszó. Ellenőrizd, és próbáld újra. | Wrong email or password. Check them and try again. |
+| `login.error.invalid` | Hibás felhasználónév vagy jelszó. Ellenőrizd, és próbáld újra. | Wrong username or password. Check them and try again. |
 | `login.error.tooMany` | Túl sok próbálkozás. Várj egy percet, és próbáld újra. | Too many attempts. Wait a minute and try again. |
 | `auth.logout` | Kijelentkezés | Sign out |
-| `field.email` / `field.password` | E-mail cím / Jelszó | Email / Password |
-| `field.error.email` / `.passwordShort` / `.passwordMismatch` | Adj meg egy érvényes e-mail címet. / Legalább 8 karakter legyen. / A két jelszó nem egyezik. | Enter a valid email. / Use at least 8 characters. / The passwords don't match. |
+| `field.username` / `field.name` / `field.password` | Felhasználónév / Hogyan szólíthatunk? / Jelszó | Username / What should we call you? / Password |
+| `field.error.username` | Használj 3 és 32 közötti karaktert: kisbetű, szám, pont, kötőjel vagy aláhúzás. | Use 3 to 32 characters: lowercase letters, digits, dot, dash or underscore. |
+| `field.error.name` | Add meg a neved (legfeljebb 60 karakter). | Enter your name (60 characters at most). |
+| `field.error.passwordShort` / `.passwordMismatch` | Legalább 8 karakter legyen. / A két jelszó nem egyezik. | Use at least 8 characters. / The passwords don't match. |
 | `field.error.code` / `error.invalid_setup_code` | Add meg a telepítési kódot. / Hibás telepítési kód. | Enter the setup code. / Wrong setup code. |
 | `common.next` / `common.back` | Tovább / Vissza | Next / Back |
 | `common.privacyNote` | A hang a saját szervereden marad. | Your voice stays on your own server. |
 
 ## Privacy & data
-- Stored: email, Argon2id password hash, sessions (Better Auth tables), settings on the user row, the transcription flag.
-- Logs never contain the email, password or session token (checked in spec 007). The one secret in the log is the setup code, and only while no account exists.
+- Stored: username, name, Argon2id password hash, sessions (Better Auth tables), settings on the user row, the transcription flag.
+- Logs never contain the username, name, password or session token (checked in spec 007). The one secret in the log is the setup code, and only while no account exists.
 - Nothing leaves the server.
 
 ## Open questions

@@ -49,28 +49,28 @@ describe('004-timeline: Home', () => {
 
   it('AC-8: the greeting follows the hour in the user time zone', async () => {
     await openHomeAt('2026-11-26T20:00:00Z')
-    expect(greeting()).toBe("Good evening. What's on your mind?")
+    expect(greeting()).toBe("Good evening, Örs. What's on your mind?")
   })
 
   it('AC-8: 5 to 10 is morning, 10 to 18 afternoon and the rest evening', async () => {
     await openHomeAt('2026-11-26T04:00:00Z')
-    expect(greeting()).toBe("Good morning. What's on your mind?")
+    expect(greeting()).toBe("Good morning, Örs. What's on your mind?")
   })
 
   it('AC-8: the same moment gives another greeting in another time zone', async () => {
     await openHomeAt('2026-11-26T08:30:00Z', { ...me, timeZone: 'UTC' })
-    expect(greeting()).toBe("Good morning. What's on your mind?")
+    expect(greeting()).toBe("Good morning, Örs. What's on your mind?")
   })
 
   it('AC-8: after ten it is afternoon', async () => {
     await openHomeAt('2026-11-26T09:00:00Z')
-    expect(greeting()).toBe("Good afternoon. What's on your mind?")
+    expect(greeting()).toBe("Good afternoon, Örs. What's on your mind?")
   })
 
   it('AC-8: Hungarian greeting and weekday', async () => {
     await i18n.changeLanguage('hu')
     await openHomeAt('2026-11-26T20:00:00Z', { ...me, uiLanguage: 'hu' })
-    expect(greeting()).toBe('Jó estét. Mi járt a fejedben?')
+    expect(greeting()).toBe('Jó estét, Örs! Mi járt a fejedben?')
     expect(screen.getByText('csütörtök')).toBeInTheDocument()
     expect(screen.getByText('csütörtök, november 26.')).toBeInTheDocument()
   })

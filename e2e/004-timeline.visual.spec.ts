@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { expectLayout } from './support/layout.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -51,7 +51,7 @@ test.describe('004-timeline: screens are accessible and look right', () => {
             const hu = locale === 'hu-HU'
             await createAdmin(headers, hu ? 'hu' : 'en')
             await page.goto('/login')
-            await page.getByLabel(hu ? 'E-mail cím' : 'Email').fill(adminEmail)
+            await page.getByLabel(hu ? 'Felhasználónév' : 'Username').fill(adminUsername)
             await page.getByLabel(hu ? 'Jelszó' : 'Password').fill(password)
             await page.getByRole('button', { name: hu ? 'Belépés' : 'Sign in' }).click()
             const timelineName = hu ? 'Idővonal' : 'Timeline'
@@ -140,7 +140,7 @@ test.describe('004-timeline: screens are accessible and look right', () => {
             await createAdmin(headers, hu ? 'hu' : 'en')
             await seedBulkEntries(40, '2026-11-26T19:00:00Z')
             await page.goto('/login')
-            await page.getByLabel(hu ? 'E-mail cím' : 'Email').fill(adminEmail)
+            await page.getByLabel(hu ? 'Felhasználónév' : 'Username').fill(adminUsername)
             await page.getByLabel(hu ? 'Jelszó' : 'Password').fill(password)
             await page.getByRole('button', { name: hu ? 'Belépés' : 'Sign in' }).click()
             await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()

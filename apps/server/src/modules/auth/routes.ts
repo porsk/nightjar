@@ -1,4 +1,10 @@
-import { meResponseSchema, setupRequestSchema, setupStatusSchema, type Me } from '@nightjar/shared'
+import {
+  meResponseSchema,
+  setupRequestSchema,
+  setupStatusSchema,
+  usernameSchema,
+  type Me,
+} from '@nightjar/shared'
 import { count, eq, sql } from 'drizzle-orm'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
@@ -45,7 +51,8 @@ const toHeaders = (raw: FastifyRequest['headers']) => {
 
 export const toMe = (user: {
   id: string
-  email: string
+  username?: string | null | undefined
+  name: string
   isAdmin?: boolean | null | undefined
   uiLanguage?: string | null | undefined
   entryLanguage?: string | null | undefined
@@ -53,12 +60,15 @@ export const toMe = (user: {
 }): Me =>
   meResponseSchema.parse({
     id: user.id,
-    email: user.email,
+    username: user.username,
+    name: user.name,
     isAdmin: user.isAdmin,
     uiLanguage: user.uiLanguage,
     entryLanguage: user.entryLanguage,
     timeZone: user.timeZone,
   })
+
+const signInBodySchema = z.object({ username: usernameSchema, password: z.string() })
 
 const authErrorSchema = z.object({ code: z.string(), message: z.string() })
 
@@ -140,7 +150,6 @@ export function registerAuthRoutes(
     const parsed = setupRequestSchema.safeParse(request.body)
     if (!parsed.success) throw new AppError(400, 'invalid_request')
     const input = parsed.data
-    const email = input.email.toLowerCase()
 
     const authInstance = getAuth()
     const password = await hashPassword(input.password)
@@ -151,8 +160,8 @@ export function registerAuthRoutes(
       const [created] = await tx
         .insert(users)
         .values({
-          name: email.split('@')[0] ?? email,
-          email,
+          username: input.username,
+          name: input.name,
           isAdmin: true,
           uiLanguage: input.uiLanguage,
           entryLanguage: input.uiLanguage,
@@ -170,8 +179,8 @@ export function registerAuthRoutes(
       return created
     })
 
-    const signedIn = await authInstance.api.signInEmail({
-      body: { email, password: input.password },
+    const signedIn = await authInstance.api.signInUsername({
+      body: { username: input.username, password: input.password },
       headers: toHeaders(request.headers),
       asResponse: true,
     })
@@ -181,7 +190,12 @@ export function registerAuthRoutes(
     return reply.code(201).send(toMe(user))
   })
 
-  app.post(`${authBasePath}/sign-in/email`, strictRoute, forward)
+  app.post(`${authBasePath}/sign-in/username`, strictRoute, async (request, reply) => {
+    const credentials = signInBodySchema.safeParse(request.body)
+    if (!credentials.success) throw new AppError(401, 'invalid_username_or_password')
+    request.body = credentials.data
+    return forward(request, reply)
+  })
 
   app.get(`${authBasePath}/get-session`, forward)
   app.post(`${authBasePath}/sign-out`, forward)

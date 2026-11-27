@@ -7,10 +7,12 @@ export const hu = {
     retry: 'Újrapróbálás',
   },
   field: {
-    email: 'E-mail cím',
+    username: 'Felhasználónév',
+    name: 'Hogyan szólíthatunk?',
     password: 'Jelszó',
     error: {
-      email: 'Adj meg egy érvényes e-mail címet.',
+      username: 'Használj 3 és 32 közötti karaktert: kisbetű, szám, pont, kötőjel vagy aláhúzás.',
+      name: 'Add meg a neved (legfeljebb 60 karakter).',
       passwordShort: 'Legalább 8 karakter legyen.',
       passwordMismatch: 'A két jelszó nem egyezik.',
       code: 'Add meg a telepítési kódot.',
@@ -63,7 +65,7 @@ export const hu = {
     lead: 'Jelentkezz be a naplódba.',
     submit: 'Belépés',
     error: {
-      invalid: 'Hibás e-mail cím vagy jelszó. Ellenőrizd, és próbáld újra.',
+      invalid: 'Hibás felhasználónév vagy jelszó. Ellenőrizd, és próbáld újra.',
       tooMany: 'Túl sok próbálkozás. Várj egy percet, és próbáld újra.',
     },
   },
@@ -77,9 +79,9 @@ export const hu = {
     todayEntries: 'Mai bejegyzések',
     todayEmpty: 'Ma még nincs bejegyzés.',
     greeting: {
-      morning: 'Jó reggelt. Mi járt a fejedben?',
-      afternoon: 'Jó napot. Mi járt a fejedben?',
-      evening: 'Jó estét. Mi járt a fejedben?',
+      morning: 'Jó reggelt, {{name}}! Mi járt a fejedben?',
+      afternoon: 'Jó napot, {{name}}! Mi járt a fejedben?',
+      evening: 'Jó estét, {{name}}! Mi járt a fejedben?',
     },
   },
   timeline: {

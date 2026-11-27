@@ -68,7 +68,8 @@ describe('006-settings: settings API against a real Postgres', () => {
         await request('POST', '/api/v1/setup', {
           payload: {
             setupCode,
-            email: 'owner@example.test',
+            username: 'owner',
+            name: 'Owner',
             password,
             uiLanguage,
             timeZone: 'Europe/Budapest',
@@ -81,7 +82,7 @@ describe('006-settings: settings API against a real Postgres', () => {
     const addSecondUser = async () => {
       const [created] = await database.db
         .insert(users)
-        .values({ name: 'second', email: 'second@example.test' })
+        .values({ name: 'second', username: 'second' })
         .returning()
       if (!created) throw new Error('user was not created')
       await database.db.insert(accounts).values({
@@ -90,8 +91,8 @@ describe('006-settings: settings API against a real Postgres', () => {
         providerId: 'credential',
         password: await hashPassword(password),
       })
-      const response = await request('POST', '/api/v1/auth/sign-in/email', {
-        payload: { email: 'second@example.test', password },
+      const response = await request('POST', '/api/v1/auth/sign-in/username', {
+        payload: { username: 'second', password },
       })
       return { id: created.id, cookie: cookieOf(response) }
     }
@@ -111,7 +112,7 @@ describe('006-settings: settings API against a real Postgres', () => {
     expect(response.statusCode).toBe(200)
     expect(response.json<object>()).toMatchObject({ uiLanguage: 'hu' })
     const me = await request('GET', '/api/v1/me', { cookie })
-    expect(me.json<object>()).toMatchObject({ uiLanguage: 'hu', email: 'owner@example.test' })
+    expect(me.json<object>()).toMatchObject({ uiLanguage: 'hu', username: 'owner' })
   })
 
   it('AC-2: PATCH entryLanguage saves hu, en and auto, and rejects other values', async () => {
@@ -173,11 +174,43 @@ describe('006-settings: settings API against a real Postgres', () => {
     expect(meA2).toMatchObject({ timeZone: 'Asia/Tokyo' })
   })
 
+  it('AC-16: PATCH name saves a trimmed name, GET /me returns it, other users keep theirs', async () => {
+    const { request, setup, addSecondUser } = await launch()
+    const cookie = await setup()
+    const other = await addSecondUser()
+    const saved = await patch(request, cookie, { name: '  Árpád  ' })
+    expect(saved.statusCode).toBe(200)
+    expect(saved.json<object>()).toMatchObject({ name: 'Árpád', username: 'owner' })
+    const me = await request('GET', '/api/v1/me', { cookie })
+    expect(me.json<object>()).toMatchObject({ name: 'Árpád' })
+    const meOther = await request('GET', '/api/v1/me', { cookie: other.cookie })
+    expect(meOther.json<object>()).toMatchObject({ name: 'second' })
+  })
+
+  it.each([
+    ['empty', ''],
+    ['blank', '   '],
+    ['too long', 'x'.repeat(61)],
+  ])('AC-16: a name that is %s answers 400 and changes nothing', async (_label, name) => {
+    const { request, setup } = await launch()
+    const cookie = await setup()
+    const response = await patch(request, cookie, { name })
+    expect(response.statusCode).toBe(400)
+    const me = await request('GET', '/api/v1/me', { cookie })
+    expect(me.json<object>()).toMatchObject({ name: 'Owner' })
+  })
+
+  it('AC-16: the username cannot be changed through settings', async () => {
+    const { request, setup } = await launch()
+    const cookie = await setup()
+    expect((await patch(request, cookie, { username: 'other' })).statusCode).toBe(400)
+  })
+
   it('AC-13: a user created without a language choice gets en and en', async () => {
     await launch()
     const [created] = await database.db
       .insert(users)
-      .values({ name: 'plain', email: 'plain@example.test' })
+      .values({ name: 'plain', username: 'plain' })
       .returning()
     expect(created).toMatchObject({ uiLanguage: 'en', entryLanguage: 'en' })
   })
@@ -189,11 +222,12 @@ describe('006-settings: settings API against a real Postgres', () => {
     expect(user).toMatchObject({ uiLanguage: 'hu', entryLanguage: 'hu' })
   })
 
-  it('AC-3: zones and the account email never show up in the logs', async () => {
+  it('AC-3: zones, the username and the name never show up in the logs', async () => {
     const { request, setup, capture } = await launch()
     const cookie = await setup()
     await patch(request, cookie, { timeZone: 'Mars/Base' })
     await patch(request, cookie, { timeZone: 'Asia/Tokyo' })
-    expectNoMarkersInLogs(capture, ['Mars/Base', 'Asia/Tokyo', 'owner@example.test'])
+    await patch(request, cookie, { name: 'ZQX-Név-4417' })
+    expectNoMarkersInLogs(capture, ['Mars/Base', 'Asia/Tokyo', 'owner', 'ZQX-Név-4417'])
   })
 })

@@ -40,7 +40,7 @@ instance_settings (one row)          jobs (pg-boss) carry userId + recordingId
 
 | Table | What it holds |
 |---|---|
-| `users` | email, password (Better Auth), `is_admin`, UI language, default recording language, time zone |
+| `users` | username, name, password (Better Auth), email (empty for now), `is_admin`, UI language, default recording language, time zone |
 | `instance_settings` | transcription on / off (the only instance-wide setting) |
 | `entries` | `user_id`, entry date, Markdown body, search index |
 | `recordings` | `user_id`, entry, original file, length, language asked for, status (`pending`, `transcribing`, `done`, `failed`, `skipped`) |

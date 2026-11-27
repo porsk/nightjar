@@ -9,18 +9,18 @@ works in Hungarian and English.
 
 ## Scope
 In (screen names from `design/alkony/m1.html`):
-- **Settings** (`settings`): "Személyes" (UI language, default entry language, time zone), "Fiók" (signed-in email,
-  "Kijelentkezés" from spec 001). The "Rendszergazda" section is spec 003. Changes save right away, no save button.
+- **Settings** (`settings`): "Személyes" (UI language, default entry language, time zone), "Fiók" (name "Hogyan szólíthatunk?" you can edit, the signed-in
+  username, "Kijelentkezés" from spec 001). The "Rendszergazda" section is spec 003. Changes save right away, no save button.
 - **HU/EN UI**: react-i18next, catalogues in `packages/shared`, every user-facing string through i18n, dates and times via
   `Intl` in the UI language, `<html lang>` follows the UI language. Before login the browser language is used.
 - **Theme**: follows the system light / dark setting, no theme setting (design.md).
 - **Installable app** (D-30 Q12): `vite-plugin-pwa` manifest, icons and a service worker that caches the app shell
   (static files) only. API responses and audio are never cached. The offline recording queue stays in M4.
 - **Defaults** (D-31): English is the default UI language; the default recording language follows the UI language.
-- API: `GET /api/v1/me` (email, isAdmin, settings), `PATCH /api/v1/me/settings` (`uiLanguage`, `entryLanguage`, `timeZone`).
+- API: `GET /api/v1/me` (username, name, isAdmin, settings), `PATCH /api/v1/me/settings` (`uiLanguage`, `entryLanguage`, `timeZone`, `name`).
   Columns on `users` (architecture.md, "M1 data model").
 
-Out (not now): changing email or password, more languages, a theme switch, per-device settings, offline use of journal data.
+Out (not now): changing the username or password, more languages, a theme switch, per-device settings, offline use of journal data.
 
 ## Acceptance criteria
 
@@ -39,6 +39,7 @@ Out (not now): changing email or password, more languages, a theme switch, per-d
 - **AC-13** Given a user created without a language choice, then `ui_language` is `en` and `entry_language` equals `ui_language`; after the setup wizard picked Magyar, both are `hu`.
 - **AC-14** Given the built app, then `/manifest.webmanifest` is served with name "Nightjar", `display: standalone`, `start_url: /`, theme and background colours from the design tokens, and 192 px, 512 px and maskable PNG icons that exist; the page links the manifest and a service worker registers.
 - **AC-15** Given the app was opened once and the browser goes offline, when the user reloads, then the app shell loads from the cache (the login or the app frame shows, not a browser error page); no `/api/v1` response and no audio file is ever stored in the cache.
+- **AC-16** Given the Account section, when the user changes the name and leaves the field (or presses Enter), then it is saved (1 to 60 characters after trimming), `GET /api/v1/me` returns it and the Home greeting uses it after a reload; an empty or too long name shows an error, sends nothing, and the API answers 400; a failed save puts the saved name back and shows an error; the username cannot be changed here and other users keep their own names.
 
 ## Test plan
 
@@ -59,6 +60,7 @@ Out (not now): changing email or password, more languages, a theme switch, per-d
 | AC-13 | default resolver | | DB defaults for a user inserted without languages; setup with Magyar → both `hu` | | |
 | AC-14 | manifest JSON shape | | built `dist` served: manifest, icon files exist | Chromium: manifest link present, `navigator.serviceWorker.ready` resolves | production build via `vite preview` |
 | AC-15 | | | | load, `context.setOffline(true)`, reload → shell shows; Cache Storage holds no `/api/` or audio entries | Chromium only |
+| AC-16 | | name saves on blur, empty name error, unchanged sends nothing, failed save restores | `PATCH name` trims, 400 for empty / 61 characters / `username`, other user untouched | rename → reload → greeting shows it | |
 
 Also covered: screenshots of `settings` in both languages and themes.
 
@@ -72,13 +74,14 @@ New keys, in both `hu` and `en`.
 | `settings.uiLanguage` | A felület nyelve | App language |
 | `settings.entryLanguage` / `.entryLanguageHint` | Alapértelmezett nyelv a felvételekhez / Bejegyzésenként felülírhatod. | Default language for recordings / You can change it per entry. |
 | `settings.timeZone` | Időzóna | Time zone |
+| `field.name` (label of the name field) | Hogyan szólíthatunk? | What should we call you? |
 | `settings.saveFailed` | Nem sikerült menteni a beállítást. | Couldn't save the setting. |
 | `error.invalid_time_zone` | Ismeretlen időzóna. | Unknown time zone. |
 
 The hint "Bejegyzésenként felülírhatod." is only true for uploads in M1 (the recorder uses the default language, D-30 Q4).
 
 ## Privacy & data
-- Stored: three columns on the user's own row. Nothing leaves the server.
+- Stored: three columns and the name on the user's own row. Nothing leaves the server.
 - The service worker caches only static app files, never journal data or audio.
 
 ## Open questions

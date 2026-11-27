@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { en } from '../apps/web/src/i18n/en.ts'
 import { hu } from '../apps/web/src/i18n/hu.ts'
 import { expectLayout } from './support/layout.ts'
-import { adminEmail, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
+import { adminUsername, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
 import { catalogue, walkScreens, type Language } from './support/walk.ts'
 
 // Mocked responses (route) never reach a page whose service worker handles its requests
@@ -25,7 +25,7 @@ const choose = (group: Locator, name: string) =>
 
 async function signIn(page: Page) {
   await page.goto('/login')
-  await page.getByRole('textbox', { name: /E-?mail/i }).fill(adminEmail)
+  await page.getByRole('textbox', { name: /Felhasználónév|Username/i }).fill(adminUsername)
   await page.locator('#password').fill(password)
   await page.locator('button[type=submit]').click()
   await expect(page).toHaveURL(/\/$/)
@@ -62,17 +62,21 @@ function foreignTexts(current: Language) {
 }
 
 async function expectOnly(page: Page, language: Language, state: string) {
-  const texts = await page.evaluate(() => {
-    const found: string[] = []
-    for (const element of document.querySelectorAll('body *')) {
-      const own = element.children.length === 0 ? element.textContent.trim() : ''
-      if (own) found.push(own)
-      const label = element.getAttribute('aria-label')
-      if (label) found.push(label)
-    }
-    return found
-  })
-  expect(texts.length, `${state} has text`).toBeGreaterThan(0)
+  const collectTexts = () =>
+    page.evaluate(() => {
+      const found: string[] = []
+      for (const element of document.querySelectorAll('body *')) {
+        const own = element.children.length === 0 ? element.textContent.trim() : ''
+        if (own) found.push(own)
+        const label = element.getAttribute('aria-label')
+        if (label) found.push(label)
+      }
+      return found
+    })
+  await expect
+    .poll(async () => (await collectTexts()).length, { message: `${state} has text` })
+    .toBeGreaterThan(0)
+  const texts = await collectTexts()
   const foreign = foreignTexts(language)
   for (const text of texts) {
     expect(foreign.get(text), `${state}: "${text}" belongs to the other language`).toBeUndefined()
@@ -145,6 +149,23 @@ test.describe('006-settings: language, time zone and account', () => {
     const radio = (name: string) => entryLanguageGroup(page).getByRole('radio', { name })
     await expect(radio('English')).toBeChecked()
     await expect(radio('Automatic')).not.toBeChecked()
+  })
+
+  test('AC-16: a new name saved in Account shows in the Home greeting after a reload', async ({
+    page,
+  }) => {
+    await openSettings(page)
+    const name = page.getByLabel('What should we call you?')
+    await expect(name).toHaveValue('Örs')
+    await name.fill('Árpád')
+    await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith('/api/v1/me/settings')),
+      name.press('Enter'),
+    ])
+    await page.reload()
+    await expect(name).toHaveValue('Árpád')
+    await page.getByRole('link', { name: 'Today' }).first().click()
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Árpád')
   })
 
   test('AC-11: settings can only be read or changed with a session', async ({ page, request }) => {

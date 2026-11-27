@@ -54,11 +54,11 @@ describe('004-timeline: timeline API against a real Postgres', () => {
     test.readiness.markMigrated()
     await test.app.ready()
     const alice = await createUserWithSession(database, auth, {
-      email: 'alice@example.test',
+      username: 'alice',
       timeZone: 'Europe/Budapest',
     })
     const bob = await createUserWithSession(database, auth, {
-      email: 'bob@example.test',
+      username: 'bob',
       timeZone: 'Europe/Budapest',
     })
     const get = (user: { cookie: string } | null, url: string) =>

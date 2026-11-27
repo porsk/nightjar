@@ -5,22 +5,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n/index.ts'
 import { apiError, json, me, renderApp, stubApi } from '../test-utils.tsx'
 
+const usernameError = 'Use 3 to 32 characters: lowercase letters, digits, dot, dash or underscore.'
 const needed = { 'GET /api/v1/setup': () => json({ needed: true }) }
 
 async function fillAccount(
   user: ReturnType<typeof userEvent.setup>,
-  overrides: Partial<Record<'code' | 'email' | 'password' | 'again', string>> = {},
+  overrides: Partial<Record<'code' | 'username' | 'name' | 'password' | 'again', string>> = {},
 ) {
   const values = {
     code: 'ABCD2345',
-    email: 'owner@example.test',
+    username: 'owner.name',
+    name: 'Örs',
     password: 'correct horse',
     again: 'correct horse',
     ...overrides,
   }
   const fields: [string, string][] = [
     ['Setup code', values.code],
-    ['Email', values.email],
+    ['Username', values.username],
+    ['What should we call you?', values.name],
     ['Password', values.password],
     ['Password again', values.again],
   ]
@@ -41,7 +44,15 @@ describe('001-setup-login: setup wizard', () => {
 
   it.each([
     ['empty setup code', { code: '' }, 'Enter the setup code.'],
-    ['invalid email', { email: 'a@b' }, 'Enter a valid email.'],
+    ['username too short', { username: 'ab' }, usernameError],
+    ['username with a space', { username: 'owner name' }, usernameError],
+    ['username with an at sign', { username: 'a@b.hu' }, usernameError],
+    ['empty name', { name: '' }, 'Enter your name (60 characters at most).'],
+    [
+      'name over 60 characters',
+      { name: 'x'.repeat(61) },
+      'Enter your name (60 characters at most).',
+    ],
     [
       'password of 7 characters',
       { password: '1234567', again: '1234567' },
@@ -107,7 +118,8 @@ describe('001-setup-login: setup wizard', () => {
     expect(await screen.findByRole('heading', { name: /What's on your mind/ })).toBeInTheDocument()
     expect(calls.find((call) => call.key === 'POST /api/v1/setup')?.body).toMatchObject({
       setupCode: 'ABCD2345',
-      email: 'owner@example.test',
+      username: 'owner.name',
+      name: 'Örs',
       uiLanguage: 'en',
       transcriptionEnabled: false,
     })

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   boolean,
+  check,
   customType,
   date,
   index,
@@ -20,23 +21,28 @@ const updatedAt = () =>
     .defaultNow()
     .$onUpdate(() => new Date())
 
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull().default(false),
-  image: text('image'),
-  isAdmin: boolean('is_admin').notNull().default(false),
-  uiLanguage: text('ui_language', { enum: ['hu', 'en'] })
-    .notNull()
-    .default('en'),
-  entryLanguage: text('entry_language', { enum: ['hu', 'en', 'auto'] })
-    .notNull()
-    .default('en'),
-  timeZone: text('time_zone').notNull().default('UTC'),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-})
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    username: text('username').unique(),
+    email: text('email').unique(),
+    emailVerified: boolean('email_verified').notNull().default(false),
+    image: text('image'),
+    isAdmin: boolean('is_admin').notNull().default(false),
+    uiLanguage: text('ui_language', { enum: ['hu', 'en'] })
+      .notNull()
+      .default('en'),
+    entryLanguage: text('entry_language', { enum: ['hu', 'en', 'auto'] })
+      .notNull()
+      .default('en'),
+    timeZone: text('time_zone').notNull().default('UTC'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [check('users_username_lowercase', sql`${table.username} = lower(${table.username})`)],
+)
 
 export const sessions = pgTable('sessions', {
   id: uuid('id').primaryKey().defaultRandom(),

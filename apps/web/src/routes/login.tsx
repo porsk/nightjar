@@ -21,7 +21,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const me = useQuery(meQuery)
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<LoginError>()
   const [busy, setBusy] = useState(false)
@@ -34,7 +34,7 @@ export function LoginPage() {
     setBusy(true)
     setError(undefined)
     try {
-      await signIn({ email, password })
+      await signIn({ username, password })
       await queryClient.query({ ...meQuery, staleTime: 0 })
       await navigate(next, { replace: true })
     } catch (caught) {
@@ -55,13 +55,14 @@ export function LoginPage() {
           </div>
         ) : null}
         <TextField
-          id="email"
-          label={t('field.email')}
-          type="email"
+          id="username"
+          label={t('field.username')}
           autoComplete="username"
-          value={email}
+          autoCapitalize="none"
+          spellCheck={false}
+          value={username}
           onChange={(event) => {
-            setEmail(event.target.value)
+            setUsername(event.target.value)
           }}
         />
         <TextField
