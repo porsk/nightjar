@@ -9,7 +9,7 @@ const repo = join(import.meta.dirname, '../../../..')
 const image = process.env.BACKUP_TEST_IMAGE ?? 'porsk/nightjar:edge'
 const port = process.env.BACKUP_TEST_PORT ?? '3998'
 const origin = `http://localhost:${port}`
-const account = { email: 'backup@example.com', password: 'backup-test-password' }
+const account = { username: 'backup', name: 'Backup', password: 'backup-test-password' }
 const entry = { entryDate: '2026-01-05', bodyMd: 'Backup test entry. Árvíztűrő tükörfúrógép.' }
 const audio = readFileSync(join(repo, 'e2e/fixtures/en-sample.wav'))
 const sha256 = (data: Buffer) => createHash('sha256').update(data).digest('hex')
@@ -70,7 +70,12 @@ async function waitReady() {
 }
 
 const signIn = async () =>
-  (await api('/api/v1/auth/sign-in/email', { method: 'POST', body: account })).cookie
+  (
+    await api('/api/v1/auth/sign-in/username', {
+      method: 'POST',
+      body: { username: account.username, password: account.password },
+    })
+  ).cookie
 
 async function readJournal(cookie: string) {
   const page = (await api('/api/v1/entries', { cookie })).json as { items: { id: string }[] }

@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { expectLayout } from './support/layout.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -76,7 +76,7 @@ test.describe('005-search: screens are accessible and look right', () => {
               createdAt: '2026-11-14T16:15:00Z',
             })
             await page.goto('/login')
-            await page.getByLabel(hu ? 'E-mail cím' : 'Email').fill(adminEmail)
+            await page.getByLabel(hu ? 'Felhasználónév' : 'Username').fill(adminUsername)
             await page.getByLabel(hu ? 'Jelszó' : 'Password').fill(password)
             await page.getByRole('button', { name: hu ? 'Belépés' : 'Sign in' }).click()
             await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()

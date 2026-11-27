@@ -28,7 +28,7 @@ Out (not now): tracing, log shipping, dashboards, alerts, an admin UI for logs.
 - **AC-5** Given the database is reachable and migrations are done, then `/readyz` answers 200; given the database is down or migrations are still running, then it answers 503 with `status` `db_down` or `starting`; when the database comes back, it answers 200 again without a restart.
 - **AC-6** Given an empty database, when the server starts, then it applies all migrations before serving `/api/v1` (API calls before that get 503); a second start applies nothing; a failing migration leaves no partial schema change, logs the error and exits with a non-zero code.
 - AC-7 moved to spec 003 (AC-30), because jobs and the queue arrive there. The number stays unused here.
-- **AC-8** Given requests to 50 different ids on a test-only route with a parameter, then `/metrics` has one series for that route (template label), and no metric label holds an id, email or any text.
+- **AC-8** Given requests to 50 different ids on a test-only route with a parameter, then `/metrics` has one series for that route (template label), and no metric label holds an id, username or any text.
 - **AC-9** Given the app port (3000), when `/metrics` is requested there, then it answers 404; the metrics port serves only `/metrics`.
 - **AC-10** Given the shipped files, then `docker/compose.yaml` publishes only port 3000, the Dockerfile exposes only 3000, and `docs/engineering.md` shows a Prometheus scrape config for the metrics port (compose network name + `NIGHTJAR_METRICS_PORT`).
 
@@ -55,7 +55,7 @@ Also covered: the Docker `HEALTHCHECK` keeps using `/healthz`.
 No new user-facing text.
 
 ## Privacy & data
-- Logs: no journal text, transcripts, file names, search queries, emails, passwords or tokens (AC-2, AC-3).
+- Logs: no journal text, transcripts, file names, search queries, usernames, names, passwords or tokens (AC-2, AC-3).
 - `/healthz` and `/readyz` hold no user data and need no login. `/metrics` holds no user data but shows activity, so it is on its own internal port that is not published by default; whoever publishes it should keep it off the internet.
 - Nothing leaves the server; Prometheus scrapes it if the owner sets that up.
 

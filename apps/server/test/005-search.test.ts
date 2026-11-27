@@ -52,8 +52,8 @@ describe('005-search: search API against a real Postgres', () => {
     const test = await buildTestApp({ database, auth })
     test.readiness.markMigrated()
     await test.app.ready()
-    const alice = await createUserWithSession(database, auth, { email: 'alice@example.test' })
-    const bob = await createUserWithSession(database, auth, { email: 'bob@example.test' })
+    const alice = await createUserWithSession(database, auth, { username: 'alice' })
+    const bob = await createUserWithSession(database, auth, { username: 'bob' })
     const call = (
       user: { cookie: string } | null,
       method: 'GET' | 'POST' | 'PATCH' | 'DELETE',

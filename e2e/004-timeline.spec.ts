@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -27,10 +27,10 @@ const isWide = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1024
 
 async function signIn(
   page: Page,
-  labels = { email: 'Email', password: 'Password', go: 'Sign in' },
+  labels = { username: 'Username', password: 'Password', go: 'Sign in' },
 ) {
   await page.goto('/login')
-  await page.getByLabel(labels.email).fill(adminEmail)
+  await page.getByLabel(labels.username).fill(adminUsername)
   await page.getByLabel(labels.password).fill(password)
   await page.getByRole('button', { name: labels.go }).click()
   await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()
@@ -313,7 +313,7 @@ test.describe('004-timeline: timeline and Home', () => {
     })
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      "Good evening. What's on your mind?",
+      "Good evening, Örs. What's on your mind?",
     )
     const today = page.getByRole('region', { name: "Today's entries" })
     await expect(today.getByRole('link')).toHaveCount(2)
@@ -353,12 +353,12 @@ test.describe('004-timeline: timeline and Home', () => {
     await page.clock.setFixedTime(new Date('2026-11-27T04:00:00Z'))
     await page.reload()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      "Good morning. What's on your mind?",
+      "Good morning, Örs. What's on your mind?",
     )
     await page.clock.setFixedTime(new Date('2026-11-27T09:00:00Z'))
     await page.reload()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      "Good afternoon. What's on your mind?",
+      "Good afternoon, Örs. What's on your mind?",
     )
   })
 
@@ -428,7 +428,7 @@ test.describe('004-timeline: Hungarian', () => {
 
   test('AC-2: day headings in Hungarian', async ({ page }) => {
     await createAdmin(headers, 'hu')
-    await signIn(page, { email: 'E-mail cím', password: 'Jelszó', go: 'Belépés' })
+    await signIn(page, { username: 'Felhasználónév', password: 'Jelszó', go: 'Belépés' })
     for (const day of ['2026-11-26', '2026-11-25', '2026-11-23', '2025-12-05']) {
       await seedTimelineEntry({
         bodyMd: `on ${day}`,
@@ -446,7 +446,7 @@ test.describe('004-timeline: Hungarian', () => {
     ])
     await page.getByRole('link', { name: 'Ma' }).first().click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      'Jó estét. Mi járt a fejedben?',
+      'Jó estét, Örs! Mi járt a fejedben?',
     )
     await expect(page.getByText('Mai bejegyzések', { exact: true })).toBeVisible()
   })

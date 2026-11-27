@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { expectLayout } from './support/layout.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -52,7 +52,7 @@ test.describe('002-text-entries: screens are accessible and look right', () => {
             await createAdmin(headers, hu ? 'hu' : 'en')
             const tag = `${colorScheme}-${String(width)}-${locale.slice(0, 2)}`
             const text = {
-              email: hu ? 'E-mail cím' : 'Email',
+              username: hu ? 'Felhasználónév' : 'Username',
               password: hu ? 'Jelszó' : 'Password',
               signIn: hu ? 'Belépés' : 'Sign in',
               write: hu ? 'Inkább írok' : "I'd rather write",
@@ -68,7 +68,7 @@ test.describe('002-text-entries: screens are accessible and look right', () => {
             }
 
             await page.goto('/login')
-            await page.getByLabel(text.email).fill(adminEmail)
+            await page.getByLabel(text.username).fill(adminUsername)
             await page.getByLabel(text.password).fill(password)
             await page.getByRole('button', { name: text.signIn }).click()
             await page.getByRole('button', { name: text.write }).click()

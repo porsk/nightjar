@@ -7,7 +7,8 @@ import { modelFiles, testModelId } from '../../apps/server/test/support/model-se
 import { e2eServerFiles } from './server-files.ts'
 
 export const password = 'correct horse battery'
-export const adminEmail = 'owner@example.test'
+export const adminUsername = 'owner'
+export const adminName = 'Örs'
 
 /** The setup code the server printed at start. It stays valid whenever the database is empty. */
 export function setupCodeFromLog() {
@@ -60,7 +61,8 @@ export async function createAdmin(
     const response = await api.post('/api/v1/setup', {
       data: {
         setupCode: setupCodeFromLog(),
-        email: adminEmail,
+        username: adminUsername,
+        name: adminName,
         password,
         uiLanguage,
         timeZone: 'Europe/Budapest',

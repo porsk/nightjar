@@ -112,10 +112,67 @@ describe('006-settings: Settings screen', () => {
     expect(select).toHaveValue('Europe/Budapest')
   })
 
-  it('AC-12: the account section shows the signed-in email and the sign out button', async () => {
+  it('AC-12: the account section shows the signed-in username and the sign out button', async () => {
     stubApi(base)
     renderApp('/settings')
-    expect(await screen.findByText('owner@example.test')).toBeInTheDocument()
+    expect(await screen.findByText('owner')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument()
+  })
+
+  it('AC-16: leaving the name field saves the new name', async () => {
+    const calls = stubApi({
+      ...base,
+      'PATCH /api/v1/me/settings': () => json({ ...me, name: 'Árpád' }),
+    })
+    const user = userEvent.setup()
+    renderApp('/settings')
+    const field = await screen.findByLabelText('What should we call you?')
+    expect(field).toHaveValue('Örs')
+
+    await user.clear(field)
+    await user.type(field, 'Árpád')
+    await user.tab()
+
+    await waitFor(() => {
+      expect(patchBody(calls)).toEqual({ name: 'Árpád' })
+    })
+    expect(screen.getByLabelText('What should we call you?')).toHaveValue('Árpád')
+  })
+
+  it('AC-16: an empty name shows an error and sends nothing', async () => {
+    const calls = stubApi(base)
+    const user = userEvent.setup()
+    renderApp('/settings')
+    const field = await screen.findByLabelText('What should we call you?')
+
+    await user.clear(field)
+    await user.tab()
+
+    expect(await screen.findByText('Enter your name (60 characters at most).')).toBeInTheDocument()
+    expect(patchBody(calls)).toBeUndefined()
+  })
+
+  it('AC-16: an unchanged name sends nothing', async () => {
+    const calls = stubApi(base)
+    const user = userEvent.setup()
+    renderApp('/settings')
+    await screen.findByLabelText('What should we call you?')
+    await user.click(screen.getByLabelText('What should we call you?'))
+    await user.tab()
+    expect(patchBody(calls)).toBeUndefined()
+  })
+
+  it('AC-16: a failed save puts the saved name back and shows an error', async () => {
+    stubApi({ ...base, 'PATCH /api/v1/me/settings': () => apiError(500, 'internal') })
+    const user = userEvent.setup()
+    renderApp('/settings')
+    const field = await screen.findByLabelText('What should we call you?')
+
+    await user.clear(field)
+    await user.type(field, 'Árpád')
+    await user.tab()
+
+    expect(await screen.findByText("Couldn't save the setting.")).toBeInTheDocument()
+    expect(field).toHaveValue('Örs')
   })
 })

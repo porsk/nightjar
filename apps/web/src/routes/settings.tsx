@@ -1,4 +1,4 @@
-import type { EntryLanguage, Language, Me } from '@nightjar/shared'
+import { nameSchema, type EntryLanguage, type Language, type Me } from '@nightjar/shared'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -114,6 +114,65 @@ function PersonalSettings({ me }: { me: Me }) {
   )
 }
 
+function NameField({ me }: { me: Me }) {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [name, setName] = useState(me.name)
+  const [error, setError] = useState<string>()
+
+  const save = useMutation({
+    mutationFn: updateSettings,
+    onSuccess: (saved) => {
+      queryClient.setQueryData(meQuery.queryKey, saved)
+      setName(saved.name)
+    },
+    onError: () => {
+      setName(me.name)
+      setError(t('settings.saveFailed'))
+    },
+  })
+
+  const commit = () => {
+    setError(undefined)
+    const parsed = nameSchema.safeParse(name)
+    if (!parsed.success) {
+      setError(t('field.error.name'))
+      return
+    }
+    if (parsed.data !== me.name) save.mutate({ name: parsed.data })
+  }
+
+  return (
+    <div className="srow">
+      <label className="fl" htmlFor="name">
+        {t('field.name')}
+      </label>
+      <div className="inp" data-invalid={error ? 'true' : undefined}>
+        <input
+          id="name"
+          autoComplete="given-name"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'name-error' : undefined}
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value)
+          }}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') commit()
+          }}
+        />
+      </div>
+      {error ? (
+        <p className="field-error" id="name-error">
+          <Icon name="alert" />
+          <span>{error}</span>
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 export function SettingsPage() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
@@ -134,8 +193,9 @@ export function SettingsPage() {
       {me.data?.isAdmin ? <TranscriptionSettings /> : null}
       <h2 className="sec">{t('settings.account')}</h2>
       <div className="group">
+        {me.data ? <NameField key={me.data.name} me={me.data} /> : null}
         <div className="srow acct">
-          <span>{me.data?.email}</span>
+          <span>{me.data?.username}</span>
           <button className="btn sm line" type="button" onClick={() => void logout()}>
             <Icon name="out" />
             {t('auth.logout')}

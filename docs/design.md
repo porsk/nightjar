@@ -21,7 +21,7 @@ entries beside the record button, Entry as timeline list + reading pane side by 
 | Screen | Main content |
 |---|---|
 | Setup wizard (starts in English) | setup code + account; language + time zone; transcription now or later (download progress shows in Settings) |
-| Login | email + password |
+| Login | username + password |
 | Home / Today | record button, write button, today's entries |
 | Recorder | timer, level meter, pause, stop, discard |
 | Entry | date, text, recordings with transcript + player, status while transcribing |

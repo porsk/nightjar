@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { expectLayout } from './support/layout.ts'
-import { adminEmail, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
+import { adminUsername, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
 
 const viewports = { 390: { width: 390, height: 844 }, 1280: { width: 1280, height: 800 } }
 
@@ -28,7 +28,9 @@ test.describe('006-settings: Settings is accessible and looks right', () => {
             await createAdmin(headers, locale === 'hu-HU' ? 'hu' : 'en')
 
             await page.goto('/login')
-            await page.getByRole('textbox', { name: /E-?mail/i }).fill(adminEmail)
+            await page
+              .getByRole('textbox', { name: /Felhasználónév|Username/i })
+              .fill(adminUsername)
             await page.locator('#password').fill(password)
             await page.locator('button[type=submit]').click()
             await page

@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { fakeTexts } from '../apps/server/src/modules/transcription/fake-transcriber.ts'
 import { expectLayout } from './support/layout.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -25,7 +25,7 @@ test.beforeEach(async ({ context, page }) => {
   await page.clock.setFixedTime(new Date('2026-11-26T20:30:00Z'))
   await createAdmin(headers)
   await page.goto('/login')
-  await page.getByLabel('Email').fill(adminEmail)
+  await page.getByLabel('Username').fill(adminUsername)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: /on your mind/ })).toBeVisible()

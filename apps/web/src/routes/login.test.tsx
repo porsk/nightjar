@@ -8,7 +8,7 @@ import { apiError, json, me, renderApp, stubApi } from '../test-utils.tsx'
 const accountExists = { 'GET /api/v1/setup': () => json({ needed: false }) }
 
 async function submitLogin(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(await screen.findByLabelText('Email'), 'owner@example.test')
+  await user.type(await screen.findByLabelText('Username'), 'owner')
   await user.type(screen.getByLabelText('Password'), 'correct horse')
   await user.click(screen.getByRole('button', { name: 'Sign in' }))
 }
@@ -26,19 +26,19 @@ describe('001-setup-login: login', () => {
     stubApi({
       ...accountExists,
       'GET /api/v1/me': () => apiError(401, 'unauthorized'),
-      'POST /api/v1/auth/sign-in/email': () => apiError(401, 'invalid_email_or_password'),
+      'POST /api/v1/auth/sign-in/username': () => apiError(401, 'invalid_username_or_password'),
     })
     renderApp('/login')
     await submitLogin(userEvent.setup())
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('Wrong email or password. Check them and try again.')
+    expect(alert).toHaveTextContent('Wrong username or password. Check them and try again.')
   })
 
   it('AC-11: a 429 shows the too many attempts message', async () => {
     stubApi({
       ...accountExists,
       'GET /api/v1/me': () => apiError(401, 'unauthorized'),
-      'POST /api/v1/auth/sign-in/email': () => apiError(429, 'too_many_attempts'),
+      'POST /api/v1/auth/sign-in/username': () => apiError(429, 'too_many_attempts'),
     })
     renderApp('/login')
     await submitLogin(userEvent.setup())
@@ -52,7 +52,7 @@ describe('001-setup-login: login', () => {
     stubApi({
       ...accountExists,
       'GET /api/v1/me': () => (signedIn ? json(me) : apiError(401, 'unauthorized')),
-      'POST /api/v1/auth/sign-in/email': () => {
+      'POST /api/v1/auth/sign-in/username': () => {
         signedIn = true
         return json({})
       },
@@ -67,7 +67,7 @@ describe('001-setup-login: login', () => {
     stubApi({
       ...accountExists,
       'GET /api/v1/me': () => (signedIn ? json(me) : apiError(401, 'unauthorized')),
-      'POST /api/v1/auth/sign-in/email': () => {
+      'POST /api/v1/auth/sign-in/username': () => {
         signedIn = true
         return json({})
       },

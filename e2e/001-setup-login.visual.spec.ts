@@ -1,7 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { expectLayout } from './support/layout.ts'
-import { adminEmail, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
+import {
+  adminName,
+  adminUsername,
+  createAdmin,
+  password,
+  resetDatabase,
+  uniqueIp,
+} from './support/server.ts'
 
 const viewports = { 390: { width: 390, height: 844 }, 1280: { width: 1280, height: 800 } }
 
@@ -36,7 +43,8 @@ test.describe('001-setup-login: screens are accessible and look right', () => {
             await page.goto('/setup')
             await expect(page.getByRole('heading', { name: 'Welcome to Nightjar' })).toBeVisible()
             await page.getByLabel('Setup code').fill('ABCD2345')
-            await page.getByLabel('Email', { exact: true }).fill(adminEmail)
+            await page.getByLabel('Username', { exact: true }).fill(adminUsername)
+            await page.getByLabel('What should we call you?').fill(adminName)
             await page.getByLabel('Password', { exact: true }).fill(password)
             await page.getByLabel('Password again').fill(password)
             await checkScreen(page, testInfo, `setup1-${tag}`)
@@ -68,10 +76,14 @@ test.describe('001-setup-login: screens are accessible and look right', () => {
             await createAdmin(headers)
             const tag = `${colorScheme}-${String(width)}-${locale.slice(0, 2)}`
             await page.goto('/login')
-            await expect(page.getByRole('textbox', { name: /E-?mail/i })).toBeVisible()
+            await expect(
+              page.getByRole('textbox', { name: /Felhasználónév|Username/i }),
+            ).toBeVisible()
             await checkScreen(page, testInfo, `login-${tag}`)
 
-            await page.getByRole('textbox', { name: /E-?mail/i }).fill(adminEmail)
+            await page
+              .getByRole('textbox', { name: /Felhasználónév|Username/i })
+              .fill(adminUsername)
             await page.locator('#password').fill('not the password')
             await page.locator('button[type=submit]').click()
             await expect(page.getByRole('alert')).toBeVisible()

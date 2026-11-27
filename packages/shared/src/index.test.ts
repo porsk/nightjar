@@ -30,18 +30,38 @@ describe('readyResponseSchema', () => {
 })
 
 describe('001-setup-login: setup schemas', () => {
-  const account = { setupCode: 'ABCD2345', email: 'owner@example.test', password: '12345678' }
+  const account = {
+    setupCode: 'ABCD2345',
+    username: 'owner.name',
+    name: 'Örs',
+    password: '12345678',
+  }
 
-  it('AC-2: accepts a code, a valid email and a password of 8 characters', () => {
+  it('AC-2: accepts a code, a username, a name and a password of 8 characters', () => {
     expect(setupAccountSchema.safeParse(account).success).toBe(true)
   })
 
   it.each([
     ['an empty code', { setupCode: '  ' }],
-    ['an email without a domain', { email: 'a@b' }],
+    ['a username of 2 characters', { username: 'ab' }],
+    ['a username of 33 characters', { username: 'a'.repeat(33) }],
+    ['a username with a space', { username: 'owner name' }],
+    ['a username with an accent', { username: 'örs' }],
+    ['an email as username', { username: 'a@b.hu' }],
+    ['an empty name', { name: '  ' }],
+    ['a name of 61 characters', { name: 'x'.repeat(61) }],
     ['a password of 7 characters', { password: '1234567' }],
   ])('AC-2: rejects %s', (_name, change) => {
     expect(setupAccountSchema.safeParse({ ...account, ...change }).success).toBe(false)
+  })
+
+  it('AC-20: a username is trimmed and lowercased, a name keeps its accents', () => {
+    const parsed = setupAccountSchema.parse({
+      ...account,
+      username: ' Owner.Name_1-x ',
+      name: ' Árvíztűrő ',
+    })
+    expect(parsed).toMatchObject({ username: 'owner.name_1-x', name: 'Árvíztűrő' })
   })
 
   it('AC-4: the full request needs a language, a real IANA time zone and the transcription choice', () => {

@@ -30,9 +30,27 @@ export const isTimeZone = (value: string) => {
 
 export const timeZoneSchema = z.string().refine(isTimeZone)
 
+export const usernameMinLength = 3
+export const usernameMaxLength = 32
+export const nameMaxLength = 60
+
+export const usernamePattern = /^[a-z0-9._-]+$/
+
+/** Lowercase letters, digits, dot, dash and underscore. Typed capitals are folded to lowercase. */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(usernameMinLength)
+  .max(usernameMaxLength)
+  .regex(usernamePattern)
+
+export const nameSchema = z.string().trim().min(1).max(nameMaxLength)
+
 export const setupAccountSchema = z.object({
   setupCode: z.string().trim().min(1),
-  email: z.email(),
+  username: usernameSchema,
+  name: nameSchema,
   password: z.string().min(passwordMinLength).max(128),
 })
 
@@ -47,7 +65,8 @@ export const setupStatusSchema = z.object({ needed: z.boolean() })
 
 export const meResponseSchema = z.object({
   id: z.string(),
-  email: z.string(),
+  username: z.string().nullable(),
+  name: z.string(),
   isAdmin: z.boolean(),
   uiLanguage: languageSchema,
   entryLanguage: entryLanguageSchema,
@@ -61,6 +80,7 @@ export const settingsPatchSchema = z
     uiLanguage: languageSchema,
     entryLanguage: entryLanguageSchema,
     timeZone: z.string(),
+    name: nameSchema,
   })
   .partial()
   .refine((value) => Object.keys(value).length > 0)

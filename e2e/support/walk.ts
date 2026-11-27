@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { en } from '../../apps/web/src/i18n/en.ts'
 import { hu } from '../../apps/web/src/i18n/hu.ts'
-import { adminEmail, createAdmin, password, resetDatabase } from './server.ts'
+import { adminName, adminUsername, createAdmin, password, resetDatabase } from './server.ts'
 
 export type Language = 'en' | 'hu'
 export const catalogue = { en, hu }
@@ -22,7 +22,8 @@ export async function walkScreens(
   await resetDatabase()
   await page.goto('/setup')
   await label(en.setup.account.code).fill('WRONG123')
-  await label(en.field.email).fill(adminEmail)
+  await label(en.field.username).fill(adminUsername)
+  await label(en.field.name).fill(adminName)
   await label(en.field.password).fill(password)
   await label(en.setup.account.passwordAgain).fill(password)
   if (language === 'hu') {
@@ -54,7 +55,7 @@ export async function walkScreens(
   await page.goto('/login')
   await expect(page.getByRole('heading', { name: t.login.title })).toBeVisible()
   await check('login')
-  await label(t.field.email).fill(adminEmail)
+  await label(t.field.username).fill(adminUsername)
   await label(t.field.password).fill('not the password')
   await page.getByRole('button', { name: t.login.submit }).click()
   await expect(page.getByRole('alert')).toHaveText(t.login.error.invalid)

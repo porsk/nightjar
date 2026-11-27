@@ -23,7 +23,8 @@ const updatedAt = () =>
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
-  email: text('email').notNull().unique(),
+  username: text('username').unique(),
+  email: text('email').unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
   isAdmin: boolean('is_admin').notNull().default(false),

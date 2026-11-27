@@ -3,9 +3,13 @@ import { describeError } from './process-handlers.ts'
 
 const redactedPaths = [
   'password',
-  'email',
+  'username',
   '*.password',
-  '*.email',
+  '*.username',
+  'body.name',
+  '*.body.name',
+  'user.name',
+  '*.user.name',
   'headers.cookie',
   'headers.authorization',
   '*.headers.cookie',

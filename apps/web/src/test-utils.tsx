@@ -13,7 +13,8 @@ export const apiError = (status: number, code: string) =>
 
 export const me = {
   id: 'u1',
-  email: 'owner@example.test',
+  username: 'owner',
+  name: 'Örs',
   isAdmin: true,
   uiLanguage: 'en',
   entryLanguage: 'en',

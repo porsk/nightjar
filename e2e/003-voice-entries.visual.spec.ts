@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { fakeMic } from './support/fake-mic.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   password,
   resetDatabase,
@@ -63,7 +63,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             await createAdmin(headers, hu ? 'hu' : 'en')
             const t = hu
               ? {
-                  email: 'E-mail cím',
+                  username: 'Felhasználónév',
                   password: 'Jelszó',
                   signIn: 'Belépés',
                   record: 'Felvétel indítása',
@@ -79,7 +79,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
                   off: 'Nincs átírva.',
                 }
               : {
-                  email: 'Email',
+                  username: 'Username',
                   password: 'Password',
                   signIn: 'Sign in',
                   record: 'Start recording',
@@ -96,7 +96,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
                 }
 
             await page.goto('/login')
-            await page.getByLabel(t.email).fill(adminEmail)
+            await page.getByLabel(t.username).fill(adminUsername)
             await page.getByLabel(t.password).fill(password)
             await page.getByRole('button', { name: t.signIn }).click()
             await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()
@@ -181,7 +181,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             const hu = locale === 'hu-HU'
             await createAdmin(headers, hu ? 'hu' : 'en')
             await page.goto('/login')
-            await page.getByLabel(hu ? 'E-mail cím' : 'Email').fill(adminEmail)
+            await page.getByLabel(hu ? 'Felhasználónév' : 'Username').fill(adminUsername)
             await page.getByLabel(hu ? 'Jelszó' : 'Password').fill(password)
             await page.getByRole('button', { name: hu ? 'Belépés' : 'Sign in' }).click()
             await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()

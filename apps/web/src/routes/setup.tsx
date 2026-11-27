@@ -14,7 +14,8 @@ const modelSize = '560 MB'
 
 interface Values {
   setupCode: string
-  email: string
+  username: string
+  name: string
   password: string
   passwordAgain: string
   uiLanguage: Language
@@ -22,7 +23,7 @@ interface Values {
   transcriptionEnabled: boolean
 }
 
-type AccountField = 'setupCode' | 'email' | 'password' | 'passwordAgain'
+type AccountField = 'setupCode' | 'username' | 'name' | 'password' | 'passwordAgain'
 type Errors = Partial<Record<AccountField, string>>
 
 const languages: { value: Language; label: string }[] = [
@@ -55,7 +56,8 @@ export function SetupPage() {
   const [busy, setBusy] = useState(false)
   const [values, setValues] = useState<Values>({
     setupCode: '',
-    email: '',
+    username: '',
+    name: '',
     password: '',
     passwordAgain: '',
     uiLanguage: 'en',
@@ -77,7 +79,8 @@ export function SetupPage() {
     for (const issue of result.error?.issues ?? []) {
       const field = issue.path[0]
       if (field === 'setupCode') found.setupCode = t('field.error.code')
-      if (field === 'email') found.email = t('field.error.email')
+      if (field === 'username') found.username = t('field.error.username')
+      if (field === 'name') found.name = t('field.error.name')
       if (field === 'password') found.password = t('field.error.passwordShort')
     }
     if (!found.password && values.password !== values.passwordAgain) {
@@ -91,7 +94,7 @@ export function SetupPage() {
     const found = validateAccount()
     setErrors(found)
     if (Object.keys(found).length > 0) {
-      const first = (['setupCode', 'email', 'password', 'passwordAgain'] as const).find(
+      const first = (['setupCode', 'username', 'name', 'password', 'passwordAgain'] as const).find(
         (field) => found[field],
       )
       if (first) document.getElementById(first)?.focus()
@@ -106,7 +109,8 @@ export function SetupPage() {
     try {
       await createAccount({
         setupCode: values.setupCode,
-        email: values.email,
+        username: values.username,
+        name: values.name,
         password: values.password,
         uiLanguage: values.uiLanguage,
         timeZone: values.timeZone,
@@ -149,14 +153,25 @@ export function SetupPage() {
             }}
           />
           <TextField
-            id="email"
-            label={t('field.email')}
-            type="email"
+            id="username"
+            label={t('field.username')}
             autoComplete="username"
-            value={values.email}
-            error={errors.email}
+            autoCapitalize="none"
+            spellCheck={false}
+            value={values.username}
+            error={errors.username}
             onChange={(event) => {
-              set('email', event.target.value)
+              set('username', event.target.value)
+            }}
+          />
+          <TextField
+            id="name"
+            label={t('field.name')}
+            autoComplete="given-name"
+            value={values.name}
+            error={errors.name}
+            onChange={(event) => {
+              set('name', event.target.value)
             }}
           />
           <TextField

@@ -9,10 +9,12 @@ export const en: typeof hu = {
     retry: 'Try again',
   },
   field: {
-    email: 'Email',
+    username: 'Username',
+    name: 'What should we call you?',
     password: 'Password',
     error: {
-      email: 'Enter a valid email.',
+      username: 'Use 3 to 32 characters: lowercase letters, digits, dot, dash or underscore.',
+      name: 'Enter your name (60 characters at most).',
       passwordShort: 'Use at least 8 characters.',
       passwordMismatch: "The passwords don't match.",
       code: 'Enter the setup code.',
@@ -65,7 +67,7 @@ export const en: typeof hu = {
     lead: 'Sign in to your journal.',
     submit: 'Sign in',
     error: {
-      invalid: 'Wrong email or password. Check them and try again.',
+      invalid: 'Wrong username or password. Check them and try again.',
       tooMany: 'Too many attempts. Wait a minute and try again.',
     },
   },
@@ -79,9 +81,9 @@ export const en: typeof hu = {
     todayEntries: "Today's entries",
     todayEmpty: 'No entries today yet.',
     greeting: {
-      morning: "Good morning. What's on your mind?",
-      afternoon: "Good afternoon. What's on your mind?",
-      evening: "Good evening. What's on your mind?",
+      morning: "Good morning, {{name}}. What's on your mind?",
+      afternoon: "Good afternoon, {{name}}. What's on your mind?",
+      evening: "Good evening, {{name}}. What's on your mind?",
     },
   },
   timeline: {

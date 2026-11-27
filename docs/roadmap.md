@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M1 features all merged (001 to 008, upgrade test, layout checks). 0.1.0 released. Next release 0.2.0 (voice + search) waits on a smoke test of the image and the owner OK.
+**Now:** M1 features all merged (001 to 008, upgrade test, layout checks). 0.1.0 released. Next release 0.2.0 (voice + search) waits on a smoke test of the image and the owner OK. Username sign-in + name for the greeting (D-43) is built on branch feat/username-login (specs 001, 004, 006).
 **Next:** smoke test + round 2 review page, release 0.2.0, owner journals for a week (M1 done-when). Open: O-7 Hungarian nightly threshold, 60 min recording cap (built as 60). Follow-up: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.

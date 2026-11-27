@@ -8,7 +8,9 @@ const volumes = { data: `${run}-data`, db: `${run}-db` }
 const port = process.env.UPGRADE_TEST_PORT ?? '3999'
 const origin = `http://localhost:${port}`
 const dbPassword = 'upgrade-test'
-const account = { email: 'upgrade@example.com', password: 'upgrade-test-password' }
+const password = 'upgrade-test-password'
+const previousAccount = { email: 'Upgrade@example.com', password }
+const upgradedLogin = { username: 'upgrade', password }
 const fixtures = [
   {
     entryDate: '2026-01-05',
@@ -82,8 +84,11 @@ async function api(path: string, init: { method?: string; body?: unknown; cookie
   return { cookie, json: (await response.json()) as unknown }
 }
 
-const signIn = async () =>
-  (await api('/api/v1/auth/sign-in/email', { method: 'POST', body: account })).cookie
+const signInPrevious = async () =>
+  (await api('/api/v1/auth/sign-in/email', { method: 'POST', body: previousAccount })).cookie
+
+const signInUpgraded = async () =>
+  (await api('/api/v1/auth/sign-in/username', { method: 'POST', body: upgradedLogin })).cookie
 
 type Entry = { id: string; entryDate: string; bodyMd: string; createdAt: string }
 async function listEntries(cookie: string) {
@@ -151,13 +156,13 @@ try {
     method: 'POST',
     body: {
       setupCode: code,
-      ...account,
+      ...previousAccount,
       uiLanguage: 'en',
       timeZone: 'UTC',
       transcriptionEnabled: false,
     },
   })
-  const oldCookie = await signIn()
+  const oldCookie = await signInPrevious()
   for (const fixture of fixtures) {
     await api('/api/v1/entries', { method: 'POST', body: fixture, cookie: oldCookie })
   }
@@ -169,7 +174,15 @@ try {
 
   startApp(`${run}-new`, newImage)
   await waitFor('the new image to be ready (migrations)', ready)
-  const after = await listEntries(await signIn())
+  const upgradedCookie = await signInUpgraded()
+  const upgradedMe = (await api('/api/v1/me', { cookie: upgradedCookie })).json as {
+    username: string
+    name: string
+  }
+  if (upgradedMe.username !== 'upgrade' || upgradedMe.name !== 'upgrade') {
+    throw new Error('the existing account did not become username "upgrade" with the same name')
+  }
+  const after = await listEntries(upgradedCookie)
   if (JSON.stringify(after) !== JSON.stringify(before)) {
     throw new Error(
       `entries changed by the upgrade\nbefore: ${JSON.stringify(before)}\nafter: ${JSON.stringify(after)}`,

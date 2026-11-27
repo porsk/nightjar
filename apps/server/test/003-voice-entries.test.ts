@@ -176,16 +176,16 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
     await transcription.resume()
 
     const alice = options.sameUsers
-      ? await signInExistingUser(database, auth, 'alice@example.test')
+      ? await signInExistingUser(database, auth, 'alice')
       : await createUserWithSession(database, auth, {
-          email: 'alice@example.test',
+          username: 'alice',
           timeZone: 'Europe/Budapest',
           isAdmin: true,
         })
     const bob = options.sameUsers
-      ? await signInExistingUser(database, auth, 'bob@example.test')
+      ? await signInExistingUser(database, auth, 'bob')
       : await createUserWithSession(database, auth, {
-          email: 'bob@example.test',
+          username: 'bob',
           timeZone: 'Europe/Budapest',
         })
     const streams: AbortController[] = []

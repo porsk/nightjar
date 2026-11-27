@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import { sql } from 'drizzle-orm'
@@ -15,7 +16,8 @@ import { buildTestApp, inertTranscription } from './support/test-app.ts'
 const host = 'nightjar.test'
 const password = 'correct horse battery'
 const validSetup = {
-  email: 'Owner@Example.test',
+  username: 'Owner.Name',
+  name: 'Örs',
   password,
   uiLanguage: 'hu',
   timeZone: 'Europe/Budapest',
@@ -80,8 +82,8 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
       request('POST', '/api/v1/setup', {
         payload: { ...validSetup, setupCode: code, ...overrides },
       })
-    const login = (email: string, pass: string) =>
-      request('POST', '/api/v1/auth/sign-in/email', { payload: { email, password: pass } })
+    const login = (username: string, pass: string) =>
+      request('POST', '/api/v1/auth/sign-in/username', { payload: { username, password: pass } })
     return { ...test, setupCode, ip, request, setup, login }
   }
 
@@ -105,7 +107,9 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     const [user, ...others] = await database.db.select().from(users)
     expect(others).toHaveLength(0)
     expect(user).toMatchObject({
-      email: 'owner@example.test',
+      username: 'owner.name',
+      name: 'Örs',
+      email: null,
       isAdmin: true,
       uiLanguage: 'hu',
       entryLanguage: 'hu',
@@ -116,7 +120,7 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
 
     const me = await request('GET', '/api/v1/me', { cookie: cookieOf(response) })
     expect(me.statusCode).toBe(200)
-    expect(me.json()).toMatchObject({ email: 'owner@example.test', isAdmin: true })
+    expect(me.json()).toMatchObject({ username: 'owner.name', name: 'Örs', isAdmin: true })
     expect((await request('GET', '/api/v1/setup')).json()).toEqual({ needed: false })
   })
 
@@ -139,7 +143,7 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   it('AC-6: setup answers 409 setup_done once an account exists and creates nothing', async () => {
     const { setup } = await launch()
     await setup()
-    const again = await setup({ email: 'second@example.test' })
+    const again = await setup({ username: 'second' })
     expect(again.statusCode).toBe(409)
     expect(again.json()).toMatchObject({ error: { code: 'setup_done' } })
     expect(await userCount()).toBe(1)
@@ -148,8 +152,8 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   it('AC-7: two parallel setups create exactly one account', async () => {
     const { setup } = await launch()
     const [first, second] = await Promise.all([
-      setup({ email: 'a@example.test' }),
-      setup({ email: 'b@example.test' }),
+      setup({ username: 'first' }),
+      setup({ username: 'second' }),
     ])
     expect([first.statusCode, second.statusCode].sort()).toEqual([201, 409])
     expect(await userCount()).toBe(1)
@@ -170,15 +174,15 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   it('AC-9: the session cookie is HttpOnly and SameSite=Lax, Secure over https', async () => {
     const { setup, login, request } = await launch({ trustProxy: 1 })
     await setup()
-    const plain = await login('owner@example.test', password)
+    const plain = await login('owner.name', password)
     expect(plain.statusCode).toBe(200)
     const cookie = String(plain.headers['set-cookie']).toLowerCase()
     expect(cookie).toContain('httponly')
     expect(cookie).toContain('samesite=lax')
     expect(cookie).not.toContain('secure')
 
-    const overHttps = await request('POST', '/api/v1/auth/sign-in/email', {
-      payload: { email: 'owner@example.test', password },
+    const overHttps = await request('POST', '/api/v1/auth/sign-in/username', {
+      payload: { username: 'owner.name', password },
       headers: { 'x-forwarded-proto': 'https', origin: `https://${host}` },
     })
     expect(overHttps.statusCode).toBe(200)
@@ -197,23 +201,26 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     expect(session?.expiresAt.getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600 * 1000)
   })
 
-  it('AC-10: wrong password and unknown email give the same status and code', async () => {
+  it('AC-10: wrong password and unknown username give the same status and code', async () => {
     const { setup, login } = await launch()
     await setup()
-    const wrongPassword = await login('owner@example.test', 'not the password')
-    const unknownEmail = await login('nobody@example.test', password)
+    const wrongPassword = await login('owner.name', 'not the password')
+    const unknownUsername = await login('nobody', password)
+    const malformedUsername = await login('no body@x', password)
     expect(wrongPassword.statusCode).toBe(401)
-    expect(unknownEmail.statusCode).toBe(401)
-    expect(wrongPassword.json()).toEqual(unknownEmail.json())
+    expect(unknownUsername.statusCode).toBe(401)
+    expect(malformedUsername.statusCode).toBe(401)
+    expect(wrongPassword.json()).toEqual(unknownUsername.json())
+    expect(wrongPassword.json()).toEqual(malformedUsername.json())
   })
 
   it('AC-11: the 11th failed login in a minute answers 429', async () => {
     const { setup, login } = await launch()
     await setup()
     for (let attempt = 0; attempt < 10; attempt++) {
-      expect((await login('owner@example.test', 'wrong password')).statusCode).toBe(401)
+      expect((await login('owner.name', 'wrong password')).statusCode).toBe(401)
     }
-    const blocked = await login('owner@example.test', password)
+    const blocked = await login('owner.name', password)
     expect(blocked.statusCode).toBe(429)
     expect(blocked.json()).toMatchObject({ error: { code: 'too_many_attempts' } })
   })
@@ -222,7 +229,7 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
     const { setup, login } = await launch()
     await setup()
     const results = await Promise.all(
-      Array.from({ length: 20 }, () => login('owner@example.test', 'wrong password')),
+      Array.from({ length: 20 }, () => login('owner.name', 'wrong password')),
     )
     const statuses = results.map((response) => response.statusCode)
     expect(statuses.filter((status) => status === 401).length).toBeLessThanOrEqual(10)
@@ -232,8 +239,8 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   it('AC-11: a spoofed leftmost X-Forwarded-For does not change who is counted, behind one proxy', async () => {
     const { request } = await launch({ trustProxy: 1 })
     const attempt = (forwardedFor: string) =>
-      request('POST', '/api/v1/auth/sign-in/email', {
-        payload: { email: 'nobody@example.test', password: 'wrong password' },
+      request('POST', '/api/v1/auth/sign-in/username', {
+        payload: { username: 'nobody', password: 'wrong password' },
         headers: { 'x-forwarded-for': forwardedFor },
       })
     for (let n = 0; n < 10; n++) {
@@ -329,20 +336,109 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
   it('AC-18: the used setup code answers 409 afterwards', async () => {
     const { setup, setupCode } = await launch()
     expect((await setup()).statusCode).toBe(201)
-    const again = await setup({ email: 'second@example.test' }, setupCode)
+    const again = await setup({ username: 'second' }, setupCode)
     expect(again.statusCode).toBe(409)
     expect(await userCount()).toBe(1)
+  })
+
+  it('AC-20: the username is stored in lowercase and login ignores case', async () => {
+    const { setup, login } = await launch()
+    expect((await setup({ username: '  Owner.Name_1-x ' })).statusCode).toBe(201)
+    const [user] = await database.db.select().from(users)
+    expect(user?.username).toBe('owner.name_1-x')
+    expect((await login('OWNER.NAME_1-X', password)).statusCode).toBe(200)
+    expect((await login('owner.name_1-x', password)).statusCode).toBe(200)
+  })
+
+  it.each([
+    ['too short', 'ab'],
+    ['too long', 'a'.repeat(33)],
+    ['a space', 'owner name'],
+    ['an at sign', 'owner@example.test'],
+    ['an accent', 'örs'],
+  ])('AC-20: a username that is %s is refused and creates nothing', async (_label, username) => {
+    const { setup } = await launch()
+    const response = await setup({ username })
+    expect(response.statusCode).toBe(400)
+    expect(await userCount()).toBe(0)
+  })
+
+  it.each([
+    ['empty', ''],
+    ['blank', '   '],
+    ['too long', 'x'.repeat(61)],
+  ])('AC-20: a name that is %s is refused and creates nothing', async (_label, name) => {
+    const { setup } = await launch()
+    expect((await setup({ name })).statusCode).toBe(400)
+    expect(await userCount()).toBe(0)
+  })
+
+  it('AC-20: a name with Hungarian accents is kept as typed', async () => {
+    const { setup } = await launch()
+    await setup({ name: 'Árvíztűrő Tükörfúrógép' })
+    const [user] = await database.db.select().from(users)
+    expect(user?.name).toBe('Árvíztűrő Tükörfúrógép')
+  })
+
+  it('AC-21: no email is stored and the email sign-in route gives no session', async () => {
+    const { setup, request } = await launch()
+    await setup()
+    const [user] = await database.db.select().from(users)
+    expect(user?.email).toBeNull()
+    const response = await request('POST', '/api/v1/auth/sign-in/email', {
+      payload: { email: 'owner@example.test', password },
+    })
+    expect(response.statusCode).toBe(401)
+    expect(response.headers['set-cookie']).toBeUndefined()
+  })
+
+  it('AC-22: the migration turns existing accounts into usernames and names', async () => {
+    const migration = readFileSync(
+      join(import.meta.dirname, '../migrations/0006_username_login.sql'),
+      'utf8',
+    )
+    const backfill = migration
+      .split('--> statement-breakpoint')
+      .filter((statement) => /^\s*(WITH|UPDATE)/.test(statement))
+    const emails = [
+      'Owner.Name@Example.test',
+      'owner.name@other.test',
+      'a@x.test',
+      'jó.reggelt@x.test',
+      `${'long'.repeat(12)}@x.test`,
+    ]
+    for (const [index, email] of emails.entries()) {
+      await database.db.insert(users).values({
+        name: email,
+        email,
+        createdAt: new Date(Date.UTC(2026, 0, index + 1)),
+      })
+    }
+    for (const statement of backfill) await database.db.execute(sql.raw(statement))
+    const rows = await database.db.select().from(users).orderBy(users.createdAt)
+    expect(rows.map((row) => row.username)).toEqual([
+      'owner.name',
+      'owner.name-2',
+      'a__',
+      'j_.reggelt',
+      'long'.repeat(8),
+    ])
+    expect(rows.map((row) => row.name)).toEqual(rows.map((row) => row.username))
   })
 
   it('AC-19: marker text from setup, login, wrong password and logout never reaches the logs', async () => {
     const marker = 'ZQX-PRIVATE-7781'
     const { setup, login, request, capture } = await launch()
     const cookie = cookieOf(
-      await setup({ email: `${marker}@example.test`, password: marker + 'pw!' }),
+      await setup({
+        username: `${marker}-user`,
+        name: `${marker} Örs`,
+        password: marker + 'pw!',
+      }),
     )
-    await login(`${marker}@example.test`, `${marker}-wrong`)
-    await login(`${marker}-nobody@example.test`, marker)
-    await request('POST', '/api/v1/auth/sign-in/email', { payload: { email: marker } })
+    await login(`${marker}-user`, `${marker}-wrong`)
+    await login(`${marker}-nobody`, marker)
+    await request('POST', '/api/v1/auth/sign-in/username', { payload: { username: marker } })
     await request('POST', '/api/v1/auth/sign-out', { cookie })
     await request('GET', `/api/v1/me?q=${marker}`, { cookie })
     expectNoMarkersInLogs(capture, [marker])

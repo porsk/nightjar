@@ -2,7 +2,7 @@ import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { fakeTexts } from '../apps/server/src/modules/transcription/fake-transcriber.ts'
 import {
-  adminEmail,
+  adminUsername,
   createAdmin,
   modelFolderExists,
   password,
@@ -29,7 +29,7 @@ test.beforeEach(async ({ context }) => {
 
 async function signIn(page: Page) {
   await page.goto('/login')
-  await page.getByLabel('Email').fill(adminEmail)
+  await page.getByLabel('Username').fill(adminUsername)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: /on your mind/ })).toBeVisible()

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
-  adminEmail,
+  adminUsername,
   countRecordings,
   createAdmin,
   fileExists,
@@ -26,7 +26,7 @@ test.beforeEach(async ({ context, page }) => {
 
 async function signIn(page: Page) {
   await page.goto('/login')
-  await page.getByLabel('Email').fill(adminEmail)
+  await page.getByLabel('Username').fill(adminUsername)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
@@ -237,7 +237,7 @@ test.describe('002-text-entries: in Hungarian', () => {
   test('AC-1: "Inkább írok" opens "Új bejegyzés" with "Ma, november 26."', async ({ page }) => {
     await createAdmin(headers, 'hu')
     await page.goto('/login')
-    await page.getByLabel('E-mail cím').fill(adminEmail)
+    await page.getByLabel('Felhasználónév').fill(adminUsername)
     await page.getByLabel('Jelszó').fill(password)
     await page.getByRole('button', { name: 'Belépés' }).click()
     await page.getByRole('button', { name: 'Inkább írok' }).click()
