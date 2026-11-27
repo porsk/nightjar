@@ -572,7 +572,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         isUserEdited: false,
       })
       const tmp = join(app.dataDir, 'tmp')
-      expect(!existsSync(tmp) || readdirSync(tmp).length === 0).toBe(true)
+      await waitFor(() => !existsSync(tmp) || readdirSync(tmp).length === 0, 'the temp WAV removal')
     })
 
     it('AC-12: the event stream of the owner carries the status changes in order', async () => {
@@ -767,15 +767,18 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       })
       expect(response.json()).toMatchObject({ enabled: true, state: 'downloading' })
 
+      const folder = join(app.dataDir, 'models')
       await waitFor(async () => {
         const status = (await app.call(app.alice, 'GET', '/api/v1/admin/transcription')).json<{
           downloadedBytes: number
           state: string
         }>()
-        return status.state === 'downloading' && status.downloadedBytes > 0
-      }, 'progress')
-      const folder = join(app.dataDir, 'models')
-      expect(readdirSync(folder).some((name) => name.endsWith('.part'))).toBe(true)
+        return (
+          status.state === 'downloading' &&
+          status.downloadedBytes > 0 &&
+          readdirSync(folder).some((name) => name.endsWith('.part'))
+        )
+      }, 'progress with a partial file on disk')
 
       await waitFor(
         async () =>

@@ -198,11 +198,21 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 
 | Workflow | When | What |
 |---|---|---|
-| `ci.yml` | every PR and push to `main` | install (cached) → `pnpm verify` (needs Docker for Testcontainers, Playwright browsers cached) → build image (amd64 on PRs). On `main`: build amd64 + arm64 and push `edge`. Reports upload on failure |
+| `ci.yml` | every PR and push to `main` | A `changes` job looks at the changed files. Docs-only changes (`docs/**`, `design/**`, `*.md`) skip everything except the PR title check; docs that tests read (`docs/specs/**`, `docs/backup.md`, `docs/engineering.md`, `README.md`) run only `checks`. Then these jobs run in parallel (see the table below), and the image builds after all of them (amd64 on PRs; on `main` amd64 + arm64, push `edge`). On `main` the Docker Hub description syncs when the code or `README.md` changed. Reports upload on failure |
 | `ci.yml` `upgrade` job | every PR and push to `main` | `scripts/upgrade-test.ts`: starts Postgres and the latest released image, sets up an account, writes two entries, then starts the image built from this commit on the same database and checks `/readyz` and that the entries are unchanged. Container logs upload on failure |
 | `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
-| `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
+| `codeql.yml` | PRs, `main` (not docs-only changes), weekly | CodeQL for JavaScript/TypeScript |
 | `nightly.yml` | nightly (schedule only) | `backup-restore` builds the image and runs the backup test above |
+
+| CI job | Local command | Notes |
+|---|---|---|
+| `checks` | `pnpm format:check`, `lint`, `typecheck`, `test`, `check:acs` | unit tests with coverage |
+| `api` | `pnpm test:api` | needs Docker (Testcontainers) |
+| `e2e-chromium` | `pnpm exec playwright test --project=chromium` | only this browser is installed and cached |
+| `e2e-webkit` | `pnpm exec playwright test --project=webkit-mobile` | only WebKit is installed and cached |
+
+`pnpm verify` still runs all of it in one go locally. The `setup` composite action (`.github/actions/setup`) does the
+shared pnpm + Node install with the pnpm store cached.
 
 - PRs opened by release-please use the default token, so they do not trigger `ci.yml` by themselves. Close and reopen
   the release PR (or switch to a PAT) if the checks do not show up.
