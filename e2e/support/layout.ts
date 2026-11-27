@@ -52,7 +52,7 @@ function findLayoutProblems() {
     }
   }
 
-  const dialog = document.querySelector('[role="dialog"], [role="alertdialog"]')
+  const dialog = document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
   const scope = dialog ?? document.body
   const interactive = [
     ...scope.querySelectorAll(

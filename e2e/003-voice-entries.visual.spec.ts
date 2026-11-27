@@ -2,6 +2,7 @@ import path from 'node:path'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { fakeMic } from './support/fake-mic.ts'
+import { fakeStatus, largeId, modelRow, turboId } from './support/models.ts'
 import {
   adminUsername,
   createAdmin,
@@ -25,13 +26,11 @@ async function checkScreen(page: Page, testInfo: TestInfo, name: string) {
   await testInfo.attach(name, { path: testInfo.outputPath(file), contentType: 'image/png' })
 }
 
-const downloading = {
-  enabled: true,
-  state: 'downloading',
-  downloadedBytes: 340_000_000,
-  totalBytes: 560_000_000,
-  backlogCount: 0,
-}
+const downloading = fakeStatus(
+  modelRow(turboId, 'downloading', { downloadedBytes: 340_000_000 }),
+  modelRow(largeId, 'not_downloaded'),
+  { state: 'downloading', downloadedBytes: 340_000_000 },
+)
 
 test.describe('003-voice-entries: screens are accessible and look right', () => {
   test.skip(
@@ -200,12 +199,11 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             await page.unroute('**/api/v1/admin/transcription')
             await page.route('**/api/v1/admin/transcription', (route) =>
               route.fulfill({
-                json: {
-                  ...downloading,
-                  state: 'ready',
-                  downloadedBytes: 560_000_000,
-                  backlogCount: 14,
-                },
+                json: fakeStatus(
+                  modelRow(turboId, 'downloaded'),
+                  modelRow(largeId, 'not_downloaded'),
+                  { backlogCount: 14 },
+                ),
               }),
             )
             await page.goto('/settings')
@@ -216,7 +214,13 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
 
             await page.unroute('**/api/v1/admin/transcription')
             await page.route('**/api/v1/admin/transcription', (route) =>
-              route.fulfill({ json: { ...downloading, state: 'failed', downloadedBytes: 0 } }),
+              route.fulfill({
+                json: fakeStatus(
+                  modelRow(turboId, 'failed', { error: 'download_failed' }),
+                  modelRow(largeId, 'not_downloaded'),
+                  { state: 'failed', downloadedBytes: 0 },
+                ),
+              }),
             )
             await page.goto('/settings')
             await expect(page.getByRole('alert')).toBeVisible()

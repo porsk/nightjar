@@ -1,6 +1,6 @@
 # 009 Transcription model choice + transcribe again
 
-Status: building
+Status: done
 Milestone: 0.2.1
 
 ## Why
@@ -10,7 +10,9 @@ one the server uses, and old recordings can be transcribed again with the better
 
 ## Scope
 In (mockups: `design/alkony/009-transcription-models.html`, screenshots in `design/alkony/screenshots/009/`):
-- **Second model** in `models.json`: Whisper large-v3 int8 (sherpa-onnx). Turbo stays the default and first in the list.
+- **More models** in `models.json`: Whisper large-v3 int8 and Turbo full precision (fp32), both sherpa-onnx. Turbo
+  (int8) stays the default and first in the list. Turbo full precision is for older CPUs without int8 acceleration
+  (the owner's i5-6500T has AVX2 but no VNNI, where int8 Whisper can loop or drop text): it avoids the int8 kernels.
 - **Model list** in Settings > Rendszergazda, under the transcription switch, shown only while transcription is on
   (screens `models`, `modelsfirst`, `modelsready`, `modelsfail`, `modelsdelete`). Rows: name, one-line description, download size,
   state, actions. Choosing a model that is not downloaded downloads it, then makes it active. One model is active.
@@ -65,7 +67,26 @@ from the archive listing):
 }
 ```
 
-Sizes the UI shows: turbo 564 MB download, 1.0 GB on disk; large-v3 1.1 GB download, 1.8 GB on disk. Large-v3 uses
+Third entry, `whisper-large-v3-turbo-fp32` (label "Whisper large-v3-turbo fp32"), all downloads are plain files from
+`https://huggingface.co/csukuangfj/sherpa-onnx-whisper-turbo/resolve/main/` (sha256 from the Hugging Face LFS ids,
+`turbo-tokens.txt` hashed from a fresh download), none is an archive. The encoder weights are external data and must sit
+next to `turbo-encoder.onnx` under that exact name (checked: sherpa-onnx-node loads them from there):
+
+| File | Bytes | sha256 |
+|---|---|---|
+| `turbo-encoder.onnx` | 735920 | `1b960f278564fb8bbacd544d4f85f4dd6d8a64d3aa89543d8f2c4021c926f976` |
+| `turbo-encoder.weights` | 2600325120 | `746f879ecf066450ab0cdecc05383380b85157270ff6c0a9fb7cfdd917036e12` |
+| `turbo-decoder.onnx` | 636209532 | `b24db5d90fa230c5eaa6b823d74862ced9e0d1dc3e01ec46601968e8db0e09ec` |
+| `turbo-tokens.txt` | 816730 | `b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126` |
+| `silero_vad.onnx` | 643854 | `9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6` (GitHub release, as for the other models) |
+
+`files` lists the same five names and sizes, `.onnx` encoder first (`sherpa-transcriber.ts` picks the first file whose
+name contains "encoder"). Measured natively on a 20-core desktop with the sherpa child (4 threads, 48.7 s Hungarian
+clip, load included): peak RSS 4.1 GB, real-time factor about 1.05, no int8 kernels involved. No loop guard or other code
+tweak for old CPUs is part of this spec.
+
+Sizes the UI shows: turbo 564 MB download, 1.0 GB on disk; large-v3 1.1 GB download, 1.8 GB on disk; turbo full
+precision 3,2 GB download and on disk. Large-v3 uses
 the same sherpa-onnx Whisper settings as turbo (128 mel features), so `sherpa-child.ts` does not change. Each model
 keeps its own copy of the VAD file in its own folder, so deleting one model never breaks the other.
 
@@ -249,8 +270,8 @@ section), `product.md` (settings and entry flows).
 ## Acceptance criteria
 
 Model list
-- **AC-1** Given `models.json`, then it parses with the model list schema, turbo is the default and first, and the large-v3 entry has exactly the URLs, sha256, byte counts and file names in this spec.
-- **AC-2** Given transcription on, when the admin opens Settings, then the model list shows Turbo and Large-v3, each with name, description and download size ("564 MB", "1,1 GB"), and the active one shows "Használatban" without action buttons; given transcription off, then no model list shows and the switch, hint and turn-on flow of spec 003 work as before.
+- **AC-1** Given `models.json`, then it parses with the model list schema, turbo is the default and first, and the large-v3 and turbo full precision entries have exactly the URLs, sha256, byte counts and file names in this spec.
+- **AC-2** Given transcription on, when the admin opens Settings, then the model list shows Turbo, Large-v3 and Turbo (teljes pontosság), each with name, description and download size ("564 MB", "1,1 GB"), and the active one shows "Használatban" without action buttons; given transcription off, then no model list shows and the switch, hint and turn-on flow of spec 003 work as before.
 - **AC-3** Given a model that is not downloaded, when the admin presses "Letöltés", then it downloads into `models/<id>/` with the checksum checked, the row shows live progress (MB / MB, %) and then "Letöltve", the active model does not change, and recordings saved meanwhile are transcribed with the active model.
 - **AC-4** Given a model that is not downloaded, when the admin presses "Váltás erre", then it downloads with "Letöltés után erre váltunk." under the progress, and once the files are in place it becomes active ("Használatban") and the previous model shows "Letöltve" with its files still on disk.
 - **AC-5** Given a downloaded model that is not active, when the admin presses "Váltás erre", then it becomes active at once, nothing is downloaded, and the previous model's files stay.
@@ -288,7 +309,7 @@ Access, accessibility, privacy
 ## Test plan
 
 Fakes: the model fixture server (`apps/server/test/support/model-server.ts`) serves two models under the real ids
-(`whisper-large-v3-turbo-int8` first and default, `whisper-large-v3-int8`), each with its own small random files at
+(`whisper-large-v3-turbo-int8` first and default, `whisper-large-v3-int8`; the fp32 entry is covered by the AC-1 unit test only), each with its own small random files at
 `/<modelId>/<file>`, so the UI shows real names. It keeps `slowMs`, `dropOnce` and `corrupt`. The fake transcriber
 reports the model it was created for, and gets an option so its text names the model (old and new text differ after
 a switch). Disk full is a unit test on the model manager with a writer that fails with
@@ -333,6 +354,7 @@ New keys, in both `hu` and `en`.
 | Key | hu | en |
 |---|---|---|
 | `models.whisper-large-v3-turbo-int8.name` / `.description` | Turbo / Gyors, jó alapértelmezés. | Turbo / Fast, a good default. |
+| `models.whisper-large-v3-turbo-fp32.name` / `.description` | Turbo (teljes pontosság) / Régebbi processzorokhoz. Kb. 4 GB szabad memória kell hozzá, és lassabb. | Turbo (full precision) / For older processors. Needs about 4 GB of free RAM and is slower. |
 | `models.whisper-large-v3-int8.name` / `.description` | Large-v3 / A legpontosabb. 4 magos processzoron kb. 3-szor lassabb a valós időnél, és kb. 5 GB szabad memória kell hozzá. | Large-v3 / Most accurate. About 3x slower than real time on a 4-core CPU, needs about 5 GB of free RAM. |
 | `settings.models.title` | Átírási modell | Transcription model |
 | `settings.models.size` | {{size}} letöltés | {{size}} download |

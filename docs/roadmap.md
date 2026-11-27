@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** 0.2.1: search partial matches (merged), transcription model choice + transcribe again (spec 009), loop fix.
+**Now:** 0.2.1: search partial matches (merged), transcription model choice + transcribe again (spec 009, built and verified in branch `feat/transcription-models`), loop fix.
 **Next:** owner installs 0.2.0 and journals for a week (M1 done-when). Then M2 planning. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser, owner speech clips + Soniox yardstick.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
