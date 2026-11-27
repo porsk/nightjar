@@ -174,11 +174,12 @@ export function createTranscriptionService({
         userId: recordings.userId,
         entryId: recordings.entryId,
         durationMs: recordings.durationMs,
+        replaceEdited: recordings.replaceEdited,
       })
       .from(recordings)
       .where(inArray(recordings.status, ['pending', 'transcribing']))
       .orderBy(asc(recordings.createdAt), asc(recordings.id))
-    for (const recording of waiting) await queue(recording)
+    for (const recording of waiting) await queue(recording, undefined, recording.replaceEdited)
   }
 
   /** Model events go out one after the other, so the last one is always the newest. */

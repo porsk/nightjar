@@ -110,7 +110,7 @@ export function createTranscribeHandler({
           .observe(seconds / (recording.durationMs / 1000))
       }
 
-      const replaceEdited = job.data.replaceEdited === true
+      const replaceEdited = job.data.replaceEdited === true || recording.replaceEdited
       await db.transaction(async (tx) => {
         await tx
           .insert(transcripts)
@@ -131,7 +131,10 @@ export function createTranscribeHandler({
             },
             ...(replaceEdited ? {} : { setWhere: eq(transcripts.isUserEdited, false) }),
           })
-        await tx.update(recordings).set({ status: 'done' }).where(eq(recordings.id, recordingId))
+        await tx
+          .update(recordings)
+          .set({ status: 'done', replaceEdited: false })
+          .where(eq(recordings.id, recordingId))
       })
       await events.publishToUser(userId, {
         type: 'recording.updated',
@@ -152,7 +155,13 @@ export function createTranscribeHandler({
         'transcription failed',
       )
       await dropModel()
-      if (lastAttempt) await setStatus(recording, 'failed')
+      if (lastAttempt) {
+        await db
+          .update(recordings)
+          .set({ replaceEdited: false })
+          .where(eq(recordings.id, recording.id))
+        await setStatus(recording, 'failed')
+      }
       throw error
     } finally {
       await wav.remove()

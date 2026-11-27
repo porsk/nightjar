@@ -139,6 +139,8 @@ export const recordings = pgTable(
     status: text('status', {
       enum: ['pending', 'transcribing', 'done', 'failed', 'skipped'],
     }).notNull(),
+    /** A confirmed "transcribe again" replaces a transcript the user edited. Kept here so a restart does not lose it. */
+    replaceEdited: boolean('replace_edited').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

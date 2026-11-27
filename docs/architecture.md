@@ -163,7 +163,7 @@ D-20), large-v3 int8 and turbo full precision for older CPUs (D-47, spec 009). T
 Settings; downloaded models stay on disk until deleted. A job reads the active model when it starts; the transcribe job
 drops the loaded transcriber before it creates one for another model, so only one model is in memory. Each transcript
 stores the id of the model that wrote it, and "transcribe again" (`POST /api/v1/recordings/:id/retranscribe`) queues a
-recording again with the active model; the old transcript stays until the new one is saved.
+recording again with the active model; the old transcript stays until the new one is saved. A confirmed replace of an edited transcript is kept in `recordings.replace_edited` (cleared when the job ends), so a restart that queues the recording again does not lose it.
 
 ## 7. Search
 

@@ -495,6 +495,27 @@ describe('009-transcription-models: model choice and transcribe again against a 
       })
     })
 
+    it('AC-19: a confirmed replace survives a server restart that queues the recording again', async () => {
+      const app = await launch()
+      const saved = await withTranscript(app)
+      await app.call(app.alice, 'PATCH', `/api/v1/recordings/${saved.id}/transcript`, {
+        text: 'my own words',
+      })
+      await database.db
+        .update(recordings)
+        .set({ status: 'pending', replaceEdited: true })
+        .where(eq(recordings.id, saved.id))
+
+      const restarted = await launchAgain(app)
+      await done(restarted, saved.id)
+      expect(await transcriptOf(saved.id)).toMatchObject({
+        text: fakeTexts.en,
+        isUserEdited: false,
+      })
+      const [row] = await database.db.select().from(recordings).where(eq(recordings.id, saved.id))
+      expect(row?.replaceEdited).toBe(false)
+    })
+
     it('AC-20: it is refused while transcription is off, the model is missing or the recording is busy', async () => {
       const app = await launch()
       const saved = await withTranscript(app)
@@ -676,19 +697,11 @@ describe('009-transcription-models: model choice and transcribe again against a 
         .insert(entries)
         .values({ userId: user?.id ?? '', entryDate: '2026-11-01' })
         .returning()
-      const [recording] = await old.db
-        .insert(recordings)
-        .values({
-          userId: user?.id ?? '',
-          entryId: entry?.id ?? '',
-          filePath: 'media/x/recordings/x.wav',
-          mimeType: 'audio/wav',
-          sizeBytes: 1,
-          durationMs: 1,
-          language: 'hu',
-          status: 'done',
-        })
-        .returning()
+      const recordingRows = await old.db.execute<{ id: string }>(sql`
+        insert into recordings (user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status)
+        values (${user?.id ?? ''}, ${entry?.id ?? ''}, 'media/x/recordings/x.wav', 'audio/wav', 1, 1, 'hu', 'done')
+        returning id`)
+      const recording = recordingRows.rows[0]
       await old.db.insert(transcripts).values({
         userId: user?.id ?? '',
         recordingId: recording?.id ?? '',

@@ -315,7 +315,7 @@ export function registerRecordingRoutes(
     if (transcript?.isUserEdited && !replaceEdited) throw new AppError(409, 'transcript_edited')
     const [updated] = await db
       .update(recordings)
-      .set({ status: 'pending' })
+      .set({ status: 'pending', replaceEdited })
       .where(
         and(eq(recordings.id, row.id), inArray(recordings.status, ['done', 'failed', 'skipped'])),
       )
