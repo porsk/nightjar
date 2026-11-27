@@ -1,7 +1,7 @@
 # Roadmap
 
-**Now:** M1 round 1 merged (007, 001, 006, 002). Paused on usage limit: the smoke test + side-by-side review + layout checks task (branch `test/visual-review`, worktree under .claude/worktrees) was stopped mid-way; restart or resume it. 004 timeline is built (PR open), 003 runs in parallel.
-**Next:** finish that task, owner reviews design/review/m1-round1.html, owner OK to release 0.1.0 (PR #29) after the smoke test passes, then 003 ∥ 004, then 005 ∥ 008 (D-35).
+**Now:** M1 features all merged (001 to 008, upgrade test, layout checks). 0.1.0 released. Next release 0.2.0 (voice + search) waits on a smoke test of the image and the owner OK.
+**Next:** smoke test + round 2 review page, release 0.2.0, owner journals for a week (M1 done-when). Open: O-7 Hungarian nightly threshold, 60 min recording cap (built as 60). Follow-up: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
