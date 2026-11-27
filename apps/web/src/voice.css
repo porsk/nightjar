@@ -1,57 +1,4 @@
 /* home: record */
-.rec-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 22px 0 20px;
-}
-
-.rec {
-  width: 156px;
-  height: 156px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--accent);
-  color: var(--on-accent);
-  display: grid;
-  place-items: center;
-  box-shadow:
-    0 0 0 12px color-mix(in srgb, var(--accent) 22%, transparent),
-    0 0 0 26px color-mix(in srgb, var(--accent) 10%, transparent),
-    0 14px 40px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-.rec svg {
-  width: 60px;
-  height: 60px;
-  stroke-width: 1.8;
-}
-
-.rec-label {
-  margin-top: 34px;
-  font-weight: 600;
-  font-size: 17px;
-}
-
-.upl {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.newrec {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 52px;
-  margin-bottom: 14px;
-  border-radius: 26px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: 700;
-  text-decoration: none;
-}
-
 /* recorder */
 .rec-screen {
   display: flex;
@@ -189,10 +136,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .state b,
-  .sk {
-    animation: none;
-  }
-
   .meter span {
     transition: none;
   }
@@ -293,21 +236,6 @@
 .working svg {
   width: 18px;
   height: 18px;
-}
-
-.sk {
-  height: 10px;
-  border-radius: 5px;
-  background: linear-gradient(90deg, var(--surface2), var(--line), var(--surface2));
-  background-size: 200% 100%;
-  animation: shimmer 2s linear infinite;
-  margin-bottom: 8px;
-}
-
-@keyframes shimmer {
-  to {
-    background-position: -200% 0;
-  }
 }
 
 .failed {
@@ -623,26 +551,6 @@ textarea.edit:focus-visible {
 }
 
 @media (min-width: 900px) {
-  .rec {
-    width: 176px;
-    height: 176px;
-    margin: 24px 0 0;
-  }
-
-  .rec svg {
-    width: 68px;
-    height: 68px;
-  }
-
-  .rec-label {
-    margin: 44px 0 22px;
-    font-size: 18px;
-  }
-
-  .upl {
-    width: auto;
-  }
-
   .timer {
     font-size: 128px;
     margin: 36px 0 12px;

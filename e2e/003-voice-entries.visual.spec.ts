@@ -66,7 +66,6 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
                   email: 'E-mail cím',
                   password: 'Jelszó',
                   signIn: 'Belépés',
-                  today: 'Ma',
                   record: 'Felvétel indítása',
                   recording: 'Felvétel folyamatban',
                   discard: 'Elvetés',
@@ -83,7 +82,6 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
                   email: 'Email',
                   password: 'Password',
                   signIn: 'Sign in',
-                  today: 'Today',
                   record: 'Start recording',
                   recording: 'Recording',
                   discard: 'Discard',
@@ -101,7 +99,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             await page.getByLabel(t.email).fill(adminEmail)
             await page.getByLabel(t.password).fill(password)
             await page.getByRole('button', { name: t.signIn }).click()
-            await expect(page.getByRole('heading', { name: t.today })).toBeVisible()
+            await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()
             await checkScreen(page, testInfo, `home-${tag}`)
 
             await page.getByRole('link', { name: t.record }).first().click()
@@ -114,7 +112,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             await page.getByRole('button', { name: t.keep }).click()
             await page.getByRole('button', { name: t.discard }).click()
             await page.getByRole('alertdialog').getByRole('button', { name: t.discard }).click()
-            await expect(page.getByRole('heading', { name: t.today })).toBeVisible()
+            await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()
 
             await page.goto('/upload')
             await expect(page.locator('input[type="file"]')).toBeAttached()
@@ -186,7 +184,7 @@ test.describe('003-voice-entries: screens are accessible and look right', () => 
             await page.getByLabel(hu ? 'E-mail cím' : 'Email').fill(adminEmail)
             await page.getByLabel(hu ? 'Jelszó' : 'Password').fill(password)
             await page.getByRole('button', { name: hu ? 'Belépés' : 'Sign in' }).click()
-            await expect(page.getByRole('heading', { name: hu ? 'Ma' : 'Today' })).toBeVisible()
+            await expect(page.getByRole('heading', { name: /on your mind|fejedben/ })).toBeVisible()
 
             await page.goto('/settings')
             await expect(page.getByRole('switch')).not.toBeChecked()

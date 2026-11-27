@@ -32,7 +32,7 @@ async function signIn(page: Page) {
   await page.getByLabel('Email').fill(adminEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /on your mind/ })).toBeVisible()
 }
 
 async function entryWith(recording: Omit<Parameters<typeof seedRecording>[0], 'entryId'>) {
@@ -74,6 +74,24 @@ test.describe('003-voice-entries: upload and transcripts', () => {
     await expect(page.getByText('Transcribing…')).toBeVisible()
     await expect(page.getByTestId('transcript')).toHaveText(fakeTexts.hu, { timeout: 20_000 })
     await expect(page.getByText('Transcribing…')).toBeHidden()
+  })
+
+  test('AC-12: on the timeline the badge of a recording turns into the transcript text when it is done', async ({
+    page,
+  }) => {
+    await turnTranscriptionOn()
+    await page.getByRole('link', { name: 'Upload an audio file' }).click()
+    await page.locator('input[type="file"]').setInputFiles(clip)
+    await page.getByRole('button', { name: 'Upload' }).click()
+    await expect(page.getByTestId('recording-card')).toBeVisible()
+
+    await page.goto('/timeline')
+    const card = page.getByRole('link').filter({ hasText: /Transcribing|Recording, no text/ })
+    await expect(card).toContainText('Transcribing')
+    await expect(card).toHaveCount(0, { timeout: 20_000 })
+    const done = page.getByRole('link').filter({ hasText: fakeTexts.en })
+    await expect(done).toBeVisible()
+    await expect(done).not.toContainText('Transcribing')
   })
 
   test('AC-16: a failed transcription can be tried again and then shows the text', async ({

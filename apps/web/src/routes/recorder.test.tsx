@@ -168,7 +168,7 @@ describe('003-voice-entries: recorder', () => {
     await user.click(
       within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Discard' }),
     )
-    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /on your mind/ })).toBeInTheDocument()
     expect(FakeXhr.instances).toHaveLength(0)
     expect(fakes.track.stop).toHaveBeenCalled()
     expect(FakeMediaRecorder.instances[0]?.state).toBe('inactive')
@@ -187,7 +187,7 @@ describe('003-voice-entries: recorder', () => {
       expect(FakeMediaRecorder.instances).toHaveLength(0)
       expect(screen.queryByRole('timer')).not.toBeInTheDocument()
       await user.click(screen.getByRole('button', { name: 'Back' }))
-      expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument()
+      expect(await screen.findByRole('heading', { name: /on your mind/ })).toBeInTheDocument()
     })
   }
 

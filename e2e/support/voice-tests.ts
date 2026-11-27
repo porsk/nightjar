@@ -17,7 +17,7 @@ async function signIn(page: Page) {
   await page.getByLabel('Email').fill(adminEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /on your mind/ })).toBeVisible()
 }
 
 const timer = (page: Page) => page.getByRole('timer', { name: 'Elapsed time' })
@@ -101,7 +101,7 @@ export function defineVoiceTests(language: 'hu' | 'en') {
 
       await page.getByRole('button', { name: 'Discard' }).click()
       await dialog.getByRole('button', { name: 'Discard' }).click()
-      await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /on your mind/ })).toBeVisible()
       expect(uploads).toEqual([])
       expect(await readRecordings()).toHaveLength(0)
     })

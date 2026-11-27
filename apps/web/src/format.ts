@@ -33,12 +33,6 @@ export const formatTime = (date: Date, language: Language, timeZone: string) =>
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
-/** "1:48" for a length in milliseconds. */
-export const formatDuration = (milliseconds: number) => {
-  const total = Math.max(0, Math.floor(milliseconds / 1000))
-  return `${String(Math.floor(total / 60))}:${pad(total % 60)}`
-}
-
 /** "02:14" for the recorder timer. */
 export const formatTimer = (milliseconds: number) => {
   const total = Math.max(0, Math.floor(milliseconds / 1000))

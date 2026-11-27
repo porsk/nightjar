@@ -188,7 +188,6 @@ export const hu = {
     search: 'Keresés',
     newRecording: 'Új felvétel',
     settings: 'Beállítások',
-    newRecording: 'Új felvétel',
   },
   settings: {
     title: 'Beállítások',

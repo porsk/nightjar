@@ -190,7 +190,6 @@ export const en: typeof hu = {
     search: 'Search',
     newRecording: 'New recording',
     settings: 'Settings',
-    newRecording: 'New recording',
   },
   settings: {
     title: 'Settings',
