@@ -129,7 +129,7 @@ describe('003-voice-entries: recording cards on the entry page', () => {
     const box = screen.getByRole('textbox', { name: 'Edit transcript' })
     expect(box).toHaveValue('Ma reggel korán keltem.')
     expect(
-      screen.getByText('Your edits are never overwritten by transcription.'),
+      screen.getByText('Automatic transcription never overwrites your edits.'),
     ).toBeInTheDocument()
     await user.clear(box)
     await user.type(box, 'Throwaway text')

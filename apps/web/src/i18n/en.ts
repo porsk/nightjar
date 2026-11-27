@@ -32,6 +32,11 @@ export const en: typeof hu = {
     file_too_large: 'The file is too large (200 MB max).',
     recording_too_long: 'The recording is longer than 3 hours.',
     recording_not_found: 'Recording not found.',
+    model_in_use: "The model in use can't be deleted. Switch to another one first.",
+    download_running: 'Only one model can download at a time.',
+    model_not_ready: "Transcription isn't available right now.",
+    transcript_edited: 'This transcript was edited by hand in the meantime.',
+    already_transcribing: "It's already being transcribed.",
   },
   setup: {
     step: 'Step {{n}} of 3',
@@ -158,13 +163,39 @@ export const en: typeof hu = {
     working: 'Transcribing…',
     edit: 'Edit transcript',
     save: 'Save',
-    editNote: 'Your edits are never overwritten by transcription.',
+    editNote: 'Automatic transcription never overwrites your edits.',
+    reworking: 'Transcribing again…',
+    againFailed: 'Transcribing again failed.',
+    againFailedText: 'The earlier transcript is still here. Try again.',
+    modelPrefix: 'Model:',
     failed: 'Transcription failed.',
     failedText: 'The recording is safe, the text is missing. Try again.',
     off: 'Not transcribed.',
     offText:
       'Transcription is off, so this recording has audio only. You can turn it on in Settings.',
     saveFailed: "Couldn't save the transcript.",
+  },
+  recording: {
+    menu: 'Recording actions',
+    transcribeAgain: 'Transcribe again',
+    againOff: 'Transcription is off.',
+    againNoModel: 'No model is downloaded yet.',
+    againRunning: "It's already being transcribed.",
+    replaceTitle: 'Replace your edits?',
+    replaceText:
+      'You edited this transcript by hand. Transcribing again replaces the text and your edits are lost.',
+  },
+  models: {
+    'whisper-large-v3-turbo-int8': { name: 'Turbo', description: 'Fast, a good default.' },
+    'whisper-large-v3-turbo-fp32': {
+      name: 'Turbo (full precision)',
+      description: 'For older processors. Needs about 4 GB of free RAM and is slower.',
+    },
+    'whisper-large-v3-int8': {
+      name: 'Large-v3',
+      description:
+        'Most accurate. About 3x slower than real time on a 4-core CPU, needs about 5 GB of free RAM.',
+    },
   },
   date: {
     today: 'Today, {{date}}',
@@ -226,6 +257,21 @@ export const en: typeof hu = {
       progress: '{{done}} / {{total}} · {{pct}}%',
       ready: 'Model downloaded. New recordings will be transcribed.',
       failed: 'The model download failed.',
+    },
+    models: {
+      title: 'Transcription model',
+      size: '{{size}} download',
+      notDownloaded: 'Not downloaded',
+      downloaded: 'Downloaded',
+      inUse: 'In use',
+      use: 'Use',
+      download: 'Download',
+      delete: 'Delete',
+      useAfter: "We'll switch to it once it's downloaded.",
+      diskFull: "There isn't enough disk space on the server. Free up some space and try again.",
+      deleteTitle: 'Delete the {{name}} model?',
+      deleteText:
+        'Its files ({{size}}) are removed from the server. You can download it again later.',
     },
     backlog: {
       question: '{{count}} recordings were never transcribed. Transcribe them now?',

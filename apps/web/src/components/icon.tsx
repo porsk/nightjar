@@ -22,9 +22,10 @@ const paths = {
   retry: 'M4 12a8 8 0 1 0 3-6.2M4 4v5h5',
   play: 'M8 5v14l11-7z',
   stop: 'M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z',
+  more: 'M5 10.4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zM12 10.4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zM19 10.4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2z',
 } as const
 
-const filled: IconName[] = ['play', 'stop']
+const filled: IconName[] = ['play', 'stop', 'more']
 
 export type IconName = keyof typeof paths
 

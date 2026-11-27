@@ -7,14 +7,55 @@ import '../i18n/index.ts'
 import { FakeEventSource } from '../test-fakes.ts'
 import { json, me, renderApp, stubApi } from '../test-utils.tsx'
 
-const status = (overrides: object = {}) => ({
-  enabled: true,
-  state: 'ready',
-  downloadedBytes: 560_000_000,
-  totalBytes: 560_000_000,
-  backlogCount: 0,
-  ...overrides,
+const turbo = 'whisper-large-v3-turbo-int8'
+const large = 'whisper-large-v3-int8'
+
+const modelRow = (id: string, state: string, extra: object = {}) => ({
+  id,
+  state,
+  downloadBytes: id === turbo ? 560_000_000 : 1_100_000_000,
+  diskBytes: id === turbo ? 1_000_000_000 : 1_800_000_000,
+  downloadedBytes: 0,
+  useWhenReady: false,
+  error: null,
+  ...extra,
 })
+
+const rowState = {
+  ready: 'downloaded',
+  downloading: 'downloading',
+  failed: 'failed',
+  off: 'downloaded',
+}
+
+interface StatusOverrides {
+  enabled?: boolean
+  state?: keyof typeof rowState
+  downloadedBytes?: number
+  backlogCount?: number
+}
+
+const status = (overrides: StatusOverrides = {}) => {
+  const merged = {
+    enabled: true,
+    state: 'ready' as keyof typeof rowState,
+    downloadedBytes: 560_000_000,
+    totalBytes: 560_000_000,
+    backlogCount: 0,
+    activeModel: turbo,
+    ...overrides,
+  }
+  return {
+    models: [
+      modelRow(turbo, rowState[merged.state], {
+        downloadedBytes: merged.state === 'downloading' ? merged.downloadedBytes : 0,
+        error: merged.state === 'failed' ? 'download_failed' : null,
+      }),
+      modelRow(large, 'not_downloaded'),
+    ],
+    ...merged,
+  }
+}
 
 const base = {
   'GET /api/v1/setup': () => json({ needed: false }),
@@ -26,7 +67,12 @@ const put = 'PUT /api/v1/admin/transcription'
 
 const sendModelEvent = (event: object) => {
   act(() => {
-    FakeEventSource.instances[0]?.emit('model.updated', { type: 'model.updated', ...event })
+    FakeEventSource.instances[0]?.emit('model.updated', {
+      type: 'model.updated',
+      activeModel: turbo,
+      models: [modelRow(turbo, 'downloading'), modelRow(large, 'not_downloaded')],
+      ...event,
+    })
   })
 }
 
@@ -71,7 +117,15 @@ describe('003-voice-entries: transcription in Settings', () => {
     expect(await screen.findByText('Downloading model…')).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Transcription' })).toBeChecked()
 
-    sendModelEvent({ state: 'downloading', downloadedBytes: 340_000_000, totalBytes: 560_000_000 })
+    sendModelEvent({
+      state: 'downloading',
+      downloadedBytes: 340_000_000,
+      totalBytes: 560_000_000,
+      models: [
+        modelRow(turbo, 'downloading', { downloadedBytes: 340_000_000 }),
+        modelRow(large, 'not_downloaded'),
+      ],
+    })
     expect(await screen.findByText('340 MB / 560 MB · 60%')).toBeInTheDocument()
     expect(screen.getByRole('progressbar', { name: 'Downloading model…' })).toHaveAttribute(
       'aria-valuenow',
@@ -79,7 +133,12 @@ describe('003-voice-entries: transcription in Settings', () => {
     )
 
     current = status()
-    sendModelEvent({ state: 'ready', downloadedBytes: 560_000_000, totalBytes: 560_000_000 })
+    sendModelEvent({
+      state: 'ready',
+      downloadedBytes: 560_000_000,
+      totalBytes: 560_000_000,
+      models: [modelRow(turbo, 'downloaded'), modelRow(large, 'not_downloaded')],
+    })
     expect(
       await screen.findByText('Model downloaded. New recordings will be transcribed.'),
     ).toBeInTheDocument()
@@ -106,7 +165,8 @@ describe('003-voice-entries: transcription in Settings', () => {
     const calls = stubApi({
       ...base,
       [admin]: () => json(status({ state: 'failed', downloadedBytes: 0 })),
-      [put]: () => json(status({ state: 'downloading', downloadedBytes: 0 })),
+      [`POST /api/v1/admin/transcription/models/${turbo}/download`]: () =>
+        json(status({ state: 'downloading', downloadedBytes: 0 })),
     })
     const user = userEvent.setup()
     renderApp('/settings')
@@ -115,7 +175,9 @@ describe('003-voice-entries: transcription in Settings', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByText('Downloading model…')).toBeInTheDocument()
-    expect(calls.find(({ key }) => key === put)?.body).toEqual({ enabled: true })
+    expect(
+      calls.some(({ key }) => key === `POST /api/v1/admin/transcription/models/${turbo}/download`),
+    ).toBe(true)
   })
 
   it('AC-24: asks about recordings that were never transcribed, Transcribe now queues them', async () => {

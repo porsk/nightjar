@@ -588,3 +588,219 @@ textarea.edit:focus-visible {
     align-items: center;
   }
 }
+
+/* model list in Settings */
+.mlist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mrow {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface2);
+  border: 1.5px solid transparent;
+}
+
+.mrow.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.mrow .mh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.mrow .mh b {
+  font-size: 17px;
+}
+
+.mrow .mdesc {
+  color: var(--muted);
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.mrow .msize {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mstate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.mstate svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mstate.on {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-radius: 13px;
+  padding: 3px 10px 3px 8px;
+}
+
+.macts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.btn.textdanger {
+  background: none;
+  border: 0;
+  color: var(--danger);
+  font-weight: 600;
+  padding: 0 12px;
+  min-height: 44px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mrow .dl {
+  margin-top: 12px;
+}
+
+.mrow .then {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.mrow .alert {
+  margin: 12px 0 0;
+}
+
+.alert .ab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* recording menu and transcribe again */
+.player .more {
+  margin-right: -8px;
+  color: var(--muted);
+}
+
+.player .more[aria-expanded='true'] {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.rcard {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  right: 12px;
+  top: 62px;
+  z-index: 3;
+  min-width: 240px;
+  max-width: min(300px, calc(100% - 24px));
+  padding: 6px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 32px #0006;
+}
+
+@media (prefers-color-scheme: light) {
+  .menu {
+    box-shadow: 0 12px 32px #231f4533;
+  }
+}
+
+.mi {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mi:hover {
+  background: var(--surface2);
+}
+
+.mi svg {
+  color: var(--accent-text);
+}
+
+.mi small {
+  display: block;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.mi[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.mi[aria-disabled='true'] .ml,
+.mi[aria-disabled='true'] svg {
+  opacity: 0.5;
+}
+
+.mi[aria-disabled='true'] svg {
+  color: var(--muted);
+}
+
+.tr.old {
+  color: var(--muted);
+}
+
+.tag .mdl {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tag .mdl::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+  margin-right: 3px;
+}
+
+.rcard .failed {
+  margin: 14px 0 4px;
+}
+
+.rcard .alert {
+  margin: 12px 0 0;
+}

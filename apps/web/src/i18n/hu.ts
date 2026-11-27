@@ -30,6 +30,11 @@ export const hu = {
     file_too_large: 'A fájl túl nagy (legfeljebb 200 MB).',
     recording_too_long: 'A felvétel hosszabb 3 óránál.',
     recording_not_found: 'A felvétel nem található.',
+    model_in_use: 'A használatban lévő modellt nem lehet törölni. Előbb válts másikra.',
+    download_running: 'Egyszerre csak egy modell töltődhet le.',
+    model_not_ready: 'Az átírás most nem érhető el.',
+    transcript_edited: 'Ezt az átiratot közben kézzel javították.',
+    already_transcribing: 'Az átírás már folyamatban van.',
   },
   setup: {
     step: '{{n}}. lépés a 3-ból',
@@ -156,13 +161,39 @@ export const hu = {
     working: 'Átírás folyamatban…',
     edit: 'Átirat szerkesztése',
     save: 'Mentés',
-    editNote: 'A módosításaidat az átírás később sem írja felül.',
+    editNote: 'Az automatikus átírás nem írja felül a javításaidat.',
+    reworking: 'Újraírás folyamatban…',
+    againFailed: 'Az újraírás nem sikerült.',
+    againFailedText: 'A korábbi átirat megmaradt. Próbáld újra.',
+    modelPrefix: 'Modell:',
     failed: 'Az átírás nem sikerült.',
     failedText: 'A felvétel megvan, a szöveg hiányzik. Próbáld újra.',
     off: 'Nincs átírva.',
     offText:
       'Az átírás ki van kapcsolva, ezért ehhez a felvételhez csak hang tartozik. Bekapcsolni a Beállításokban tudod.',
     saveFailed: 'Nem sikerült menteni az átiratot.',
+  },
+  recording: {
+    menu: 'Felvétel műveletei',
+    transcribeAgain: 'Átírás újra',
+    againOff: 'Az átírás ki van kapcsolva.',
+    againNoModel: 'Még nincs letöltött modell.',
+    againRunning: 'Az átírás már folyamatban van.',
+    replaceTitle: 'Felülírjuk a javításaidat?',
+    replaceText:
+      'Ezt az átiratot kézzel javítottad. Az új átírás lecseréli a szöveget, a javításaid elvesznek.',
+  },
+  models: {
+    'whisper-large-v3-turbo-int8': { name: 'Turbo', description: 'Gyors, jó alapértelmezés.' },
+    'whisper-large-v3-turbo-fp32': {
+      name: 'Turbo (teljes pontosság)',
+      description: 'Régebbi processzorokhoz. Kb. 4 GB szabad memória kell hozzá, és lassabb.',
+    },
+    'whisper-large-v3-int8': {
+      name: 'Large-v3',
+      description:
+        'A legpontosabb. 4 magos processzoron kb. 3-szor lassabb a valós időnél, és kb. 5 GB szabad memória kell hozzá.',
+    },
   },
   date: {
     today: 'Ma, {{date}}',
@@ -224,6 +255,20 @@ export const hu = {
       progress: '{{done}} / {{total}} · {{pct}}%',
       ready: 'A modell letöltve, az új felvételeket átírjuk.',
       failed: 'A modell letöltése nem sikerült.',
+    },
+    models: {
+      title: 'Átírási modell',
+      size: '{{size}} letöltés',
+      notDownloaded: 'Nincs letöltve',
+      downloaded: 'Letöltve',
+      inUse: 'Használatban',
+      use: 'Váltás erre',
+      download: 'Letöltés',
+      delete: 'Törlés',
+      useAfter: 'Letöltés után erre váltunk.',
+      diskFull: 'Nincs elég hely a szerveren. Szabadíts fel helyet, és próbáld újra.',
+      deleteTitle: 'Törlöd a {{name}} modellt?',
+      deleteText: 'A fájljai ({{size}}) törlődnek a szerverről. Később újra letöltheted.',
     },
     backlog: {
       question: '{{count}} felvételt még nem írtunk át. Átírjuk most?',

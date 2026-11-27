@@ -17,9 +17,11 @@ import {
   recordingSchema,
   recordingsResponseSchema,
   transcriptSchema,
+  transcriptionAvailabilitySchema,
   transcriptionStatusSchema,
   type Recording,
   type Transcript,
+  type TranscriptionAvailability,
   type TranscriptionStatus,
 } from '@nightjar/shared/recordings'
 import { searchResponseSchema, type SearchResponse } from '@nightjar/shared/search'
@@ -162,6 +164,37 @@ export const transcriptionQuery = queryOptions({
 
 export const setTranscription = async (enabled: boolean): Promise<TranscriptionStatus> =>
   parse(transcriptionStatusSchema, await request('PUT', '/api/v1/admin/transcription', { enabled }))
+
+const modelPath = (id: string) => `/api/v1/admin/transcription/models/${id}`
+
+export const downloadModel = async (id: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('POST', `${modelPath(id)}/download`))
+
+export const useModel = async (id: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('POST', `${modelPath(id)}/use`))
+
+export const deleteModel = async (id: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('DELETE', modelPath(id)))
+
+export const transcriptionAvailabilityQuery = queryOptions({
+  queryKey: ['transcription', 'availability'],
+  queryFn: async (): Promise<TranscriptionAvailability> =>
+    parse(transcriptionAvailabilitySchema, await request('GET', '/api/v1/transcription')),
+  staleTime: 0,
+})
+
+export const retranscribeRecording = async (
+  recordingId: string,
+  replaceEdited: boolean,
+): Promise<Recording> =>
+  parse(
+    recordingSchema,
+    await request(
+      'POST',
+      `/api/v1/recordings/${recordingId}/retranscribe`,
+      replaceEdited ? { replaceEdited: true } : {},
+    ),
+  )
 
 export const transcribeBacklog = async () => {
   await request('POST', '/api/v1/admin/transcription/backlog')
