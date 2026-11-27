@@ -97,6 +97,7 @@ export async function buildApp({
   await app.register(rateLimit, {
     max: rateLimitMax ?? 300,
     timeWindow: '1 minute',
+    allowList: (request) => !request.url.startsWith('/api/'),
     errorResponseBuilder: () => new AppError(429, 'too_many_attempts'),
   })
   registerAuthRoutes(app, { database, getAuth })

@@ -106,6 +106,8 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 | API | `apps/server/test/*.test.ts`, Testcontainers starts `postgres:19` (needs Docker and the `docker` CLI on the PATH, some tests stop and start the container) | `pnpm test:api` |
 | E2E | `e2e/*.spec.ts`, config in `playwright.config.ts`. Playwright starts the server (with its own Postgres container from Testcontainers) and the built web app via `vite preview`, on free ports picked per run, so two runs in different worktrees do not clash. Projects: `chromium` and `webkit-mobile` (iPhone 15). Will target the Docker image once it exists | `pnpm test:e2e` |
 
+- **Layout checks:** every UI spec calls `expectLayout(page, 'screen name')` from `e2e/support/layout.ts` on each screen state at 390 and 1280 px width. It fails on sideways scroll, visible content outside the viewport, and overlapping buttons, links or inputs.
+- **Side-by-side review:** after each round of screens, take Hungarian screenshots from the Docker image, write the differences in `design/review-notes/<round>.json` and run `node scripts/review-page.ts <notes> <mockup-dir> <real-dir>`. It builds `design/review/<round>.html` (git-ignored, too big to commit) for the owner.
 - **Fake mic:** each language has its own spec (`e2e/fake-mic.hu.spec.ts`, `e2e/fake-mic.en.spec.ts`) because Chromium
   launch args are per worker. They use `fakeMic('<clip>.wav')` from `e2e/support/fake-mic.ts` and only run in
   Chromium. Fixtures and their CC-BY-4.0 attribution are in `e2e/fixtures/`. Never use private recordings there.

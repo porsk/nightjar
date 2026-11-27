@@ -33,7 +33,7 @@ Out (not now): changing email or password, more languages, a theme switch, per-d
 - **AC-7** Given a date and time, then they are formatted with the UI language (`hu`: "2026. november 26., csütörtök", 21:30; `en`: "Thursday, November 26, 2026", 9:30 PM).
 - **AC-8** Given no session, then setup step 1 renders in English, and login renders in the browser language (`hu` if `navigator.language` starts with `hu`, otherwise `en`).
 - **AC-9** Given the system prefers dark (or light), then the app uses the dark (or light) tokens, and there is no theme setting.
-- **AC-10** Given Hungarian UI at 390 px wide, when every M1 screen state is opened, then the page has no horizontal scroll (long Hungarian labels wrap).
+- **AC-10** Given Hungarian UI at 390 px wide, when every M1 screen state is opened, then the page has no horizontal scroll, nothing outside the viewport and no overlapping controls (long Hungarian labels wrap). Also checked at 1280 px.
 - **AC-11** Given users A and B, when A changes a setting, then only A's row changes, and `GET /api/v1/me` for B shows B's own values.
 - **AC-12** Given Settings (personal and account sections), then axe reports no violations on mobile and desktop, light and dark, in both languages.
 - **AC-13** Given a user created without a language choice, then `ui_language` is `en` and `entry_language` equals `ui_language`; after the setup wizard picked Magyar, both are `hu`.
@@ -53,7 +53,7 @@ Out (not now): changing email or password, more languages, a theme switch, per-d
 | AC-7 | date / time formatters | | | | `Intl`, fixed clock and zone |
 | AC-8 | | | | Playwright `locale: 'hu-HU'` and `'en-US'`: setup step 1 English in both; login `hu` / `en` | |
 | AC-9 | | | | `emulateMedia({ colorScheme })` + screenshot per theme | |
-| AC-10 | | | | `scrollWidth <= clientWidth` on each state at 390 | |
+| AC-10 | | | | `expectLayout` on each state at 390 and 1280 | |
 | AC-11 | | | two users | | |
 | AC-12 | | | | axe | |
 | AC-13 | default resolver | | DB defaults for a user inserted without languages; setup with Magyar → both `hu` | | |

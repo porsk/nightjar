@@ -237,6 +237,16 @@ describe('serving the web app', () => {
     expect(response.body).toBe('<h1>hello</h1>')
   })
 
+  it('does not count static files or health checks against the global rate limit', async () => {
+    const webDir = mkdtempSync(join(tmpdir(), 'nightjar-web-'))
+    writeFileSync(join(webDir, 'index.html'), '<h1>hello</h1>')
+    const { app } = await buildTestApp({ webDir, rateLimitMax: 2 })
+    for (let n = 0; n < 6; n++) {
+      expect((await app.inject({ method: 'GET', url: '/' })).statusCode).toBe(200)
+      expect((await app.inject({ method: 'GET', url: '/healthz' })).statusCode).toBe(200)
+    }
+  })
+
   it('does not serve the web app without a web directory', async () => {
     const response = await (await buildTestApp()).app.inject({ method: 'GET', url: '/' })
     expect(response.statusCode).toBe(404)

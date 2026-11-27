@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { en } from '../apps/web/src/i18n/en.ts'
 import { hu } from '../apps/web/src/i18n/hu.ts'
+import { expectLayout } from './support/layout.ts'
 import { adminEmail, createAdmin, password, resetDatabase, uniqueIp } from './support/server.ts'
 import { catalogue, walkScreens, type Language } from './support/walk.ts'
 
@@ -170,19 +171,15 @@ for (const language of ['en', 'hu'] as const) {
   })
 }
 
-test.describe('006-settings: Hungarian at phone width', () => {
-  test.use({ locale: 'hu-HU', viewport: { width: 390, height: 844 } })
+for (const width of [390, 1280]) {
+  test.describe(`006-settings: Hungarian at ${String(width)} px`, () => {
+    test.use({ locale: 'hu-HU', viewport: { width, height: 844 } })
 
-  test('AC-10: no screen state scrolls sideways at 390 px', async ({ page }) => {
-    await walkScreens(page, 'hu', headers, async (state) => {
-      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
-        scrollWidth: document.documentElement.scrollWidth,
-        clientWidth: document.documentElement.clientWidth,
-      }))
-      expect(scrollWidth, state).toBeLessThanOrEqual(clientWidth)
+    test(`AC-10: no screen state has layout problems at ${String(width)} px`, async ({ page }) => {
+      await walkScreens(page, 'hu', headers, (state) => expectLayout(page, state))
     })
   })
-})
+}
 
 test.describe('006-settings: before sign-in the browser language decides', () => {
   for (const locale of ['hu-HU', 'en-US']) {

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
+import { expectLayout } from './support/layout.ts'
 import {
   adminEmail,
   createAdmin,
@@ -16,6 +17,7 @@ const body =
 async function checkScreen(page: Page, testInfo: TestInfo, name: string) {
   const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations, name).toEqual([])
+  await expectLayout(page, name)
   const file = `${name}.png`
   await page.screenshot({ path: testInfo.outputPath(file), fullPage: true })
   await testInfo.attach(name, { path: testInfo.outputPath(file), contentType: 'image/png' })

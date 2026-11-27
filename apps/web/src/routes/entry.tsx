@@ -11,11 +11,12 @@ import { TimelineList } from '../components/timeline-list.tsx'
 import { longDate } from '../dates.ts'
 import { renderMarkdown } from '../markdown.ts'
 import { useMediaQuery } from '../use-media-query.ts'
+import { ErrorNotice } from '../components/error-notice.tsx'
 
 export function EntryError({ error }: { error: unknown }) {
   const { t } = useTranslation()
   const notFound = error instanceof ApiError && error.status === 404
-  return <p role="alert">{t(notFound ? 'error.entry_not_found' : 'error.generic')}</p>
+  return <ErrorNotice message={t(notFound ? 'error.entry_not_found' : 'error.generic')} />
 }
 
 function EntryView({ id }: { id: string }) {

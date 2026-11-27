@@ -162,6 +162,22 @@ test.describe('001-setup-login: setup wizard and login', () => {
   })
 })
 
+test.describe('001-setup-login: page load', () => {
+  test('a page served with the strict Content-Security-Policy logs no policy violation', async ({
+    page,
+  }) => {
+    await createAdmin(headers)
+    const violations: string[] = []
+    page.on('console', (message) => {
+      if (/Content Security Policy|script-src/.test(message.text())) violations.push(message.text())
+    })
+    await page.goto(`http://localhost:${process.env['NIGHTJAR_E2E_SERVER_PORT'] ?? ''}/login`)
+    await expect(page.getByRole('heading', { name: 'Welcome back.' })).toBeVisible()
+    await page.waitForTimeout(500)
+    expect(violations).toEqual([])
+  })
+})
+
 test.describe('001-setup-login: wizard language follows no browser setting', () => {
   for (const locale of ['en-US', 'hu-HU']) {
     test.describe(`browser locale ${locale}`, () => {

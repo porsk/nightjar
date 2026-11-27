@@ -8,6 +8,7 @@ import {
   seedTimelineEntry,
   uniqueIp,
 } from './support/server.ts'
+import { expectLayout } from './support/layout.ts'
 
 const evening = new Date('2026-11-26T20:30:00Z')
 
@@ -37,13 +38,6 @@ async function signIn(
 
 const timelineList = (page: Page) => page.getByRole('region', { name: /Timeline|Idővonal/ })
 const cards = (page: Page) => timelineList(page).getByRole('link')
-
-async function expectNoSidewaysScroll(page: Page) {
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  )
-  expect(overflow).toBeLessThanOrEqual(0)
-}
 
 const openTimeline = async (page: Page) => {
   await page.goto('/timeline')
@@ -85,7 +79,7 @@ test.describe('004-timeline: timeline and Home', () => {
     expect(
       texts.map((text) => /early today|yesterday night|late today|backdated/.exec(text)?.[0]),
     ).toEqual(['late today', 'early today', 'yesterday night', 'backdated'])
-    await expectNoSidewaysScroll(page)
+    await expectLayout(page, 'timeline')
   })
 
   test('AC-2: day headings in English name today, yesterday, then weekday and date', async ({
@@ -272,7 +266,7 @@ test.describe('004-timeline: timeline and Home', () => {
       'aria-current',
       'true',
     )
-    await expectNoSidewaysScroll(page)
+    await expectLayout(page, 'split view')
   })
 
   test('AC-7: deleting an entry from its page opens Home and the timeline no longer has it', async ({
@@ -331,7 +325,7 @@ test.describe('004-timeline: timeline and Home', () => {
     await expect(
       page.getByText(isWide(page) ? 'Thursday, November 26' : 'Thursday', { exact: true }),
     ).toBeVisible()
-    await expectNoSidewaysScroll(page)
+    await expectLayout(page, 'Home')
   })
 
   test('AC-8: the greeting and the day follow the clock in the user time zone', async ({
