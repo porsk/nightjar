@@ -1,7 +1,6 @@
 # 009 Transcription model choice + transcribe again
 
-Status: ready
-<!-- ready: decisions D-47 / D-48 made, mockups done, can be built. -->
+Status: building
 Milestone: 0.2.1
 
 ## Why

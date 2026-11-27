@@ -1,6 +1,6 @@
 # 005 Search
 
-Status: in progress
+Status: done
 Milestone: M1
 
 ## Why
