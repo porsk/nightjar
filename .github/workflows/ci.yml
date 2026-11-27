@@ -81,6 +81,32 @@ jobs:
           cache-from: type=gha,scope=edge
           cache-to: type=gha,scope=edge,mode=max
 
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: nightjar-upgrade:test
+          cache-from: type=gha,scope=edge
+      - run: node scripts/upgrade-test.ts nightjar-upgrade:test
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: upgrade-logs
+          path: upgrade-logs/
+          if-no-files-found: ignore
+
   dockerhub-description:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest

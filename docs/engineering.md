@@ -108,6 +108,8 @@ cheaper model (Sonnet) with the spec as the brief, then reviewed.
 
 - **Layout checks:** every UI spec calls `expectLayout(page, 'screen name')` from `e2e/support/layout.ts` on each screen state at 390 and 1280 px width. It fails on sideways scroll, visible content outside the viewport, and overlapping buttons, links or inputs.
 - **Side-by-side review:** after each round of screens, take Hungarian screenshots from the Docker image, write the differences in `design/review-notes/<round>.json` and run `node scripts/review-page.ts <notes> <mockup-dir> <real-dir>`. It builds `design/review/<round>.html` (git-ignored, too big to commit) for the owner.
+- **Upgrade test (D-29):** `docker build -f docker/Dockerfile -t nightjar-local:test . && node scripts/upgrade-test.ts nightjar-local:test`.
+  It needs Docker and the `gh` CLI (finds the latest release). Pass a second argument to use a specific previous image. Logs land in `upgrade-logs/` on failure.
 - **Fake mic:** each language has its own spec (`e2e/fake-mic.hu.spec.ts`, `e2e/fake-mic.en.spec.ts`) because Chromium
   launch args are per worker. They use `fakeMic('<clip>.wav')` from `e2e/support/fake-mic.ts` and only run in
   Chromium. Fixtures and their CC-BY-4.0 attribution are in `e2e/fixtures/`. Never use private recordings there.
@@ -194,6 +196,7 @@ No extra services. Tests cover redaction, both health endpoints and the metrics 
 | Workflow | When | What |
 |---|---|---|
 | `ci.yml` | every PR and push to `main` | install (cached) → `pnpm verify` (needs Docker for Testcontainers, Playwright browsers cached) → build image (amd64 on PRs). On `main`: build amd64 + arm64 and push `edge`. Reports upload on failure |
+| `ci.yml` `upgrade` job | every PR and push to `main` | `scripts/upgrade-test.ts`: starts Postgres and the latest released image, sets up an account, writes two entries, then starts the image built from this commit on the same database and checks `/readyz` and that the entries are unchanged. Container logs upload on failure |
 | `release.yml` | push to `main` | release-please keeps a release PR up to date (version + changelog from conventional commits). When that PR is merged: build and push `X.Y.Z`, `X.Y`, `latest` with SBOM + provenance |
 | `codeql.yml` | PRs, `main`, weekly | CodeQL for JavaScript/TypeScript |
 | `nightly.yml` | nightly | real-model transcription tests + eval report. Not written yet, there are no real-model tests |

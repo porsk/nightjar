@@ -48,7 +48,7 @@ Parallel start: WP1, WP4, WP5. Then WP2 + WP3. Then WP6, WP7.
 - [x] 006 Settings (UI language, default entry language, time zone) + HU/EN UI
 - [x] 007 Logs, health, metrics
 - [ ] 008 Backup guide (docs only: `pg_dump` + `/data` volume)
-- [ ] CI upgrade test: previous release to new image on the same database (right after the first release, D-29)
+- [x] CI upgrade test: previous release to new image on the same database (right after the first release, D-29)
 
 Done when: the owner journals daily for a week on phone + desktop.
 Tests: every AC has a unit, API or e2e test. E2E records a HU and an EN WAV through the fake mic and sees the transcript. `/readyz` and `/metrics` are tested.
