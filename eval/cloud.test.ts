@@ -5,10 +5,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import {
   CLOUD_VENDORS,
-  elevenLabsFields,
   estimateCost,
   gladiaCreateBody,
-  parseElevenLabs,
   parseGladiaResult,
   parseGladiaStatus,
   parseSonioxTranscript,
@@ -51,14 +49,10 @@ test('request bodies follow the vendor docs', () => {
     model: 'solaria-1',
     language_config: { languages: ['hu'] },
   });
-  assert.equal(elevenLabsFields('hu').model_id, 'scribe_v3');
-  assert.equal(elevenLabsFields('hu').language_code, 'hu');
 });
 
 test('responses are parsed from the documented shapes', () => {
   assert.equal(parseSonioxTranscript({ id: 'x', text: ' Hello world ', tokens: [] }), 'Hello world');
-  assert.deepEqual(parseElevenLabs({ language_code: 'en', language_probability: 0.98, text: 'Hello world!', words: [] }), { text: 'Hello world!', transcriptionId: undefined });
-  assert.equal(parseElevenLabs({ text: 'a', transcription_id: 't1' }).transcriptionId, 't1');
   const done = { status: 'done', error_code: null, result: { transcription: { full_transcript: 'szia' } } };
   assert.equal(parseGladiaResult(done), 'szia');
   assert.equal(parseGladiaResult({ status: 'queued', result: null }), '');
@@ -96,37 +90,6 @@ test('soniox: a failed job still deletes the file and transcription', async () =
   });
   await assert.rejects(transcribeClip(vendor('soniox'), 'k', clipPath(), 'hu', fetchFn, poll), /bad audio/);
   assert.equal(calls.filter((call) => call.method === 'DELETE').length, 2);
-});
-
-test('elevenlabs: sends the key header and multipart fields, deletes the transcript', async () => {
-  const { fetchFn, calls } = fakeFetch({
-    'POST /v1/speech-to-text': () => json({ language_code: 'hu', language_probability: 1, text: 'Szia', transcription_id: 't1', words: [] }),
-    'DELETE /v1/speech-to-text/transcripts/t1': () => empty(200),
-  });
-  const outcome = await transcribeClip(vendor('elevenlabs'), 'secret-key', clipPath(), 'hu', fetchFn, poll);
-  assert.equal(outcome.text, 'Szia');
-  assert.deepEqual(outcome.deleteProblems, []);
-  assert.equal(calls[0].headers['xi-api-key'], 'secret-key');
-  const form = calls[0].body as FormData;
-  assert.equal(form.get('model_id'), 'scribe_v3');
-  assert.equal(form.get('language_code'), 'hu');
-});
-
-test('elevenlabs: a failed delete is reported, not hidden', async () => {
-  const { fetchFn } = fakeFetch({
-    'POST /v1/speech-to-text': () => json({ text: 'Szia', transcription_id: 't1' }),
-    'DELETE /v1/speech-to-text/transcripts/t1': () => empty(500),
-  });
-  const outcome = await transcribeClip(vendor('elevenlabs'), 'k', clipPath(), 'hu', fetchFn, poll);
-  assert.equal(outcome.text, 'Szia');
-  assert.equal(outcome.deleteProblems.length, 1);
-  assert.match(outcome.deleteProblems[0], /HTTP 500/);
-});
-
-test('elevenlabs: no transcription_id means the delete cannot happen and is reported', async () => {
-  const { fetchFn } = fakeFetch({ 'POST /v1/speech-to-text': () => json({ text: 'Szia' }) });
-  const outcome = await transcribeClip(vendor('elevenlabs'), 'k', clipPath(), 'hu', fetchFn, poll);
-  assert.match(outcome.deleteProblems[0], /no transcription_id/);
 });
 
 test('gladia: uploads, creates a job, polls to done, deletes the job (and with it the audio)', async () => {

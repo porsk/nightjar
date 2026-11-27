@@ -76,7 +76,7 @@ Both the old (round 1) and the new scoring are reported.
 - Clips longer than 25 s are split with Silero VAD. Whisper decodes with `max_tokens_per_second` 25, like the app (cached public results from before this setting are not re-run).
 - RTF is decode time divided by audio length (model load excluded). Peak RAM is the worker process max RSS.
 
-## Cloud engines (Soniox, ElevenLabs, Gladia)
+## Cloud engines (Soniox, Gladia)
 
 Own clips only (the public FLEURS set never goes to a cloud). They are scored, cached and reported like the local engines,
 with two extra columns: Wall (upload to transcript, RTF uses it) and Cost (list price per audio hour times clip length).
@@ -84,7 +84,6 @@ with two extra columns: Wall (upload to transcript, RTF uses it) and Cost (list 
 | Id | Model | Price / audio hour | Key variable |
 |---|---|---|---|
 | `soniox` | `stt-async-v6`, `language_hints` `["hu","en"]` | 0.10 USD | `SONIOX_API_KEY` |
-| `elevenlabs` | `scribe_v3`, `language_code` = clip language | 0.20 USD | `ELEVENLABS_API_KEY` |
 | `gladia` | `solaria-1`, `language_config.languages` = clip language | 0.27 EUR | `GLADIA_API_KEY` |
 
 Prices are the list prices from `docs/research/cloud-transcription.md` (checked 2026-11-27).
@@ -97,7 +96,7 @@ Copy `.env.example` to `eval/.env` and fill in the keys you have. `.env` is giti
 ```
 docker compose run --rm --build eval own                      # local and cloud engines
 docker compose run --rm -e ENGINES=soniox,gladia eval own        # only some engines
-docker compose run --rm -e FORCE=1 -e ENGINES=elevenlabs eval own   # call a vendor again (costs money, cached otherwise)
+docker compose run --rm -e FORCE=1 -e ENGINES=soniox eval own   # call a vendor again (costs money, cached otherwise)
 ```
 
 Unit tests (no keys, no network, fake fetch with the documented payloads): `pnpm test` in `eval/`.
@@ -111,21 +110,19 @@ Unit tests (no keys, no network, fake fetch with the documented payloads): `pnpm
 | Vendor | Upload | Job | Deleted after use |
 |---|---|---|---|
 | Soniox | `POST /v1/files` | `POST /v1/transcriptions`, poll, `GET .../transcript` | `DELETE /v1/transcriptions/{id}` and `DELETE /v1/files/{id}` (204) |
-| ElevenLabs | one call: `POST /v1/speech-to-text` (synchronous) | same call | `DELETE /v1/speech-to-text/transcripts/{transcription_id}` (200). Needs `transcription_id` in the response, otherwise the failure is reported |
 | Gladia | `POST /v2/upload` | `POST /v2/pre-recorded`, poll `GET /v2/pre-recorded/{id}` | `DELETE /v2/pre-recorded/{id}` (202), which removes audio and transcript. There is no separate delete for an upload that never became a job |
 
-Other facts from the docs: ElevenLabs zero retention (`enable_logging=false`) is enterprise only, so it is not used. Gladia Self-serve trains on audio
+Other facts from the docs: Gladia Self-serve trains on audio
 unless you opt out in your profile. Soniox keeps data 30 days unless deleted. Details in `docs/research/cloud-transcription.md`.
 
 ### Formats
 
-- Soniox lists webm and ElevenLabs lists webm, so the original clip is sent as is.
+- Soniox lists webm, so the original clip is sent as is.
 - Gladia does not list webm (it lists ogg and opus). Its clips are remuxed to ogg with `ffmpeg -c:a copy -f ogg`, a stream copy of the opus track, no re-encode.
-- Limits: Soniox 300 min, ElevenLabs 15 h / 5 GB, Gladia 135 min / 1000 MB. Own clips are far below all of them. Each job is polled for at most 10 minutes.
+- Limits: Soniox 300 min, Gladia 135 min / 1000 MB. Own clips are far below all of them. Each job is polled for at most 10 minutes.
 
 ### Sources (API docs, read 2026-11-27)
 
 - Soniox: https://docs.soniox.com/stt/async/async-transcription, https://docs.soniox.com/stt/api-reference/transcriptions/create_transcription, https://docs.soniox.com/stt/api-reference/files/upload_file, https://docs.soniox.com/stt/api-reference/files/delete_file, https://docs.soniox.com/stt/api-reference/transcriptions/delete_transcription, models: https://docs.soniox.com/stt/models
-- ElevenLabs: https://elevenlabs.io/docs/api-reference/speech-to-text/convert, https://elevenlabs.io/docs/api-reference/speech-to-text/delete, https://elevenlabs.io/docs/overview/capabilities/speech-to-text
 - Gladia: https://docs.gladia.io/chapters/pre-recorded-stt/getting-started, https://docs.gladia.io/api-reference/v2/pre-recorded/get, https://docs.gladia.io/api-reference/v2/pre-recorded/delete, https://docs.gladia.io/chapters/limits-and-specifications/supported-formats
 

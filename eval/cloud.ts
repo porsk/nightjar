@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import { extname, join } from 'node:path';
 
-export type CloudVendorId = 'soniox' | 'elevenlabs' | 'gladia';
+export type CloudVendorId = 'soniox' | 'gladia';
 export type Fetch = typeof fetch;
 export type Price = { perHour: number; currency: 'USD' | 'EUR' };
 
@@ -111,32 +111,6 @@ const deleteSoniox = async (fetchFn: Fetch, auth: Record<string, string>, fileId
   return problems.filter((problem): problem is string => Boolean(problem));
 };
 
-// ElevenLabs Scribe. https://elevenlabs.io/docs/api-reference/speech-to-text/convert
-const ELEVENLABS = 'https://api.elevenlabs.io/v1';
-export const ELEVENLABS_MODEL = 'scribe_v3';
-
-export const elevenLabsFields = (language: string) => ({ model_id: ELEVENLABS_MODEL, language_code: language, tag_audio_events: 'false' });
-export const parseElevenLabs = (json: any): { text: string; transcriptionId?: string } => ({
-  text: String(json.text ?? '').trim(),
-  transcriptionId: json.transcription_id ?? undefined,
-});
-
-const elevenlabs: CloudVendor['transcribe'] = async (audio, language, key, fetchFn) => {
-  const auth = { 'xi-api-key': key };
-  const form = new FormData();
-  for (const [name, value] of Object.entries(elevenLabsFields(language))) form.append(name, value);
-  form.append('file', audio, UPLOAD_NAME);
-  const { text, transcriptionId } = parseElevenLabs(await (await ok('elevenlabs convert', await fetchFn(`${ELEVENLABS}/speech-to-text`, { method: 'POST', headers: auth, body: form }))).json());
-  const deleteProblems: string[] = [];
-  if (transcriptionId) {
-    const problem = await tryDelete('elevenlabs delete transcript', () => fetchFn(`${ELEVENLABS}/speech-to-text/transcripts/${transcriptionId}`, { method: 'DELETE', headers: auth }), [200]);
-    if (problem) deleteProblems.push(problem);
-  } else {
-    deleteProblems.push('elevenlabs delete transcript: response had no transcription_id');
-  }
-  return { text, deleteProblems };
-};
-
 // Gladia pre-recorded v2. https://docs.gladia.io/chapters/pre-recorded-stt/getting-started
 const GLADIA = 'https://api.gladia.io/v2';
 export const GLADIA_MODEL = 'solaria-1';
@@ -181,7 +155,6 @@ const gladia: CloudVendor['transcribe'] = async (audio, language, key, fetchFn, 
 // Prices are list prices per audio hour, see docs/research/cloud-transcription.md.
 export const CLOUD_VENDORS: CloudVendor[] = [
   { id: 'soniox', label: `Soniox ${SONIOX_MODEL}`, keyEnv: 'SONIOX_API_KEY', price: { perHour: 0.1, currency: 'USD' }, acceptsWebm: true, transcribe: soniox },
-  { id: 'elevenlabs', label: `ElevenLabs ${ELEVENLABS_MODEL}`, keyEnv: 'ELEVENLABS_API_KEY', price: { perHour: 0.2, currency: 'USD' }, acceptsWebm: true, transcribe: elevenlabs },
   { id: 'gladia', label: `Gladia ${GLADIA_MODEL}`, keyEnv: 'GLADIA_API_KEY', price: { perHour: 0.27, currency: 'EUR' }, acceptsWebm: false, transcribe: gladia },
 ];
 
