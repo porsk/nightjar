@@ -572,7 +572,7 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
         isUserEdited: false,
       })
       const tmp = join(app.dataDir, 'tmp')
-      expect(!existsSync(tmp) || readdirSync(tmp).length === 0).toBe(true)
+      await waitFor(() => !existsSync(tmp) || readdirSync(tmp).length === 0, 'the temp WAV removal')
     })
 
     it('AC-12: the event stream of the owner carries the status changes in order', async () => {
