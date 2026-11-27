@@ -159,8 +159,8 @@ int8 (D-20); the final pick comes after the owner's own clips.
 ## 7. Search
 
 Postgres full-text search: `search_vector` per entry from text + transcripts, built with both the `hungarian` and the `english` configuration (stemming: "költözésről" finds "költözés", "walked" finds "walking"). Accents are optional:
-the vector holds each stem with and without accents, and the query is built the same way ("naplo" finds "napló"). `GET /api/v1/search?q=` uses `websearch_to_tsquery`, so odd input never fails. Results are ranked,
-one per entry, at most 50. Snippets come from `ts_headline` over the unaccented text; the server moves the marks onto the original text and escapes everything but `<mark>`.
+the vector holds each stem with and without accents, and the query is built the same way ("naplo" finds "napló"). `POST /api/v1/search` (words in the body, never in a URL) uses `websearch_to_tsquery`, so odd input never fails. Results are ranked,
+one per entry, at most 50. Snippets are cut in the database (a 230 character window around the first match, `ts_headline` on the unaccented window); the server moves the marks onto the original text and escapes everything but `<mark>`. Lexemes are rewritten one by one (never in the serialized vector text), because `unaccent` turns some look-alike apostrophes into the quote character.
 
 ## 8. AI and MCP (M3, opt-in)
 

@@ -13,6 +13,9 @@ import { createUserWithSession } from './support/users.ts'
 
 const marker = 'ZQX-PRIVATE-7781'
 
+/** Characters that unaccent turns into a plain apostrophe. */
+const lookAlikes = ['ŉ', 'ʼ', 'ʻ', 'ʹ', 'ʽ', 'ˈ', '′']
+
 interface Hit {
   entryId: string
   entryDate: string
@@ -64,7 +67,7 @@ describe('005-search: search API against a real Postgres', () => {
         ...(payload ? { payload } : {}),
       })
     const search = async (user: { cookie: string }, query: string) => {
-      const response = await call(user, 'GET', `/api/v1/search?q=${encodeURIComponent(query)}`)
+      const response = await call(user, 'POST', '/api/v1/search', { q: query })
       expect(response.statusCode).toBe(200)
       return response.json<Found>()
     }
@@ -214,6 +217,67 @@ describe('005-search: search API against a real Postgres', () => {
     expect(await app.ids(app.alice, 'lighthouse')).toEqual([id])
   })
 
+  it('AC-5: text with look-alike apostrophes and backslashes can be saved, edited and searched', async () => {
+    const app = await launch()
+    const created = await app.call(app.alice, 'POST', '/api/v1/entries', {
+      bodyMd: `Hawaiʻi ${lookAlikes.join(' ')} back\\slash O'Brien`,
+      entryDate: '2026-11-26',
+    })
+    expect(created.statusCode).toBe(201)
+    const { id } = created.json<{ id: string }>()
+    expect(await app.ids(app.alice, 'Hawaiʻi')).toEqual([id])
+    expect(await app.ids(app.alice, 'hawai')).toEqual([id])
+    expect(await app.ids(app.alice, "O'Brien")).toEqual([id])
+    const edited = await app.call(app.alice, 'PATCH', `/api/v1/entries/${id}`, {
+      bodyMd: 'ʼŉʻ Kauaʻi again',
+    })
+    expect(edited.statusCode).toBe(200)
+    expect(await app.ids(app.alice, 'Kauaʻi')).toEqual([id])
+  })
+
+  it('AC-5: a transcript with look-alike apostrophes can be created and edited', async () => {
+    const app = await launch()
+    const id = await addEntry(app.alice.id, '')
+    const recordingId = await addTranscript(app.alice.id, id, `Mauiʻs ${lookAlikes.join(' ')}`)
+    expect(await app.ids(app.alice, 'maui')).toEqual([id])
+    const edited = await app.call(
+      app.alice,
+      'PATCH',
+      `/api/v1/recordings/${recordingId}/transcript`,
+      { text: 'Oʻahu ʹ ʽ ˈ ′ trip' },
+    )
+    expect(edited.statusCode).toBe(200)
+    expect(await app.ids(app.alice, 'Oʻahu')).toEqual([id])
+  })
+
+  it('AC-5: the migration backfill copes with rows that hold look-alike apostrophes', async () => {
+    const app = await launch()
+    const id = await addEntry(app.alice.id, `Hawaiʻi ${lookAlikes.join(' ')} lighthouse`)
+    await database.db.execute(sql`update entries set search_vector = ''`)
+    await database.db.execute(
+      sql`update entries set search_vector = entry_search_vector(id, body_md)`,
+    )
+    expect(await app.ids(app.alice, 'lighthouse')).toEqual([id])
+  })
+
+  it('AC-6: 50 hits in 100 KB entries come back fast, with a bounded snippet each', async () => {
+    const app = await launch()
+    const words = ['szél', 'folyó', 'reggel', 'költözés', 'napló', 'walk', 'river', 'dobozok']
+    const filler = Array.from({ length: 7_500 }, (_, at) => words[at % words.length]).join(' ')
+    for (let at = 0; at < 50; at += 1) {
+      await addEntry(app.alice.id, `${filler} heron${String(at)} final heron ${filler}`)
+    }
+    const started = performance.now()
+    const found = await app.search(app.alice, 'heron')
+    const elapsed = performance.now() - started
+    expect(found.results).toHaveLength(50)
+    expect(elapsed).toBeLessThan(1000)
+    for (const hit of found.results) {
+      expect(hit.snippet.length).toBeLessThan(600)
+      expect(hit.snippet).toContain('<mark>heron</mark>')
+    }
+  })
+
   it('AC-6: one card per entry, ranked, then newest first, at most 50, with the full count', async () => {
     const app = await launch()
     const strong = await addEntry(app.alice.id, 'owl owl owl owl owl', {
@@ -266,7 +330,7 @@ describe('005-search: search API against a real Postgres', () => {
   it('AC-7: rejects a missing query with 400 and finds nothing for an unknown word', async () => {
     const app = await launch()
     await addEntry(app.alice.id, 'Something')
-    expect((await app.call(app.alice, 'GET', '/api/v1/search')).statusCode).toBe(400)
+    expect((await app.call(app.alice, 'POST', '/api/v1/search', {})).statusCode).toBe(400)
     expect(await app.search(app.alice, 'nonexistentword')).toEqual({ total: 0, results: [] })
   })
 
@@ -280,7 +344,7 @@ describe('005-search: search API against a real Postgres', () => {
     await addTranscript(app.bob.id, theirsSpoken, 'heron again')
     expect(await app.ids(app.alice, 'heron')).toEqual([mine, mineSpoken].sort())
     expect(await app.ids(app.bob, 'heron')).toEqual([theirs, theirsSpoken].sort())
-    expect((await app.call(null, 'GET', '/api/v1/search?q=heron')).statusCode).toBe(401)
+    expect((await app.call(null, 'POST', '/api/v1/search', { q: 'heron' })).statusCode).toBe(401)
   })
 
   it('AC-10: odd queries with operators and quotes answer 200, never 500', async () => {
@@ -299,13 +363,12 @@ describe('005-search: search API against a real Postgres', () => {
       '"unclosed phrase',
       '\\',
       'a <-> b',
+      ...lookAlikes,
+      ...lookAlikes.map((char) => `a${char}b & x`),
+      'Hawaiʻi',
     ]
     for (const query of odd) {
-      const response = await app.call(
-        app.alice,
-        'GET',
-        `/api/v1/search?q=${encodeURIComponent(query)}`,
-      )
+      const response = await app.call(app.alice, 'POST', '/api/v1/search', { q: query })
       expect(response.statusCode, query).toBe(200)
       expect(response.json<Found>().results, query).toBeInstanceOf(Array)
     }
@@ -320,8 +383,8 @@ describe('005-search: search API against a real Postgres', () => {
       [id, spoken].sort(),
     )
     expect(await app.search(app.alice, `${marker}-nothing-here`)).toMatchObject({ total: 0 })
-    await app.call(app.alice, 'GET', `/api/v1/search?q=${marker}%26%26(`)
-    await app.call(app.alice, 'GET', '/api/v1/search')
+    await app.call(app.alice, 'POST', '/api/v1/search', { q: `${marker}&&(` })
+    await app.call(app.alice, 'POST', '/api/v1/search', {})
     expectNoMarkersInLogs(app.capture, [marker])
   })
 })

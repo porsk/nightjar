@@ -115,10 +115,7 @@ export const searchQuery = (terms: string) =>
   queryOptions({
     queryKey: ['search', terms],
     queryFn: async (): Promise<SearchResponse> =>
-      parse(
-        searchResponseSchema,
-        await request('GET', `/api/v1/search?q=${encodeURIComponent(terms)}`),
-      ),
+      parse(searchResponseSchema, await request('POST', '/api/v1/search', { q: terms })),
     staleTime: 0,
   })
 

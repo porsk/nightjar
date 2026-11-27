@@ -9,12 +9,13 @@ import { searchEntries } from './query.ts'
 
 type App = FastifyInstance<Server, IncomingMessage, ServerResponse, Logger>
 
-const searchQuerySchema = z.object({ q: z.string().max(200) })
+/** A POST with a body, so the words searched for never show up in a URL or an access log. */
+const searchBodySchema = z.object({ q: z.string().max(200) })
 
 export function registerSearchRoutes(app: App, { database }: { database: Database }) {
-  app.get('/api/v1/search', async (request) => {
+  app.post('/api/v1/search', async (request) => {
     if (!request.me) throw new AppError(401, 'unauthorized')
-    const parsed = searchQuerySchema.safeParse(request.query)
+    const parsed = searchBodySchema.safeParse(request.body)
     if (!parsed.success) throw new AppError(400, 'invalid_request')
     return searchResponseSchema.parse(await searchEntries(database, request.me.id, parsed.data.q))
   })

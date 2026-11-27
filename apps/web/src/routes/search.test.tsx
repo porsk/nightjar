@@ -41,9 +41,9 @@ async function open() {
   return view
 }
 
-const searchUrl = (query: string) => `GET /api/v1/search?q=${encodeURIComponent(query)}`
-const searchCalls = (calls: { key: string }[]) =>
-  calls.filter((call) => call.key.includes('/api/v1/search'))
+const searchRoute = 'POST /api/v1/search'
+const searchCalls = (calls: { key: string; body: unknown }[]) =>
+  calls.filter((call) => call.key === searchRoute)
 
 describe('005-search: search screen', () => {
   beforeEach(async () => {
@@ -60,7 +60,7 @@ describe('005-search: search screen', () => {
   it('AC-6: a card shows the date and time, the source and the snippet with the match highlighted', async () => {
     stubApi({
       ...signedIn,
-      [searchUrl('move')]: () =>
+      [searchRoute]: () =>
         found([
           hit(),
           hit({
@@ -90,7 +90,7 @@ describe('005-search: search screen', () => {
   it('AC-6: the snippet is never read as HTML, only the marks are', async () => {
     stubApi({
       ...signedIn,
-      [searchUrl('move')]: () =>
+      [searchRoute]: () =>
         found([
           hit({
             snippet:
@@ -109,7 +109,7 @@ describe('005-search: search screen', () => {
   })
 
   it('AC-6: the count is singular for one result', async () => {
-    stubApi({ ...signedIn, [searchUrl('move')]: () => found([hit()]) })
+    stubApi({ ...signedIn, [searchRoute]: () => found([hit()]) })
     await open()
     type('move')
     await pass(350)
@@ -120,7 +120,7 @@ describe('005-search: search screen', () => {
     stubApi({
       ...signedIn,
       'GET /api/v1/me': () => json({ ...me, uiLanguage: 'hu' }),
-      [searchUrl('move')]: () => found([hit({ source: 'transcript' }), hit({ entryId: 'e2' })]),
+      [searchRoute]: () => found([hit({ source: 'transcript' }), hit({ entryId: 'e2' })]),
     })
     await open()
     fireEvent.change(screen.getByRole('searchbox', { name: 'Keresés' }), {
@@ -134,7 +134,7 @@ describe('005-search: search screen', () => {
   })
 
   it('AC-6: shows the full count when there are more matches than cards', async () => {
-    stubApi({ ...signedIn, [searchUrl('move')]: () => found([hit()], 73) })
+    stubApi({ ...signedIn, [searchRoute]: () => found([hit()], 73) })
     await open()
     type('move')
     await pass(350)
@@ -142,7 +142,7 @@ describe('005-search: search screen', () => {
   })
 
   it('AC-7: no match shows the empty state with its hint', async () => {
-    stubApi({ ...signedIn, [searchUrl('zzz')]: () => found([]) })
+    stubApi({ ...signedIn, [searchRoute]: () => found([]) })
     await open()
     type('zzz')
     await pass(350)
@@ -166,18 +166,18 @@ describe('005-search: search screen', () => {
     expect(searchCalls(calls)).toHaveLength(0)
   })
 
-  it('AC-8: the request goes out 300 ms after the last keystroke, once', async () => {
-    const calls = stubApi({ ...signedIn, [searchUrl('mov')]: () => found([hit()]) })
+  it('AC-8: the request goes out 300 ms after the last keystroke, once, with the words in the body not the URL', async () => {
+    const calls = stubApi({ ...signedIn, [searchRoute]: () => found([hit()]) })
     await open()
     type('mov')
     await pass(299)
     expect(searchCalls(calls)).toHaveLength(0)
     await pass(1)
-    expect(searchCalls(calls).map((call) => call.key)).toEqual([searchUrl('mov')])
+    expect(searchCalls(calls)).toEqual([{ key: searchRoute, body: { q: 'mov' } }])
   })
 
   it('AC-8: typing on restarts the wait, and only the last text is searched', async () => {
-    const calls = stubApi({ ...signedIn, [searchUrl('move')]: () => found([hit()]) })
+    const calls = stubApi({ ...signedIn, [searchRoute]: () => found([hit()]) })
     await open()
     type('mo')
     await pass(200)
@@ -185,11 +185,11 @@ describe('005-search: search screen', () => {
     await pass(200)
     expect(searchCalls(calls)).toHaveLength(0)
     await pass(100)
-    expect(searchCalls(calls).map((call) => call.key)).toEqual([searchUrl('move')])
+    expect(searchCalls(calls)).toEqual([{ key: searchRoute, body: { q: 'move' } }])
   })
 
   it('AC-8: the clear button empties the box and the results', async () => {
-    stubApi({ ...signedIn, [searchUrl('move')]: () => found([hit()]) })
+    stubApi({ ...signedIn, [searchRoute]: () => found([hit()]) })
     await open()
     expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()
     type('move')
@@ -205,7 +205,7 @@ describe('005-search: search screen', () => {
   it('AC-8: a card opens its entry', async () => {
     stubApi({
       ...signedIn,
-      [searchUrl('move')]: () => found([hit()]),
+      [searchRoute]: () => found([hit()]),
       'GET /api/v1/entries/e1': () =>
         json({
           id: 'e1',

@@ -692,7 +692,9 @@ describe('003-voice-entries: voice entries API against a real Postgres', () => {
       )
       expect(edited.statusCode).toBe(200)
       expect(edited.json()).toMatchObject({ text: 'Zebrafinch morning walk', isUserEdited: true })
-      const found = await app.call(app.alice, 'GET', '/api/v1/search?q=zebrafinch')
+      const found = await app.call(app.alice, 'POST', '/api/v1/search', {
+        q: 'zebrafinch',
+      })
       expect(found.json()).toMatchObject({
         total: 1,
         results: [{ entryId: saved.entryId, source: 'transcript' }],
