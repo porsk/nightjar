@@ -102,7 +102,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 
 | # | Decision | Why |
 |---|---|---|
-| P-01 | One Node process (Fastify + pg-boss jobs) + Postgres 19, one Docker image | Simplest thing that works for a household. Heavy work runs in a child process / worker thread |
+| P-01 | One Node process (Fastify + pg-boss jobs) + Postgres 19, one Docker image | Simplest thing that works for a household. Heavy work runs in a child process |
 | P-02 | Fastify + Zod, schemas shared with the web app | Light, fast, one source of truth for types |
 | P-03 | React + Vite PWA, React Router, TanStack Query | No SSR needed behind a login, PWA is simpler as an SPA |
 | P-04 | Postgres full-text search with `hungarian`/`english` + `unaccent` | Hungarian stemming built in, no extra search service |

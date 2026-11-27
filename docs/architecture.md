@@ -17,14 +17,14 @@ One container for the app, one for Postgres.
  ┌──────────────────────────── nightjar (one Node process) ───────────────────────────┐
  │ Fastify: serves the built PWA, REST API, SSE, MCP                                   │
  │ pg-boss job handlers in the same process:                                           │
- │   transcode (ffmpeg child process) → transcribe (sherpa-onnx in a worker thread)    │
+ │   transcode (ffmpeg child process) → transcribe (sherpa-onnx in a child process)   │
  │   → enrich (AI, if enabled) · photos (sharp)                                         │
  └──────────────┬───────────────────────────────────────────────┬────────────────────┘
                 │                                               │
               Postgres 19                              /data volume: media/, models/
 ```
 
-- Heavy work never blocks requests: ffmpeg runs as a child process, transcription runs in a worker thread,
+- Heavy work never blocks requests: ffmpeg runs as a child process, transcription runs in its own child process (started when work arrives, ended when the queue is empty so the OS takes all model memory back),
   jobs are queued in Postgres (pg-boss) so they survive restarts and retry on failure.
 
 ## 2. Repository layout
@@ -149,6 +149,10 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 1. Browser uploads the original recording (webm/opus or mp4/aac) → saved as-is, entry shows "Transcribing…".
 2. Job: ffmpeg → temporary 16 kHz mono WAV.
 3. Job: Silero VAD (built into sherpa-onnx; stops invented text on silence) → model → transcript → saved → temp WAV deleted → SSE event.
+   Sherpa runs in its own child process, one at a time. It starts when a job needs it and ends when no job is
+   waiting, so the OS gets all model memory back (about 1.8 GB peak, 130 MB idle). If the child dies, the waiting
+   job fails and the next job starts a fresh child. Whisper is allowed 25 tokens per second of audio, because
+   the default of 6 cuts Hungarian short.
 4. If AI is enabled → enrichment job.
 
 Transcription is off by default (D-23). When the admin turns it on in Settings, the model downloads

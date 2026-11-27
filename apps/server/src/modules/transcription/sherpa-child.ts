@@ -1,7 +1,6 @@
-import { parentPort, workerData } from 'node:worker_threads'
 import sherpa from 'sherpa-onnx-node'
 
-export interface SherpaWorkerData {
+export interface SherpaChildData {
   encoder: string
   decoder: string
   tokens: string
@@ -15,7 +14,9 @@ export type SherpaReply =
 
 const sampleRate = 16000
 const longestWholeClipSeconds = 25
-const files = workerData as SherpaWorkerData
+// Whisper stops after this many tokens per second of audio. Hungarian needs far more than the default of 6.
+const maxTokensPerSecond = '25'
+const files = JSON.parse(process.argv[2] ?? '{}') as SherpaChildData
 
 const recognizerConfig = (language: SherpaRequest['language']) => ({
   featConfig: { sampleRate, featureDim: 128 },
@@ -48,6 +49,7 @@ function recognizerFor(language: SherpaRequest['language']) {
 function decode(samples: Float32Array, language: SherpaRequest['language']) {
   const engine = recognizerFor(language)
   const stream = engine.createStream()
+  stream.setOption('max_tokens_per_second', maxTokensPerSecond)
   stream.acceptWaveform({ sampleRate, samples })
   engine.decode(stream)
   const result = engine.getResult(stream)
@@ -96,11 +98,13 @@ function transcribe({ wavPath, language }: SherpaRequest) {
   }
 }
 
-parentPort?.on('message', (request: SherpaRequest) => {
+process.on('message', (request: SherpaRequest) => {
   try {
     const { text, detected } = transcribe(request)
-    parentPort?.postMessage({ id: request.id, ok: true, text, detected } satisfies SherpaReply)
+    process.send?.({ id: request.id, ok: true, text, detected } satisfies SherpaReply)
   } catch {
-    parentPort?.postMessage({ id: request.id, ok: false } satisfies SherpaReply)
+    process.send?.({ id: request.id, ok: false } satisfies SherpaReply)
   }
 })
+
+process.on('disconnect', () => process.exit(0))

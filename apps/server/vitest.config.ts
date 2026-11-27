@@ -30,7 +30,7 @@ export default defineConfig({
         'src/modules/transcription/fake-transcriber.ts',
         'src/modules/transcription/routes.ts',
         'src/modules/transcription/service.ts',
-        'src/modules/transcription/sherpa-worker.ts',
+        'src/modules/transcription/sherpa-child.ts',
         'src/modules/transcription/transcribe-job.ts',
         'src/**/*.d.ts',
         '**/*.json',

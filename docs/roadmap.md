@@ -1,6 +1,6 @@
 # Roadmap
 
-**Now:** M1 features all merged (001 to 008, upgrade test, layout checks), plus username sign-in (D-43). 0.1.0 released. Next release 0.2.0 (voice + search) waits on the owner OK.
+**Now:** M1 features all merged (001 to 008, upgrade test, layout checks), plus username sign-in (D-43). 0.1.0 released. The image smoke test passed (model download, three transcriptions in a row with the model released in between, upload, search, timeline). Next release 0.2.0 (voice + search) waits on the owner OK.
 **Next:** release 0.2.0, owner journals for a week (M1 done-when). Recording cap is 3 h (D-40). Follow-up: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
