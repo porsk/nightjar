@@ -43,7 +43,7 @@ transcript label, failed cloud transcription; no privacy line outside Settings, 
 
 | Mockup | What | Status |
 |---|---|---|
-| `design/alkony/011-settings-users.html` | Settings in tabs (General, Transcription, Users, Account; one URL per tab, tabs at the top on phone and desktop), user list, create / edit / delete user, last-admin locked state, change own password, a basic user's settings, "Letöltés" in the recording menu | waiting for owner approval |
+| `design/alkony/011-settings-users.html` | Settings in tabs (General, Transcription, Users, Account; one URL per tab, tabs at the top on phone and desktop), "Megjelenés" theme switch on General (Rendszer / Világos / Sötét, per user, applied right away), user list, create / edit / delete user, last-admin locked state, change own password, a basic user's settings, "Letöltés" in the recording menu | waiting for owner approval |
 | `design/alkony/012-mood.html` | Mood, three variants on the same 1-5 scale: A faces, B colour scale, C words with sky icons. Each shown while writing, right after a recording, on the entry, empty, and on the timeline, plus a side-by-side board | waiting for owner approval |
 
 Screenshots at 390 / 1280, dark + light in `design/alkony/screenshots/011/` and `design/alkony/screenshots/012/`.

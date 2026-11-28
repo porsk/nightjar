@@ -510,11 +510,14 @@ const page=(label,cur,body,o={})=>({label,nav:'beall',tabs:1,side:1,rec:1,over:o
 
 /* ---- General ---- */
 const general=()=>`<div class="group">
-  <div class="srow"><div class="fl">A felület nyelve</div>${seg('A felület nyelve',['Magyar','English'],0)}</div>
-  <div class="srow"><div class="fl">Alapértelmezett nyelv a felvételekhez</div>${seg('Alapértelmezett nyelv',['Magyar','English','Automatikus'],0)}
-    <p class="hint">Bejegyzésenként felülírhatod.</p></div>
-  <div class="srow"><div class="fl">Időzóna</div><div class="inp sel"><span>Europe/Budapest (UTC+01:00)</span>${ic('down')}</div></div></div>`;
+  <div class="srow"><div class="fl">${L('A felület nyelve','App language')}</div>${seg(L('A felület nyelve','App language'),['Magyar','English'],EN?1:0)}</div>
+  <div class="srow"><div class="fl">${L('Megjelenés','Appearance')}</div>${seg(L('Megjelenés','Appearance'),[L('Rendszer','System'),L('Világos','Light'),L('Sötét','Dark')],0)}
+    <p class="hint">${L('A Rendszer a készüléked beállítását követi.','System follows your device setting.')}</p></div>
+  <div class="srow"><div class="fl">${L('Alapértelmezett nyelv a felvételekhez','Default language for recordings')}</div>${seg(L('Alapértelmezett nyelv','Default language'),['Magyar','English',L('Automatikus','Automatic')],0)}
+    <p class="hint">${L('Bejegyzésenként felülírhatod.','You can change it for each entry.')}</p></div>
+  <div class="srow"><div class="fl">${L('Időzóna','Time zone')}</div><div class="inp sel"><span>Europe/Budapest (UTC+01:00)</span>${ic('down')}</div></div></div>`;
 S.general=page('General tab (admin: 4 tabs)','general',general);
+S.generalen=page('General tab in English (text length check)','general',general,{en:1});
 S.basic=page('Basic user: General tab (2 tabs only)','general',general,{basic:1});
 
 /* ---- Transcription (unchanged from 010, now its own tab) ---- */
