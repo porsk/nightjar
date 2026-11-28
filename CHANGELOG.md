@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/porsk/nightjar/compare/nightjar-v0.2.0...nightjar-v0.3.0) (2026-11-28)
+
+
+### Features
+
+* choose the transcription model, transcribe again ([#53](https://github.com/porsk/nightjar/issues/53)) ([3766c36](https://github.com/porsk/nightjar/commit/3766c36b1422ee1baf990656f1c764d70ae3f1de))
+* search matches anywhere inside words ([#51](https://github.com/porsk/nightjar/issues/51)) ([a0b3d02](https://github.com/porsk/nightjar/commit/a0b3d02a2ff932b91e4af64d5d4d307fbd7974c3))
+
 ## [0.2.0](https://github.com/porsk/nightjar/compare/nightjar-v0.1.0...nightjar-v0.2.0) (2026-11-27)
 
 
