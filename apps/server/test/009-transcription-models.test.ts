@@ -38,6 +38,7 @@ import {
   enWav,
   resetInstanceSettings,
   waitFor,
+  waitForDownloadSlotFree,
 } from './support/voice-harness.ts'
 
 const marker = 'ZQX-PRIVATE-7781'
@@ -85,8 +86,13 @@ describe('009-transcription-models: model choice and transcribe again against a 
     return row
   }
 
-  const waitForModel = (app: App, id: string, state: string) =>
-    waitFor(async () => rowOf(await statusOf(app), id).state === state, `${id} to be ${state}`)
+  const waitForModel = async (app: App, id: string, state: string) => {
+    await waitFor(
+      async () => rowOf(await statusOf(app), id).state === state,
+      `${id} to be ${state}`,
+    )
+    if (state === 'downloaded') await waitForDownloadSlotFree(database)
+  }
 
   /** Transcription on with turbo on disk. */
   async function turnOn(app: App) {
@@ -287,10 +293,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
         () => events.some((event) => event.type === 'model.updated' && event.state === 'ready'),
         'the ready event',
       )
-      await waitFor(async () => {
-        const [saved] = await database.db.select().from(instanceSettings)
-        return saved?.modelDownloadId === null && saved.modelDownloadState === 'idle'
-      }, 'the download slot to be cleared')
+      await waitForDownloadSlotFree(database)
       await database.db.update(instanceSettings).set({
         modelDownloadState: 'downloading',
         modelDownloadId: largeModelId,
