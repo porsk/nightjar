@@ -1,7 +1,6 @@
 # 012 Users and roles
 
-Status: draft
-<!-- draft until the owner answers O-9 to O-12 in decisions.md. Places that use a recommended answer say "(assumed, waiting for owner)". -->
+Status: approved
 Milestone: 0.5
 
 ## Why
@@ -20,20 +19,22 @@ In (mockups: `design/alkony/011-settings-users.html`, screens `users`, `usersen`
   the edit dialog.
 - **Create:** name, username, role (Felhasználó default / Rendszergazda), starting password set by the admin. The user
   is not forced to change it.
-- **Edit:** name, username shown read-only (assumed, waiting for owner: O-9), role, "Új jelszó beállítása" (opens a
-  password field), "Felhasználó törlése". Your own row: no password field, a link to the Account tab instead (assumed,
-  waiting for owner: O-11).
+- **Edit:** name, username shown read-only (O-9), role, "Új jelszó beállítása" (opens a
+  password field), "Felhasználó törlése". Your own row: no password field, a link to the Account tab instead (O-11).
 - **Delete:** confirm dialog, unlocked by typing the username. Deletes the user and everything they own: entries,
   recordings, transcripts, audio files, settings, sessions, and any copy still at a cloud provider (spec 010 cleanup).
 - **Rules:** there is always at least one admin. Nobody can remove the admin role from the last admin or delete them;
-  the UI shows the control disabled with the reason. An admin can't delete themselves from Users (assumed, waiting for
-  owner: O-10) and can remove their own admin role only while another admin exists (O-10).
+  the UI shows the control disabled with the reason. An admin can't delete themselves from Users (O-10) and can remove their own admin role only while another admin exists (O-10).
 - **Privacy:** admins can't read other users' entries anywhere. No "view as", no impersonation, no counts or activity
   of other users. Every admin route is checked on the server.
-- **Password reset by an admin** ends all of that user's sessions (assumed, waiting for owner: O-12).
+- **Password reset by an admin** ends all of that user's sessions (O-12).
 - API: `GET/POST /api/v1/admin/users`, `PATCH/DELETE /api/v1/admin/users/:id`.
 
 Out (not now): public sign-up or invites, email, forcing a password change at next sign-in, disabling (banning) an
+- **Transcript label by role** (D-68): on the recording card meta row an admin sees the engine as today (chip
+  icon + model name, or cloud icon + provider name). A basic user sees only where it ran: chip icon + "Helyi" or cloud
+  icon + "Felhő". The provider is still named for basic users in Settings > General (spec 011), so they know who
+  receives their audio. This is display only; the API is unchanged.
 account, roles other than user / admin, per-journal sharing between users, an audit log screen, changing usernames
 (O-9), bulk actions, showing another user's storage use or entry count.
 
@@ -59,9 +60,9 @@ Settings > Felhasználók (admin)
                                                                      \─ username taken ──► error under the field
   row ──► edit dialog
            [name] [role: Felhasználó | Rendszergazda] [Új jelszó beállítása ──► password field]
-           Mentés ──► saved; a new password ends that user's sessions (assumed, O-12)
+           Mentés ──► saved; a new password ends that user's sessions (O-12)
            Felhasználó törlése ──► confirm [type username] ──Végleges törlés──► user and all their data gone
-  own row ──► edit dialog: password ──► "use the Fiók tab" link; delete disabled (assumed, O-10, O-11)
+  own row ──► edit dialog: password ──► "use the Fiók tab" link; delete disabled (O-10, O-11)
                            last admin: role locked + reason; delete locked + reason
 ```
 
@@ -74,12 +75,12 @@ Routes (all need a session and `is_admin`, read fresh from the database on each 
 |---|---|---|
 | `GET /api/v1/admin/users` | | `{ users: [{ id, name, username, isAdmin, createdAt }] }`, oldest first. Nothing else about other users |
 | `POST /api/v1/admin/users` | `{ name, username, isAdmin, password }` | 201 with the user. 409 `username_taken` |
-| `PATCH /api/v1/admin/users/:id` | any of `{ name, isAdmin, password }` | 200 with the user. 409 `last_admin`; 400 `use_account_password` for your own id with `password` (assumed, O-11); 404 `user_not_found` |
-| `DELETE /api/v1/admin/users/:id` | `{ confirmUsername }` | 204. 400 `confirmation_mismatch`; 409 `cannot_delete_self` (assumed, O-10); 409 `last_admin`; 404 `user_not_found` |
+| `PATCH /api/v1/admin/users/:id` | any of `{ name, isAdmin, password }` | 200 with the user. 409 `last_admin`; 400 `use_account_password` for your own id with `password` (O-11); 404 `user_not_found` |
+| `DELETE /api/v1/admin/users/:id` | `{ confirmUsername }` | 204. 400 `confirmation_mismatch`; 409 `cannot_delete_self` (O-10); 409 `last_admin`; 404 `user_not_found` |
 
 - Validation: `nameSchema`, `usernameSchema` (trimmed, lowercased, 3 to 32 of `a-z 0-9 . - _`), password 8 to 128
   characters, `isAdmin` boolean, strict objects (unknown keys 400 `invalid_request`). `username` is not accepted by PATCH
-  (assumed, waiting for owner: O-9).
+  (O-9).
 - New user defaults: `ui_language` and `entry_language` `en` (D-31), `time_zone` copied from the admin who creates it,
   `theme` `system`. The user changes them in General.
 - **Last-admin rule:** every role change and delete runs in one transaction that first takes
@@ -93,8 +94,7 @@ Routes (all need a session and `is_admin`, read fresh from the database on each 
 - **Jobs of a deleted user:** a queued transcription job whose recording is gone finishes as a no-op (no retry, no
   error-level log). A running job that finds its recording gone when it saves drops the result; a cloud job still
   deletes its vendor copies after the attempt (spec 010 AC-18).
-- **Sessions:** a password reset by an admin deletes all `sessions` rows of that user (assumed, waiting for owner:
-  O-12). A delete removes them through the foreign key. No session cookie cache is configured, so the next request of
+- **Sessions:** a password reset by an admin deletes all `sessions` rows of that user (O-12). A delete removes them through the foreign key. No session cookie cache is configured, so the next request of
   that browser gets 401.
 - **Live updates:** after a role change, password reset or delete, the server closes every open `/api/v1/events`
   stream of that user (an event to that user's audience that the stream handler ends on). Browsers reconnect as today;
@@ -130,11 +130,14 @@ export const deleteUserSchema = z.strictObject({ confirmUsername: z.string() })
   (`autocomplete="new-password"`) with the hint. Client checks as setup (`field.error.*`); `username_taken` shows under
   the username field. On success the dialog closes and the list refreshes.
 - Edit: "Új jelszó beállítása" swaps in a password field (`new-password`) with its hint; "Mentés" sends only changed
-  fields. Own row (assumed, O-11): instead of the button, "A saját jelszavadat a Fiók fülön módosíthatod." with a link
+  fields. Own row (O-11): instead of the button, "A saját jelszavadat a Fiók fülön módosíthatod." with a link
   to `/settings/account`. Last admin (own row): the role `Segmented` is `aria-disabled` with the lock note (info icon)
   linked by `aria-describedby`; delete is `aria-disabled` with "Az egyetlen rendszergazda nem törölhető.". Own row with
-  other admins (assumed, O-10): role enabled; delete disabled with "Saját magadat nem törölheted.".
+  other admins (O-10): role enabled; delete disabled with "Saját magadat nem törölheted.".
 - When the live-updates stream reconnects, the app refetches `me`, so a changed role shows (tabs appear or go) without a reload.
+- Transcript label (D-68): the meta row picks the label from `me.isAdmin`. Basic user: chip icon + "Helyi" or cloud
+  icon + "Felhő", visually hidden prefix "Átírás:" (`transcript.where.label`). Admin: unchanged from specs 009 and 010.
+  An unknown model id shows nothing for both roles.
 - Saving your own role away (another admin exists, O-10): after the 200 the app refetches `me` and moves to
   `/settings/general`.
 - Delete: `alertdialog` "Törlöd {{name}} fiókját?", the warning text, a field "A megerősítéshez írd be a
@@ -157,16 +160,16 @@ Create
 - **AC-7** Given an existing username (any capitals), then the API answers 409 `username_taken`, nothing is created, and the error shows under the username field; given a bad username, empty or 61-character name, or a password under 8 or over 128 characters, then the field error shows and nothing is sent, and the API answers 400 for the same bodies.
 
 Edit
-- **AC-8** Given another user's dialog, when the admin changes the name and saves, then the list and that user's greeting (after their reload) show the new name; the username shows read-only and a PATCH with `username` answers 400 (assumed, waiting for owner: O-9).
+- **AC-8** Given another user's dialog, when the admin changes the name and saves, then the list and that user's greeting (after their reload) show the new name; the username shows read-only and a PATCH with `username` answers 400 (O-9).
 - **AC-9** Given a basic user, when an admin sets Rendszergazda and saves, then they are admin; setting Felhasználó on an admin while another admin exists makes them a basic user, and their open Settings page loses the admin tabs after the stream reconnects.
-- **AC-10** Given "Új jelszó beállítása" with a new password, when the admin saves, then the target signs in with the new password only, and every session the target had answers 401 on its next request (assumed, waiting for owner: O-12); the admin's own session is untouched.
-- **AC-11** Given the admin's own row, then there is no password button but the line linking to the Fiók tab, and `PATCH` of your own id with `password` answers 400 `use_account_password` and changes nothing (assumed, waiting for owner: O-11).
+- **AC-10** Given "Új jelszó beállítása" with a new password, when the admin saves, then the target signs in with the new password only, and every session the target had answers 401 on its next request (O-12); the admin's own session is untouched.
+- **AC-11** Given the admin's own row, then there is no password button but the line linking to the Fiók tab, and `PATCH` of your own id with `password` answers 400 `use_account_password` and changes nothing (O-11).
 
 Last admin and self
 - **AC-12** Given the signed-in admin is the only admin, when they open their own row, then the role control is disabled with "Te vagy az egyetlen rendszergazda, ezért ez nem változtatható. Előbb tegyél meg valaki mást rendszergazdának.", delete is disabled with "Az egyetlen rendszergazda nem törölhető.", and `PATCH { isAdmin: false }` on themselves answers 409 `last_admin` with no change.
-- **AC-13** Given two admins A and B, when A removes their own admin role, then it succeeds, A's app moves to `/settings/general` with two tabs, and B is now the only admin (assumed, waiting for owner: O-10).
+- **AC-13** Given two admins A and B, when A removes their own admin role, then it succeeds, A's app moves to `/settings/general` with two tabs, and B is now the only admin (O-10).
 - **AC-14** Given two admins, when each sends `PATCH { isAdmin: false }` for the other at the same moment, then exactly one answers 200, the other 409 `last_admin`, and one admin remains.
-- **AC-15** Given any admin, then `DELETE` of their own id answers 409 `cannot_delete_self` and the own-row delete button is disabled with "Saját magadat nem törölheted." (or the last-admin reason when they are the only admin) (assumed, waiting for owner: O-10).
+- **AC-15** Given any admin, then `DELETE` of their own id answers 409 `cannot_delete_self` and the own-row delete button is disabled with "Saját magadat nem törölheted." (or the last-admin reason when they are the only admin) (O-10).
 
 Delete
 - **AC-16** Given the delete dialog for "bence.k", then "Végleges törlés" stays disabled until the field holds `bence.k` (spaces around and capitals ignored); `DELETE` with a different `confirmUsername` answers 400 `confirmation_mismatch` and deletes nothing.
@@ -182,6 +185,7 @@ Limits, logs, quality
 - **AC-22** Given 30 user-management writes from one IP within a minute, when a 31st is sent, then it answers 429.
 - **AC-23** Given create, edit, password reset and delete run with marker text in name, username and password, then the marker appears nowhere in the captured logs; log lines name users only by id.
 - **AC-24** Given the screens `users`, `usercreate`, `useredit`, `usermakeadmin`, `userlastadmin`, `userdelete` in `hu` and `en`, at 390 and 1280, light and dark, then axe reports no violations and the layout checks pass.
+- **AC-25** Given transcripts by Turbo and by Soniox, then a basic user sees chip icon + "Helyi" (accessible "Átírás: Helyi") and cloud icon + "Felhő" (accessible "Átírás: Felhő") on the recording cards, with no model or provider name, while an admin sees chip icon + "Turbo" and cloud icon + "Soniox" as in spec 010; in `en` the basic labels are "Local" and "Cloud".
 
 ## Test plan
 
@@ -211,6 +215,7 @@ Limits, logs, quality
 | AC-22 | | | 31st write → 429 | | |
 | AC-23 | | | marker through all four routes, log capture | | spec 007 helper |
 | AC-24 | | | | axe + `expectLayout` per state | |
+| AC-25 | | meta row per role and engine, hu + en | | basic user sees "Felhő" on a Soniox transcript | spec 010 provider fixture |
 
 Also covered: both languages for every string, error states (network failure shows `error.generic` in the dialog and
 keeps the input).
@@ -246,6 +251,8 @@ New keys, in both `hu` and `en`.
 | `users.deleteConfirmLabel` | A megerősítéshez írd be a felhasználónevét: {{username}} | To confirm, type their username: {{username}} |
 | `users.deleteSubmit` | Végleges törlés | Delete for good |
 | `common.save` | Mentés | Save |
+| `transcript.where.label` | Átírás: | Transcription: |
+| `transcript.where.local` / `.cloud` | Helyi / Felhő | Local / Cloud |
 | `error.username_taken` | Ez a felhasználónév már foglalt. | This username is taken. |
 
 ## Privacy & data
@@ -258,4 +265,4 @@ New keys, in both `hu` and `en`.
 - Nothing leaves the server, except the vendor delete calls of spec 010.
 
 ## Open questions
-O-9, O-10, O-11, O-12 in `decisions.md` (this spec uses the recommended answers, marked "assumed, waiting for owner").
+None open. O-9, O-10, O-11, O-12 were decided by the owner on 2026-11-28 (D-67).

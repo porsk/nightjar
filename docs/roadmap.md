@@ -1,7 +1,7 @@
 # Roadmap
 
 **Now:** 0.4.0 released: cloud transcription (Soniox, Gladia; spec 010). 0.3.0 shipped search partial matches (spec 005 update) and model choice + transcribe again (spec 009). Owner's server (i5-6500T, no VNNI) transcribes badly with local int8 Whisper; owner tries Soniox (7.9% WER on own clips vs 17.9% Gladia / local large-v3, 25.7% turbo).
-**Next:** 0.5 (D-66): mockups approved 2026-11-28 (mood = faces). Specs 011 to 014 are drafts on branch `design/0.5`; they use the recommended answers to O-9 to O-15 until the owner answers, then get approved and built. Owner switches to Soniox on 0.4.0 and journals for a week (M1 done-when). Owner rotates the Soniox and Gladia keys shared in chat. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser.
+**Next:** build 0.5 (D-66, specs 011 to 014 approved 2026-11-28, D-67, D-68) on branch `design/0.5`, Opus review, PR, then release with the owner's OK. Owner switches to Soniox on 0.4.0 and journals for a week (M1 done-when). Owner rotates the Soniox and Gladia keys shared in chat. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
@@ -58,11 +58,11 @@ Tests: every AC has a unit, API or e2e test. E2E records a HU and an EN WAV thro
 Shipped as smaller releases (D-66).
 
 ### 0.5 Accounts, mood, download
-Mockups approved 2026-11-28 (`design/alkony/011-settings-users.html`, `012-mood.html`). Specs are drafts until the owner answers O-9 to O-15.
-- [ ] 011 Settings tabs, appearance (System / Light / Dark), change own password (spec draft)
-- [ ] 012 Users and roles: admin creates, edits, deletes users; last-admin rules; no reading other users' entries (spec draft)
-- [ ] 013 Mood (faces, 1-5) (spec draft)
-- [ ] 014 Download a recording (spec draft)
+Mockups approved 2026-11-28 (`design/alkony/011-settings-users.html`, `012-mood.html`). Specs 011 to 014 approved 2026-11-28 (D-67, D-68).
+- [~] 011 Settings tabs, appearance (System / Light / Dark), change own password
+- [~] 012 Users and roles: admin creates, edits, deletes users; last-admin rules; no reading other users' entries; transcript label by role (D-68)
+- [~] 013 Mood (faces, 1-5)
+- [~] 014 Download a recording
 
 ### 0.6 Organise
 - [ ] Multiple journals + favourites

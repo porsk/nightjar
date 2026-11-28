@@ -1,7 +1,6 @@
 # 014 Download a recording
 
-Status: draft
-<!-- draft until the owner answers O-13 in decisions.md. Places that use a recommended answer say "(assumed, waiting for owner)". -->
+Status: approved
 Milestone: 0.5
 
 ## Why
@@ -13,7 +12,7 @@ In (mockup: `design/alkony/011-settings-users.html`, screen `recmenu`; screensho
 - **File name:** `nightjar-YYYY-MM-DD-HHMM.<ext>`, date and time when the recording was saved, in the user's time zone
   (the time the card shows), for example `nightjar-2026-11-26-2042.webm`.
 - **File type:** the stored file as it is, no conversion: a browser recording downloads as `.webm` (or `.ogg`), an
-  uploaded `.m4a` as `.m4a`, `.mp3` as `.mp3`, and so on (assumed, waiting for owner: O-13).
+  uploaded `.m4a` as `.m4a`, `.mp3` as `.mp3`, and so on (O-13).
 - Works for recordings in every state (pending, transcribing, done, failed, not transcribed) and whether transcription
   is on or off.
 - Only the owner of the recording can download it (admins included, spec 012).
@@ -47,7 +46,7 @@ transcript as a file, sharing links.
 
 - **AC-1** Given a recording of the signed-in user, when `GET /api/v1/recordings/:id/audio?download=1` is called, then it answers 200 with the exact stored bytes, the stored `content-type`, `cache-control: private, no-store` and `content-disposition: attachment; filename="nightjar-YYYY-MM-DD-HHMM.<ext>"`; without `download=1` there is no `content-disposition` header.
 - **AC-2** Given a recording saved at 2026-11-26T19:42:30Z by a user in `Europe/Budapest`, then the name is `nightjar-2026-11-26-2042.webm`; for a user in `America/New_York` it is `nightjar-2026-11-26-1442.webm`; a recording saved at 23:05 local time on 31 December is named with that local date, not the UTC one.
-- **AC-3** Given uploads stored as `m4a`, `mp3`, `wav`, `ogg`, `aac` and `flac`, then each downloads with that extension and its bytes unchanged (no conversion) (assumed, waiting for owner: O-13).
+- **AC-3** Given uploads stored as `m4a`, `mp3`, `wav`, `ogg`, `aac` and `flac`, then each downloads with that extension and its bytes unchanged (no conversion) (O-13).
 - **AC-4** Given a `Range: bytes=0-99` request with `download=1`, then it answers 206 with those bytes, the range headers and the same `content-disposition`.
 - **AC-5** Given another user's recording (also when the caller is an admin) or a made-up id, then the download answers 404 `recording_not_found` and sends no bytes; without a session, 401.
 - **AC-6** Given `GET /api/v1/entries/:id/recordings`, then every recording has `fileName` equal to the name the download gets.
@@ -85,4 +84,4 @@ New keys, in both `hu` and `en`.
 - Logs keep the route and status only, never the file name or storage key.
 
 ## Open questions
-O-13 in `decisions.md` (this spec uses the recommended answer, marked "assumed, waiting for owner").
+None open. O-13 was decided by the owner on 2026-11-28 (D-67).

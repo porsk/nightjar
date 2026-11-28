@@ -1,7 +1,6 @@
 # 013 Mood
 
-Status: draft
-<!-- draft until the owner answers O-15 in decisions.md. Places that use a recommended answer say "(assumed, waiting for owner)". -->
+Status: approved
 Milestone: 0.5
 
 ## Why
@@ -24,9 +23,8 @@ screenshots in `design/alkony/screenshots/012/`):
   Colours go from cool blue (1) to warm amber (5), no red. A face always has its word next to it (visible, or as hidden
   text where only the small face shows), so nothing depends on colour.
 - **Picker** (five faces with their words in one row): in the writer under the text and its save line, labelled
-  "Hangulat" with "nem kötelező" (assumed, waiting for owner: O-15); on the entry page as a card "Hogy érzed magad?" with
-  "Most nem", shown once right after a voice recording when the entry has no mood yet (assumed, waiting for owner:
-  O-15); and on the entry page when the user taps the mood chip.
+  "Hangulat" with "nem kötelező" (O-15); on the entry page as a card "Hogy érzed magad?" with
+  "Most nem", shown once right after a voice recording when the entry has no mood yet (O-15); and on the entry page when the user taps the mood chip.
 - **Entry page:** a chip next to "Dátum módosítása": face + word when set, dashed "+ Hangulat" when not. Tapping it
   opens the picker card.
 - **Timeline cards and desktop rows:** after the time, a separator dot, the small face and the word. No mood: nothing.
@@ -94,12 +92,12 @@ Data
 - **AC-3** Given a mood change, then the entry's `entry_date`, `body_md` and search text are unchanged.
 
 Writer
-- **AC-4** Given the writer, then under the text and save line it shows "Hangulat" with "nem kötelező" and five faces labelled Nehéz, Borongós, Rendben, Jó, Nagyszerű (`en`: Rough, Low, Okay, Good, Great), none selected for an entry without mood (assumed, waiting for owner: O-15).
+- **AC-4** Given the writer, then under the text and save line it shows "Hangulat" with "nem kötelező" and five faces labelled Nehéz, Borongós, Rendben, Jó, Nagyszerű (`en`: Rough, Low, Okay, Good, Great), none selected for an entry without mood (O-15).
 - **AC-5** Given a new entry, when the user picks Jó and types text, then the created entry has mood 4; given only a mood and no text, then no entry is created when the user leaves.
 - **AC-6** Given an existing entry in the writer, when the user picks a face, then it is saved at once (one `PATCH { mood }`); picking the selected face again (click or Space) saves `null`.
 
 After a recording
-- **AC-7** Given the user stops a recording for a new entry, then the entry page shows the card "Hogy érzed magad?" with the five faces and "Most nem" above the recordings (assumed, waiting for owner: O-15).
+- **AC-7** Given the user stops a recording for a new entry, then the entry page shows the card "Hogy érzed magad?" with the five faces and "Most nem" above the recordings (O-15).
 - **AC-8** Given that card, when the user picks Borongós, then mood 2 is saved, the card closes and the chip shows the Borongós face and word; "Most nem" closes it and saves nothing.
 - **AC-9** Given the card was shown, when the user reloads or goes Back and forward, then it does not show again; given "Újabb felvétel" on an entry that already has a mood, then no card shows; given an upload or a typed entry, then no card shows.
 
@@ -158,4 +156,4 @@ New keys, in both `hu` and `en`.
 - Never logged, never sent anywhere.
 
 ## Open questions
-O-15 in `decisions.md` (this spec uses the recommended answer, marked "assumed, waiting for owner").
+None open. O-15 was decided by the owner on 2026-11-28 (D-67).

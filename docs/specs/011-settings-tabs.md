@@ -1,7 +1,6 @@
 # 011 Settings tabs, appearance, change password
 
-Status: draft
-<!-- draft until the owner answers O-11, O-12 and O-14 in decisions.md. Places that use a recommended answer say "(assumed, waiting for owner)". -->
+Status: approved
 Milestone: 0.5
 
 ## Why
@@ -18,7 +17,7 @@ In (mockups: `design/alkony/011-settings-users.html`, screens `general`, `genera
 - **Who sees what.** Admins see all four tabs. A basic user sees General and Account only; opening an admin tab URL sends
   them to `/settings/general`.
 - **General:** UI language, Megjelenés (appearance, new), default entry language, time zone (moved from "Személyes").
-  For a basic user, one read-only line at the end says where transcription runs (assumed, waiting for owner: O-14).
+  For a basic user, one read-only line at the end says where transcription runs (O-14).
 - **Appearance:** Rendszer (System, default) / Világos (Light) / Sötét (Dark), a 3-way segmented control like the
   language ones, with the hint "A Rendszer a készüléked beállítását követi." Saved per user, applied at once (no reload),
   no flash of the wrong theme when the app loads.
@@ -47,7 +46,7 @@ Page load: /theme-boot.js (blocking, in <head>) reads the cache ──► sets d
            GET /me arrives ──► server value wins, cache updated
 
 Change password: current + new + again ──► POST /me/password
-   ok ──► "A jelszavad megváltozott.", fields cleared, other sessions ended (assumed, O-12)
+   ok ──► "A jelszavad megváltozott.", fields cleared, other sessions ended (O-12)
    wrong current ──► error under "Jelenlegi jelszó"
 ```
 
@@ -57,7 +56,7 @@ Change password: current + new + again ──► POST /me/password
 - `settingsPatchSchema` gets `theme: z.enum(['system', 'light', 'dark'])`; `meResponseSchema` gets `theme`.
 - `POST /api/v1/me/password` body `{ currentPassword, newPassword }` (`newPassword` 8 to 128 characters, same rule as
   setup). It calls Better Auth's `changePassword` (installed 1.7.28, `auth.api.changePassword`) with
-  `revokeOtherSessions: true` (assumed, waiting for owner: O-12), which checks the current password with our Argon2id
+  `revokeOtherSessions: true` (O-12), which checks the current password with our Argon2id
   verify, stores the new hash and ends every other session of that user; the current browser gets a fresh session cookie
   and stays signed in. Better Auth's own `/change-password` HTTP route stays unexposed (only our route is registered).
 - Answers: 204 on success; 400 `invalid_request` for a bad body; 400 `wrong_current_password` when the current password
@@ -83,7 +82,7 @@ Change password: current + new + again ──► POST /me/password
   with `me.theme` and on every change. Sign-out keeps the cache, so the login page matches the last user of this browser.
 - Appearance control: `Segmented` (radios), label "Megjelenés", hint under it. Change: apply at once, then save like the
   other settings (optimistic, back to the old value on failure with "Nem sikerült menteni a beállítást.").
-- Transcription line (basic users only, assumed, waiting for owner: O-14): read-only row in the General group, label
+- Transcription line (basic users only, O-14): read-only row in the General group, label
   "Átírás", text by state: off "Az átírás ki van kapcsolva."; local "A felvételeket a saját szervered írja át
   ({{engine}})."; cloud "A felvételeket felhőszolgáltatás írja át ({{engine}})." with the cloud icon. Engine names from the
   catalogue (`models.<id>.name` / `providers.<id>.name`).
@@ -92,8 +91,7 @@ Change password: current + new + again ──► POST /me/password
   (errors as in setup: `field.error.passwordShort`, `field.error.passwordMismatch`). Server error
   `wrong_current_password` shows under the current-password field (`aria-invalid`, `aria-describedby`), focus moves
   there. Success: fields cleared, `role="status"` line "A jelszavad megváltozott.". 429 shows `login.error.tooMany`.
-- Admin editing themselves in Users gets no password field there; the dialog links to this tab (spec 012, assumed,
-  waiting for owner: O-11).
+- Admin editing themselves in Users gets no password field there; the dialog links to this tab (spec 012, O-11).
 
 ## Acceptance criteria
 
@@ -115,10 +113,10 @@ Change password
 - **AC-11** Given the right current password and a new one of 8 to 128 characters typed twice, when the user presses "Jelszó módosítása", then the API answers 204, the stored hash changes (Argon2id, old password no longer signs in, new one does), the fields clear and "A jelszavad megváltozott." shows.
 - **AC-12** Given a wrong current password, then the API answers 400 `wrong_current_password`, nothing changes, and the error "A jelenlegi jelszó nem jó." shows under that field with focus on it.
 - **AC-13** Given an empty field, a new password under 8 characters or two new passwords that differ, then the form shows the field error and sends nothing; given the same cases sent straight to the API (or a new password over 128 characters), then it answers 400 `invalid_request`.
-- **AC-14** Given the user is signed in on two browsers, when they change their password in one, then that one stays signed in and the other gets 401 on its next request and shows login; its live-updates stream is closed (assumed, waiting for owner: O-12).
+- **AC-14** Given the user is signed in on two browsers, when they change their password in one, then that one stays signed in and the other gets 401 on its next request and shows login; its live-updates stream is closed (O-12).
 - **AC-15** Given 10 password-change attempts from one IP within a minute, when an 11th is sent, then it answers 429 and the form shows "Túl sok próbálkozás. Várj egy percet, és próbáld újra."; Better Auth's own `/api/v1/auth/change-password` route answers 404.
 
-Basic user transcription line (assumed, waiting for owner: O-14)
+Basic user transcription line (O-14)
 - **AC-16** Given a basic user, then General ends with a read-only "Átírás" row: off "Az átírás ki van kapcsolva."; Turbo active "A felvételeket a saját szervered írja át (Turbo)."; Soniox active "A felvételeket felhőszolgáltatás írja át (Soniox)." with a cloud icon; it updates without a reload when the admin switches engine. An admin does not see this row.
 
 Quality
@@ -180,4 +178,4 @@ Removed: `settings.personal`, `settings.admin` (the tabs replace the headings).
 - Nothing leaves the server.
 
 ## Open questions
-O-11, O-12, O-14 in `decisions.md` (this spec uses the recommended answers, marked "assumed, waiting for owner").
+None open. O-11, O-12, O-14 were decided by the owner on 2026-11-28 (D-67).
