@@ -116,7 +116,7 @@ test.describe('009-transcription-models: screens are accessible and look right',
             await showStatus(
               page,
               fakeStatus(modelRow(turboId, 'downloaded'), modelRow(largeId, 'downloaded'), {
-                activeModel: largeId,
+                activeEngine: largeId,
                 totalBytes: 1_069_126_342,
               }),
             )
@@ -165,7 +165,7 @@ test.describe('009-transcription-models: screens are accessible and look right',
             await page.keyboard.press('Escape')
 
             await page.route('**/api/v1/transcription', (route) =>
-              route.fulfill({ json: { state: 'off' } }),
+              route.fulfill({ json: { state: 'off', engine: { id: turboId, kind: 'local' } } }),
             )
             await page.getByRole('button', { name: t.menu }).click()
             await expect(page.getByRole('menuitem', { name: t.again })).toHaveAttribute(

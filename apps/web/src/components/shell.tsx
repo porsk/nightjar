@@ -54,7 +54,6 @@ export function Shell() {
             {t('nav.newRecording')}
           </Link>
         )}
-        <p className="privacy">{t('common.privacyNote')}</p>
       </nav>
       <main>
         <div className="col">

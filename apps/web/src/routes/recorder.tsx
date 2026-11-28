@@ -306,7 +306,6 @@ export function RecorderPage() {
           {phase === 'paused' ? t('recorder.resume') : t('recorder.pause')}
         </button>
       </div>
-      <p className="note">{t('common.privacyNote')}</p>
       {confirming ? (
         <Dialog
           role="alertdialog"

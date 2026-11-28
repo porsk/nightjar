@@ -81,7 +81,6 @@ export function LoginPage() {
           </button>
         </div>
       </form>
-      <p className="privacy">{t('common.privacyNote')}</p>
     </BareLayout>
   )
 }

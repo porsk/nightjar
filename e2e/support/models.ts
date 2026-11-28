@@ -33,8 +33,35 @@ export function fakeStatus(
     downloadedBytes: turbo.downloadBytes,
     totalBytes: turbo.downloadBytes,
     backlogCount: 0,
-    activeModel: turboId,
+    activeEngine: turboId,
     models: [turbo, large],
+    providers: fakeProviders(),
+    usage: [
+      { engine: 'soniox', audioMs: 0, estimatedCost: 0 },
+      { engine: 'gladia', audioMs: 0, estimatedCost: 0 },
+    ],
     ...overrides,
   }
+}
+
+/** The two cloud providers as the status lists them. */
+export function fakeProviders(overrides: Record<string, object> = {}) {
+  return [
+    {
+      id: 'soniox',
+      label: 'Soniox',
+      configured: false,
+      keyError: null,
+      pricePerHour: { amount: 0.1, currency: 'USD' },
+      ...overrides['soniox'],
+    },
+    {
+      id: 'gladia',
+      label: 'Gladia',
+      configured: false,
+      keyError: null,
+      pricePerHour: { amount: 0.27, currency: 'EUR' },
+      ...overrides['gladia'],
+    },
+  ]
 }

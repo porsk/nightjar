@@ -5,6 +5,7 @@ import { createMetrics } from '../../src/metrics.ts'
 import type { Auth } from '../../src/modules/auth/auth.ts'
 import { createReadiness } from '../../src/readiness.ts'
 import type { Events } from '../../src/events.ts'
+import type { CloudProvider } from '../../src/modules/transcription/cloud/provider.ts'
 import type { TranscriptionService } from '../../src/modules/transcription/service.ts'
 import { createStorage, type Storage } from '../../src/storage.ts'
 import { captureLogs, type LogCapture } from './log-capture.ts'
@@ -27,10 +28,17 @@ export const inertTranscription = {
       downloadedBytes: 0,
       totalBytes: 0,
       backlogCount: 0,
-      activeModel: 'none',
+      activeEngine: 'none',
       models: [],
+      providers: [],
+      usage: [],
     } as const),
-  availability: () => Promise.resolve({ state: 'off' } as const),
+  availability: () =>
+    Promise.resolve({ state: 'off', engine: { id: 'none', kind: 'local' } } as const),
+  saveSecrets: () => Promise.reject(new Error('inert transcription')),
+  removeSecrets: () => Promise.reject(new Error('inert transcription')),
+  testKey: () => Promise.reject(new Error('inert transcription')),
+  useProvider: () => Promise.reject(new Error('inert transcription')),
   download: () => Promise.reject(new Error('inert transcription')),
   use: () => Promise.reject(new Error('inert transcription')),
   remove: () => Promise.reject(new Error('inert transcription')),
@@ -51,6 +59,7 @@ export async function buildTestApp(
     storage?: Storage
     events?: Events
     transcription?: TranscriptionService
+    providers?: CloudProvider[]
     maxUploadBytes?: number
     capture?: LogCapture
     now?: () => Date
@@ -72,6 +81,7 @@ export async function buildTestApp(
     storage: options.storage ?? createStorage('/unused'),
     events: options.events ?? inertEvents,
     transcription: options.transcription ?? inertTranscription,
+    providers: options.providers ?? [],
     maxUploadBytes: options.maxUploadBytes,
     now: options.now,
     getAuth: () => {

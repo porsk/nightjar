@@ -2,7 +2,6 @@ export const hu = {
   common: {
     next: 'Tovább',
     back: 'Vissza',
-    privacyNote: 'A hang a saját szervereden marad.',
     cancel: 'Mégse',
     retry: 'Újrapróbálás',
   },
@@ -30,6 +29,8 @@ export const hu = {
     file_too_large: 'A fájl túl nagy (legfeljebb 200 MB).',
     recording_too_long: 'A felvétel hosszabb 3 óránál.',
     recording_not_found: 'A felvétel nem található.',
+    api_key_missing: 'Előbb add meg az API-kulcsot.',
+    engine_in_use: 'A használatban lévő motor kulcsát nem lehet eltávolítani. Előbb válts másikra.',
     model_in_use: 'A használatban lévő modellt nem lehet törölni. Előbb válts másikra.',
     download_running: 'Egyszerre csak egy modell töltődhet le.',
     model_not_ready: 'Az átírás most nem érhető el.',
@@ -168,6 +169,9 @@ export const hu = {
     againFailed: 'Az újraírás nem sikerült.',
     againFailedText: 'A korábbi átirat megmaradt. Próbáld újra.',
     modelPrefix: 'Modell:',
+    cloudPrefix: 'Felhőszolgáltatás:',
+    audioKept: 'A felvétel megvan.',
+    oldKept: 'A korábbi átirat megmaradt.',
     failed: 'Az átírás nem sikerült.',
     failedText: 'A felvétel megvan, a szöveg hiányzik. Próbáld újra.',
     off: 'Nincs átírva.',
@@ -181,6 +185,7 @@ export const hu = {
     againOff: 'Az átírás ki van kapcsolva.',
     againNoModel: 'Még nincs letöltött modell.',
     againRunning: 'Az átírás már folyamatban van.',
+    againNoKey: 'Nincs használható API-kulcs.',
     replaceTitle: 'Felülírjuk a javításaidat?',
     replaceText:
       'Ezt az átiratot kézzel javítottad. Az új átírás lecseréli a szöveget, a javításaid elvesznek.',
@@ -196,6 +201,18 @@ export const hu = {
       description:
         'A legpontosabb. 4 magos processzoron kb. 3-szor lassabb a valós időnél, és kb. 5 GB szabad memória kell hozzá.',
     },
+  },
+  providers: {
+    soniox: { name: 'Soniox', description: 'Pontos magyar átírás. Kb. {{price}} óránként.' },
+    gladia: { name: 'Gladia', description: 'Francia szolgáltató. Kb. {{price}} óránként.' },
+  },
+  failure: {
+    api_key_invalid:
+      'A felhőszolgáltató nem fogadta el az API-kulcsot. A rendszergazda a Beállításokban cserélheti.',
+    quota_exceeded: 'Elfogyott a keret a felhőszolgáltatónál.',
+    provider_unavailable: 'A felhőszolgáltató most nem érhető el. Próbáld újra később.',
+    timeout: 'A felhőszolgáltató túl sokáig dolgozott rajta.',
+    audio_rejected: 'A felhőszolgáltató nem tudta feldolgozni ezt a felvételt.',
   },
   date: {
     today: 'Ma, {{date}}',
@@ -252,6 +269,7 @@ export const hu = {
     transcription: 'Átírás',
     transcriptionHint:
       'A felvételek szöveggé alakítása a saját szervereden. Egyszeri, kb. {{size}} letöltés kell hozzá.',
+    transcriptionHintCloud: 'A felvételek szöveggé alakítása felhőszolgáltatással ({{engine}}).',
     model: {
       downloading: 'Modell letöltése…',
       progress: '{{done}} / {{total}} · {{pct}}%',
@@ -259,7 +277,6 @@ export const hu = {
       failed: 'A modell letöltése nem sikerült.',
     },
     models: {
-      title: 'Átírási modell',
       size: '{{size}} letöltés',
       notDownloaded: 'Nincs letöltve',
       downloaded: 'Letöltve',
@@ -271,6 +288,31 @@ export const hu = {
       diskFull: 'Nincs elég hely a szerveren. Szabadíts fel helyet, és próbáld újra.',
       deleteTitle: 'Törlöd a {{name}} modellt?',
       deleteText: 'A fájljai ({{size}}) törlődnek a szerverről. Később újra letöltheted.',
+    },
+    engines: {
+      title: 'Átírási motor',
+      local: 'Helyi',
+      cloud: 'Felhő',
+      cloudHint: 'A hangot átírásra elküldjük a szolgáltatónak, utána töröljük nála.',
+      noKey: 'Nincs API-kulcs',
+      keySaved: 'Kulcs mentve',
+      addKey: 'API-kulcs megadása',
+      apiKey: 'API-kulcs',
+      save: 'Mentés',
+      replace: 'Csere',
+      remove: 'Eltávolítás',
+      test: 'Kulcs ellenőrzése',
+      testing: 'Ellenőrzés…',
+      testOk: 'A kulcs működik.',
+      testInvalid: 'A szolgáltató nem fogadta el a kulcsot.',
+      testUnreachable: 'Nem sikerült elérni a szolgáltatót. Próbáld újra később.',
+      keyRequired: 'Add meg az API-kulcsot.',
+      keyUnreadable: 'A mentett kulcs nem olvasható. Add meg újra.',
+      removeTitle: 'Eltávolítod a {{name}} API-kulcsát?',
+      removeText: 'A kulcs törlődik a szerverről. Később újra megadhatod.',
+      usage: 'Ebben a hónapban: {{hours}} óra · kb. {{cost}} (becslés)',
+      cloudReady: 'Az új felvételeket a felhőben írjuk át ({{engine}}).',
+      needsKey: 'Add meg újra az API-kulcsot. Addig az új felvételek várnak.',
     },
     backlog: {
       question: '{{count}} felvételt még nem írtunk át. Átírjuk most?',

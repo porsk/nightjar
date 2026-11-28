@@ -166,12 +166,6 @@ svg.icon {
   overflow-wrap: anywhere;
 }
 
-.privacy {
-  font-size: 13px;
-  color: var(--muted);
-  padding: 0 10px;
-}
-
 /* buttons */
 .btn {
   display: inline-flex;
@@ -455,10 +449,6 @@ svg.icon {
 .bare-brand {
   margin: 0 0 24px;
   padding-top: 12px;
-}
-
-.bare .privacy {
-  margin-top: 22px;
 }
 
 /* signed-in shell */
@@ -1179,11 +1169,6 @@ mark {
 
   .bare-brand {
     padding-top: 0;
-  }
-
-  .bare .privacy {
-    padding: 0;
-    text-align: center;
   }
 
   .shell {

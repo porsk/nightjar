@@ -2,6 +2,10 @@ import { pino, type DestinationStream, type Logger } from 'pino'
 import { describeError } from './process-handlers.ts'
 
 const redactedPaths = [
+  'apiKey',
+  '*.apiKey',
+  'secrets',
+  '*.secrets',
   'password',
   'username',
   '*.password',

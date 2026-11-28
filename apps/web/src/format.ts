@@ -50,3 +50,11 @@ export function formatModelSize(bytes: number, language: Language) {
   }
   return `${new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1_000_000_000)}\u00a0GB`
 }
+
+/** "0,10 USD" in Hungarian, "$0.10" in English. */
+export const formatMoney = (amount: number, currency: string, language: Language) =>
+  new Intl.NumberFormat(language, { style: 'currency', currency }).format(amount)
+
+/** Hours with at most one decimal: "3,2" or "3.2", and "0" for none. */
+export const formatHours = (milliseconds: number, language: Language) =>
+  new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(milliseconds / 3_600_000)

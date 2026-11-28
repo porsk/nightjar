@@ -32,6 +32,27 @@ Image tag in `docker/compose.yaml`:
 
 Back both up, see the [backup guide](backup.md).
 
+### Instance secret
+
+API keys for cloud transcription providers are stored encrypted. The key that encrypts them is the instance secret:
+32 random bytes written as 64 hex characters.
+
+| Where it comes from | When |
+|---|---|
+| `NIGHTJAR_SECRET_KEY` env var on the `nightjar` service | When set. Make one with `openssl rand -hex 32`. Any other format stops the start |
+| `/data/secret.key` | When the env var is not set. The app makes it on first start (mode `0600`) and reuses it |
+
+Nothing to do if you are happy with the file. Keep it with your backups: a database restored without the same secret
+keeps everything except the saved provider keys, which you then enter again in Settings. To move from the file to the
+env var, put the file's content into `NIGHTJAR_SECRET_KEY`.
+
+### Outbound traffic
+
+By default the server makes no outbound calls except downloading a model when the admin turns transcription on. If the
+admin makes a cloud transcription provider (Soniox or Gladia) the active engine in Settings, the server also sends each
+recording's audio and its language to that provider's API (`api.soniox.com` or `api.gladia.io`) and deletes it there after
+the job. Nothing else is sent: no entry text, user name or file name. Allow those hosts if you filter outbound traffic.
+
 ## 3. Traefik
 
 Remove the `ports:` section from the `nightjar` service (Traefik reaches it on the Docker network) and join Traefik's

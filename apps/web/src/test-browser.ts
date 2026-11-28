@@ -140,6 +140,7 @@ export const recording = (overrides: object = {}) => ({
   durationMs: 108_000,
   mimeType: 'audio/webm',
   language: 'hu',
+  failure: null,
   createdAt: '2026-11-26T19:42:00.000Z',
   transcript: {
     text: 'Ma reggel korán keltem.',
@@ -158,3 +159,28 @@ export const entryBody = {
   createdAt: '2026-11-26T19:42:00.000Z',
   updatedAt: '2026-11-26T19:42:00.000Z',
 }
+
+/** The two cloud providers as the status lists them, with no key saved. */
+export const providerRows = (overrides: Record<string, object> = {}) => [
+  {
+    id: 'soniox',
+    label: 'Soniox',
+    configured: false,
+    keyError: null,
+    pricePerHour: { amount: 0.1, currency: 'USD' },
+    ...overrides.soniox,
+  },
+  {
+    id: 'gladia',
+    label: 'Gladia',
+    configured: false,
+    keyError: null,
+    pricePerHour: { amount: 0.27, currency: 'EUR' },
+    ...overrides.gladia,
+  },
+]
+
+export const usageRows = (overrides: Record<string, object> = {}) => [
+  { engine: 'soniox', audioMs: 0, estimatedCost: 0, ...overrides.soniox },
+  { engine: 'gladia', audioMs: 0, estimatedCost: 0, ...overrides.gladia },
+]

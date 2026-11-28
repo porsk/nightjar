@@ -10,6 +10,10 @@ form, so keep it somewhere only you can read. Run every command from the folder 
 | Database (entries, users, settings) | `db` service, `nightjar-db` volume | Yes |
 | Files (recordings; photos later) | `nightjar-data` volume, `/data` in the app. The files are in `media/` | Yes |
 | Transcription models | `nightjar-data` volume, `models/` | No, they download again |
+| Instance secret | `nightjar-data` volume, `secret.key`, or your `NIGHTJAR_SECRET_KEY` value | Yes, if you saved cloud provider API keys. Without it those keys must be entered again; nothing else is lost |
+
+The tar below has `secret.key` in it. If you set `NIGHTJAR_SECRET_KEY` instead, keep that value somewhere safe next to
+your backups, separate from the database dump.
 
 The tar below includes `models/` because it is simpler than leaving it out. Models can be a few hundred MB.
 

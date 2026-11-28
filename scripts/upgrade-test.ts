@@ -221,10 +221,16 @@ try {
     throw new Error(`search after the upgrade did not find the old entry: ${JSON.stringify(found)}`)
   }
   const transcription = (await api('/api/v1/admin/transcription', { cookie: upgradedCookie }))
-    .json as { activeModel: string; models: { id: string }[] }
+    .json as {
+    activeEngine: string
+    models: { id: string }[]
+    providers: { id: string; configured: boolean }[]
+  }
   if (
-    transcription.activeModel !== 'whisper-large-v3-turbo-int8' ||
-    transcription.models.length < 2
+    transcription.activeEngine !== 'whisper-large-v3-turbo-int8' ||
+    transcription.models.length < 2 ||
+    transcription.providers.length < 2 ||
+    transcription.providers.some((provider) => provider.configured)
   ) {
     throw new Error(`model settings after the upgrade are wrong: ${JSON.stringify(transcription)}`)
   }

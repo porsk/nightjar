@@ -5,8 +5,18 @@ import { createJobs, type JobsOptions } from './jobs.ts'
 import { serializeFullError, type Logger } from './logger.ts'
 import { createAuth, type Auth } from './modules/auth/auth.ts'
 import { issueSetupCode } from './modules/auth/setup-code.ts'
+import { createCopyCleaner, createCleanupHandler } from './modules/transcription/cloud/cleanup.ts'
+import type { CloudProvider } from './modules/transcription/cloud/provider.ts'
+import { cloudProviders } from './modules/transcription/cloud/registry.ts'
+import { createKeyStore } from './modules/transcription/cloud/key-store.ts'
+import {
+  createSecretBox,
+  InstanceSecretError,
+  resolveInstanceSecret,
+} from './modules/transcription/cloud/secrets.ts'
+import { createEngineFactory } from './modules/transcription/engines.ts'
 import { createFakeTranscriber } from './modules/transcription/fake-transcriber.ts'
-import { supportedModels, type ModelList } from './modules/transcription/models.ts'
+import { modelById, supportedModels, type ModelList } from './modules/transcription/models.ts'
 import { createTranscriptionService } from './modules/transcription/service.ts'
 import { createSherpaTranscriber } from './modules/transcription/sherpa-transcriber.ts'
 import { createTranscribeHandler } from './modules/transcription/transcribe-job.ts'
@@ -27,6 +37,14 @@ export interface StartOptions {
   /** Replaces the transcriber chosen by `NIGHTJAR_TRANSCRIBER`. */
   transcriber?: TranscriberFactory
   jobs?: JobsOptions
+  /** Replaces the cloud providers. Tests point them at their own server. */
+  providers?: CloudProvider[]
+  /** Timings of the cloud pipeline, for tests. */
+  cloud?: {
+    pollIntervalMs?: number
+    partDeadlineMs?: (partDurationMs: number) => number
+    cleanupMinAgeMs?: number
+  }
 }
 
 /**
@@ -41,13 +59,26 @@ export async function start({
   models = supportedModels,
   transcriber,
   jobs: jobsOptions,
+  providers = cloudProviders,
+  cloud,
 }: StartOptions) {
+  const instanceSecret = await resolveInstanceSecret({
+    env: config.NIGHTJAR_SECRET_KEY,
+    dataDir: config.NIGHTJAR_DATA_DIR,
+    logger,
+  }).catch((error: unknown) => {
+    if (error instanceof InstanceSecretError) {
+      logger.fatal({ source: error.source }, error.message)
+    }
+    throw error
+  })
   const database = createDatabase(config.DATABASE_URL, logger)
   const readiness = createReadiness(database.ping)
   const metrics = createMetrics()
   const storage = createStorage(config.NIGHTJAR_DATA_DIR)
   const events = createEvents({ databaseUrl: config.DATABASE_URL, database, logger })
   const jobs = createJobs(config.DATABASE_URL, logger, jobsOptions)
+  const keys = createKeyStore(database, createSecretBox(instanceSecret))
   const transcription = createTranscriptionService({
     database,
     storage,
@@ -55,12 +86,36 @@ export async function start({
     events,
     logger,
     models,
+    providers,
+    keys,
   })
-  const createTranscriber: TranscriberFactory =
+  const cleaner = createCopyCleaner({
+    database,
+    keys,
+    providers,
+    logger,
+    fetch,
+    ...(cloud?.cleanupMinAgeMs === undefined ? {} : { minAgeMs: cloud.cleanupMinAgeMs }),
+  })
+  const local: TranscriberFactory =
     transcriber ??
     (config.NIGHTJAR_TRANSCRIBER === 'fake'
       ? createFakeTranscriber().factory
-      : (model) => createSherpaTranscriber(model, storage.localPath(modelKey(model.id))))
+      : (id) => createSherpaTranscriber(modelById(models, id), storage.localPath(modelKey(id))))
+  const createTranscriber = createEngineFactory(
+    providers,
+    {
+      database,
+      storage,
+      keys,
+      cleaner,
+      fetch,
+      queueCleanup: jobs.enqueueCloudCleanup,
+      ...(cloud?.pollIntervalMs === undefined ? {} : { pollIntervalMs: cloud.pollIntervalMs }),
+      ...(cloud?.partDeadlineMs === undefined ? {} : { partDeadlineMs: cloud.partDeadlineMs }),
+    },
+    local,
+  )
   const transcribe = createTranscribeHandler({
     database,
     storage,
@@ -69,6 +124,7 @@ export async function start({
     logger,
     createTranscriber,
     models,
+    providers,
     hasQueuedJobs: jobs.hasQueuedJobs,
   })
   let auth: Auth | undefined
@@ -86,6 +142,7 @@ export async function start({
       storage,
       events,
       transcription,
+      providers,
       getAuth,
       trustProxy: config.NIGHTJAR_TRUST_PROXY,
       webDir: config.NIGHTJAR_WEB_DIR,
@@ -108,7 +165,13 @@ export async function start({
       auth = await createAuth(database)
       await issueSetupCode(database, logger)
       await events.start()
-      worker = await startWorker({ logger, jobs, metrics, transcribe })
+      worker = await startWorker({
+        logger,
+        jobs,
+        metrics,
+        transcribe,
+        cleanup: createCleanupHandler({ cleaner, logger }),
+      })
     })
     .then(
       async () => {

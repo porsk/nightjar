@@ -121,13 +121,6 @@
   color: var(--danger);
 }
 
-.note {
-  margin: 44px 0 0;
-  text-align: center;
-  font-size: 14px;
-  color: var(--muted);
-}
-
 .rec-screen .alert {
   margin-top: 24px;
   flex-wrap: wrap;
@@ -590,12 +583,6 @@ textarea.edit:focus-visible {
 }
 
 /* model list in Settings */
-.mlist {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .mrow {
   padding: 14px 16px;
   border-radius: 18px;
@@ -803,4 +790,172 @@ textarea.edit:focus-visible {
 
 .rcard .alert {
   margin: 12px 0 0;
+}
+
+/* engine groups, cloud rows and the key form */
+.egroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.egroup + .egroup {
+  margin-top: 18px;
+}
+
+.eg-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.eg-h svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-text);
+}
+
+.eg-hint {
+  font-size: 14px;
+  color: var(--muted);
+  margin: -4px 0 2px;
+}
+
+.mrow .mh .nm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mrow .mh .nm svg {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+}
+
+.mrow.on .mh .nm svg {
+  color: var(--accent-text);
+}
+
+.keyline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.keyline .kl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.keyline .kl svg {
+  width: 18px;
+  height: 18px;
+}
+
+.keyline .dots {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text);
+}
+
+.keyline .kb {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.keyline .btn.text {
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 15px;
+}
+
+.keyline .btn.textdanger {
+  padding: 0 10px;
+  font-size: 15px;
+}
+
+.usage {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kform {
+  margin-top: 12px;
+}
+
+.kform .field {
+  margin-bottom: 10px;
+}
+
+.kform .field > label {
+  font-size: 15px;
+}
+
+.kform .inp {
+  min-height: 48px;
+}
+
+.kform .inp input {
+  height: 46px;
+}
+
+.kres {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+.kres-wrap {
+  margin-top: 10px;
+}
+
+.kres-wrap .kres {
+  margin: 0;
+}
+
+.kres svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.kres.ok svg {
+  color: var(--accent-text);
+}
+
+.kres.err svg {
+  color: var(--danger);
+}
+
+.kform .macts {
+  margin-top: 4px;
+}
+
+.mrow > .alert {
+  margin: 12px 0 0;
+}
+
+.tag .mdl svg {
+  width: 15px;
+  height: 15px;
+}
+
+.failed p + p {
+  margin-top: 2px;
 }

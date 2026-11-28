@@ -62,10 +62,21 @@ Two small interfaces, because each has several real implementations **and** a fa
 
 ```ts
 interface Transcriber {
-  transcribe(wavPath: string, language: 'hu' | 'en' | 'auto'): Promise<Transcript> // text, language
-  dispose(): void // frees the model; created when jobs start, disposed when the queue is empty
+  readonly modelId: string // the engine id, stored on the transcript
+  readonly input: 'wav' | 'original' // local engines get a 16 kHz WAV, cloud engines the stored file
+  transcribe(audio: AudioFile, language: 'hu' | 'en' | 'auto', signal: AbortSignal): Promise<Transcript>
+  dispose(): Promise<void> // frees the model; created when jobs start, disposed when the queue is empty
 }
-// M1: sherpa-onnx (Whisper large-v3-turbo int8 by default, D-20) + Fake.
+// Local: sherpa-onnx (Whisper large-v3-turbo int8 by default, D-20) + Fake.
+// Cloud (spec 010): one CloudProvider module per vendor (Soniox, Gladia) behind one cloud transcriber.
+
+interface CloudProvider {
+  id; label; secrets: [{ id: 'apiKey' }]
+  capabilities: { maxAudioMs | null; formats; languages }; pricePerHour
+  checkKey(call); upload(call, file); start(call, copy, language); poll(call, copy); remove(call, copy)
+}
+// apps/server/src/modules/transcription/cloud/: provider.ts, soniox.ts, gladia.ts, registry.ts,
+// cloud-transcriber.ts, split.ts, secrets.ts, key-store.ts, cleanup.ts. Adding a provider is one module and one registry line.
 
 interface AiProvider {
   enrichEntry(text: string, language: 'hu' | 'en'): Promise<EntrySuggestions> // summary, tags, people, places. Zod-validated
@@ -84,8 +95,10 @@ access_tokens  id, user_id, name, token_hash, can_write, last_used_at, revoked_a
 journals       id, user_id, name, is_default, created_at
 entries        id, journal_id, entry_date (date), time_zone, title, body_md, language,
                mood (1-5), is_favourite, search_text, created_at, updated_at
-recordings     id, entry_id, file_path, mime_type, duration_ms, status, created_at
-transcripts    id, recording_id, model, language, text, is_user_edited, updated_at
+recordings     id, entry_id, file_path, mime_type, duration_ms, status, failure, created_at
+transcripts    id, recording_id, model (engine id), language, text, is_user_edited, transcribed_at, updated_at
+provider_secrets  provider_id, ciphertext (AES-256-GCM under the instance secret)     (spec 010, instance-wide)
+cloud_copies   id, provider_id, user_id, recording_id, vendor_ref (jsonb ids)         (copies not yet deleted at a vendor)
 photos         id, entry_id, file_path, thumb_path, taken_at, created_at
 tags, entry_tags (entry_id, tag_id, source 'user'|'ai')
 prompts        id, user_id (null = built-in), text_hu, text_en
@@ -163,7 +176,26 @@ D-20), large-v3 int8 and turbo full precision for older CPUs (D-47, spec 009). T
 Settings; downloaded models stay on disk until deleted. A job reads the active model when it starts; the transcribe job
 drops the loaded transcriber before it creates one for another model, so only one model is in memory. Each transcript
 stores the id of the model that wrote it, and "transcribe again" (`POST /api/v1/recordings/:id/retranscribe`) queues a
-recording again with the active model; the old transcript stays until the new one is saved. A confirmed replace of an edited transcript is kept in `recordings.replace_edited` (cleared when the job ends), so a restart that queues the recording again does not lose it.
+recording again with the active engine; the old transcript stays until the new one is saved. A confirmed replace of an edited transcript is kept in `recordings.replace_edited` (cleared when the job ends), so a restart that queues the recording again does not lose it.
+
+### Cloud engines (spec 010)
+
+The admin can make a cloud provider the one active engine (`instance_settings.active_engine` holds a local model id or a
+provider id). Soniox and Gladia each live in one module; the job does not know which. For a cloud engine the job skips
+the WAV step and hands the stored file over. The cloud transcriber:
+
+1. deletes copies a stopped attempt of the same recording left (`cloud_copies`);
+2. copies the audio with ffmpeg (stream copy) into a container the provider accepts (webm to ogg for Gladia) and, for a
+   provider with a length limit, cuts it into parts in pauses (`silencedetect`);
+3. per part: upload, start, poll every 3 s until done or the part deadline;
+4. joins the texts, and in `finally` deletes every copy at the vendor. A copy that could not be deleted stays in
+   `cloud_copies` and the `cloud-cleanup` job retries it (also queued at every start).
+
+A bad key, no credit or rejected audio fail the recording at once (`recordings.failure`); an unreachable vendor or a
+timeout follow the normal retries. Nothing falls back to another engine. API keys are write-only, encrypted with
+AES-256-GCM (key from HKDF over the instance secret: `NIGHTJAR_SECRET_KEY`, else `secret.key` in the data folder),
+never returned, never logged. A key that no longer decrypts shows as unreadable and the engine as `needs_key`.
+Settings shows this month's use per provider (audio length of its transcripts times the list price, an estimate).
 
 ## 7. Search
 
@@ -189,7 +221,7 @@ WCAG 2.2 AA. The app follows the system light/dark theme. Offline recording queu
 
 - Auth via Better Auth (MIT): username + password (Argon2id, username plugin), httpOnly SameSite cookies.
 - `@fastify/helmet` (CSP, headers), `@fastify/rate-limit` on login/uploads.
-- Non-root container; only `/data` writable. No telemetry; outbound traffic only for model downloads and opt-in AI.
+- Non-root container; only `/data` writable. No telemetry; outbound traffic only for model downloads, opt-in AI and, while the admin has made a cloud transcription provider the active engine, the audio and language hint sent to that provider (deleted there after each job).
 - pino logs with redaction - never log journal text, transcripts or file names.
 - HTTPS required for the microphone (except `localhost`): docs show Caddy / Traefik / Tailscale setups.
 - Config via env vars validated at startup. Migrations run automatically on start.
@@ -214,9 +246,9 @@ No extra services. Everything is in the app process.
 | Turborepo / Nx | 3 workspaces, pnpm scripts suffice |
 | OpenAPI generation | Shared Zod types cover our own client |
 | Storybook | Component tests + Playwright screenshots cover it |
-| Encrypted secrets in DB before M3 | Only the AI key needs it (D-24), so it arrives with M3 |
+| Rotating the instance secret | A changed secret makes the saved provider keys unreadable; they are entered again (spec 010) |
 | Soft delete / trash | Confirmation dialog instead |
-| Multiple transcription engines | One sherpa-onnx model |
+| More than one active transcription engine, per-user or per-recording engine choice | One engine for the whole installation (spec 010) |
 | Event bus across processes | Single process → in-memory emitter |
 
 ## 13. M0 spikes

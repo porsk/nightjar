@@ -35,6 +35,13 @@ export function createStorage(dataDir: string) {
       return { path, remove: () => rm(path, { force: true }) }
     },
 
+    /** An empty folder for work in progress that makes several files. */
+    tempFolder: async () => {
+      const path = join(root, 'tmp', randomUUID())
+      await mkdir(path, { recursive: true })
+      return { path, remove: () => rm(path, { recursive: true, force: true }) }
+    },
+
     /** Moves a finished temp file to its key. */
     adopt: async (tempPath: string, key: string) => {
       const target = locate(key)

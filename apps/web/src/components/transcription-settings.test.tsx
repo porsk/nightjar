@@ -4,6 +4,7 @@ import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { vi } from 'vitest'
 import '../i18n/index.ts'
+import { providerRows, usageRows } from '../test-browser.ts'
 import { FakeEventSource } from '../test-fakes.ts'
 import { json, me, renderApp, stubApi } from '../test-utils.tsx'
 
@@ -42,7 +43,9 @@ const status = (overrides: StatusOverrides = {}) => {
     downloadedBytes: 560_000_000,
     totalBytes: 560_000_000,
     backlogCount: 0,
-    activeModel: turbo,
+    activeEngine: turbo,
+    providers: providerRows(),
+    usage: usageRows(),
     ...overrides,
   }
   return {
@@ -69,8 +72,9 @@ const sendModelEvent = (event: object) => {
   act(() => {
     FakeEventSource.instances[0]?.emit('model.updated', {
       type: 'model.updated',
-      activeModel: turbo,
+      activeEngine: turbo,
       models: [modelRow(turbo, 'downloading'), modelRow(large, 'not_downloaded')],
+      providers: providerRows(),
       ...event,
     })
   })

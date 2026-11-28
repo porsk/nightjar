@@ -13,6 +13,7 @@ import { join } from 'node:path'
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql'
 import type { LiveEvent, TranscriptionStatus } from '@nightjar/shared/recordings'
 import { eq, sql } from 'drizzle-orm'
+import { Client } from 'pg'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createDatabase, type Database } from '../src/database.ts'
 import { entries, instanceSettings, recordings, transcripts, users } from '../src/db/schema.ts'
@@ -20,6 +21,8 @@ import { createEvents } from '../src/events.ts'
 import { createJobs } from '../src/jobs.ts'
 import { createLogger } from '../src/logger.ts'
 import { fakeTexts } from '../src/modules/transcription/fake-transcriber.ts'
+import { createKeyStore } from '../src/modules/transcription/cloud/key-store.ts'
+import { createSecretBox } from '../src/modules/transcription/cloud/secrets.ts'
 import { createTranscriptionService } from '../src/modules/transcription/service.ts'
 import { createStorage } from '../src/storage.ts'
 import { expectNoMarkersInLogs } from './support/log-capture.ts'
@@ -117,7 +120,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const response = await app.call(app.alice, 'GET', adminPath)
       expect(response.statusCode).toBe(200)
       const status = response.json<TranscriptionStatus>()
-      expect(status.activeModel).toBe(testModelId)
+      expect(status.activeEngine).toBe(testModelId)
       expect(status.models.map((model) => model.id)).toEqual([testModelId, largeModelId])
       expect(status.models.map((model) => model.state)).toEqual([
         'not_downloaded',
@@ -151,7 +154,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       expect(filesOnDisk(app, largeModelId)).toEqual(
         Object.keys(modelFilesOf[largeModelId] ?? {}).sort(),
       )
-      expect((await statusOf(app)).activeModel).toBe(testModelId)
+      expect((await statusOf(app)).activeEngine).toBe(testModelId)
       const progress = admin.filter(
         (event) =>
           event.type === 'model.updated' &&
@@ -170,7 +173,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
         state: 'downloading',
         useWhenReady: true,
       })
-      await waitFor(async () => (await statusOf(app)).activeModel === largeModelId, 'the switch')
+      await waitFor(async () => (await statusOf(app)).activeEngine === largeModelId, 'the switch')
       const status = await statusOf(app)
       expect(rowOf(status, largeModelId).state).toBe('downloaded')
       expect(rowOf(status, testModelId).state).toBe('downloaded')
@@ -184,7 +187,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/download`)
       const marked = await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
       expect(rowOf(marked.json<TranscriptionStatus>(), largeModelId).useWhenReady).toBe(true)
-      await waitFor(async () => (await statusOf(app)).activeModel === largeModelId, 'the switch')
+      await waitFor(async () => (await statusOf(app)).activeEngine === largeModelId, 'the switch')
     })
 
     it('AC-5: use on a downloaded model switches at once without any download', async () => {
@@ -192,7 +195,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       await turnOn(app)
       await app.seedModel(largeModelId)
       const response = await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
-      expect(response.json<TranscriptionStatus>().activeModel).toBe(largeModelId)
+      expect(response.json<TranscriptionStatus>().activeEngine).toBe(largeModelId)
       expect(app.modelServer.requests).toEqual([])
       expect(filesOnDisk(app, testModelId)).toHaveLength(4)
     })
@@ -262,7 +265,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const failed = rowOf(await statusOf(app), largeModelId)
       expect(failed).toMatchObject({ error: 'download_failed', useWhenReady: true })
       expect(readdirSync(join(app.dataDir, 'models')).sort()).toEqual([testModelId])
-      expect((await statusOf(app)).activeModel).toBe(testModelId)
+      expect((await statusOf(app)).activeEngine).toBe(testModelId)
 
       app.modelServer.behaviour.corrupt = false
       app.modelServer.behaviour.dropOnce = true
@@ -271,7 +274,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       expect(readdirSync(join(app.dataDir, 'models')).sort()).toEqual([testModelId])
 
       await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
-      await waitFor(async () => (await statusOf(app)).activeModel === largeModelId, 'the switch')
+      await waitFor(async () => (await statusOf(app)).activeEngine === largeModelId, 'the switch')
     })
 
     it('AC-11: leftovers are removed on start, the active download resumes, another model shows as failed', async () => {
@@ -363,7 +366,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
         'no download',
       )
       const status = await statusOf(app)
-      expect(rowOf(status, status.activeModel).state).toBe('downloaded')
+      expect(rowOf(status, status.activeEngine).state).toBe('downloaded')
     })
 
     it('AC-5: switching at once cancels the then-use of a running download', async () => {
@@ -380,7 +383,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       })
       await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
       await waitForModel(app, testModelId, 'downloaded')
-      expect((await statusOf(app)).activeModel).toBe(largeModelId)
+      expect((await statusOf(app)).activeEngine).toBe(largeModelId)
     })
 
     it('AC-9: a finished download of another model does not queue jobs while the active model is missing', async () => {
@@ -420,7 +423,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       await waitFor(
         () =>
           admin.some(
-            (event) => event.type === 'model.updated' && event.activeModel === largeModelId,
+            (event) => event.type === 'model.updated' && event.activeEngine === largeModelId,
           ),
         'the switch event',
       )
@@ -467,8 +470,8 @@ describe('009-transcription-models: model choice and transcribe again against a 
       let first = true
       const holder: { app?: App } = {}
       const app = await launch({
-        wrapFactory: (factory) => (model) => {
-          const folder = join(holder.app?.dataDir ?? '', 'models', model.id)
+        wrapFactory: (factory) => (engineId) => {
+          const folder = join(holder.app?.dataDir ?? '', 'models', engineId)
           if (first) {
             first = false
             void rm(folder, { recursive: true, force: true })
@@ -479,7 +482,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
             )
             throw new Error('the model files are gone')
           }
-          return factory(model)
+          return factory(engineId)
         },
       })
       holder.app = app
@@ -645,6 +648,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
       expect(noModel.json()).toMatchObject({ error: { code: 'model_not_ready' } })
       expect((await app.call(app.alice, 'GET', '/api/v1/transcription')).json()).toEqual({
         state: 'not_ready',
+        engine: { id: testModelId, kind: 'local' },
       })
 
       await app.call(app.alice, 'PUT', adminPath, { enabled: false })
@@ -652,6 +656,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
         error: { code: 'model_not_ready' },
       })
       expect((await app.call(app.alice, 'GET', '/api/v1/transcription')).json()).toEqual({
+        engine: { id: testModelId, kind: 'local' },
         state: 'off',
       })
     })
@@ -698,7 +703,10 @@ describe('009-transcription-models: model choice and transcribe again against a 
 
       const availability = await app.call(app.bob, 'GET', '/api/v1/transcription')
       expect(availability.statusCode).toBe(200)
-      expect(availability.json()).toEqual({ state: 'ready' })
+      expect(availability.json()).toEqual({
+        state: 'ready',
+        engine: { id: testModelId, kind: 'local' },
+      })
       expect((await app.call(null, 'GET', '/api/v1/transcription')).statusCode).toBe(401)
       expect(
         (await app.call(null, 'POST', `/api/v1/recordings/${saved.id}/retranscribe`)).statusCode,
@@ -743,7 +751,7 @@ describe('009-transcription-models: model choice and transcribe again against a 
         text: `edit ${marker}`,
       })
       await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
-      await waitFor(async () => (await statusOf(app)).activeModel === largeModelId, 'the switch')
+      await waitFor(async () => (await statusOf(app)).activeEngine === largeModelId, 'the switch')
       await app.call(app.alice, 'POST', `/api/v1/recordings/${saved.id}/retranscribe`, {
         replaceEdited: true,
       })
@@ -757,13 +765,14 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const modelLines = app.capture
         .lines()
         .filter((line) =>
-          ['model switched', 'model deleted', 'model download started'].includes(String(line.msg)),
+          ['engine switched', 'model deleted', 'model download started'].includes(String(line.msg)),
         )
       expect(modelLines.length).toBeGreaterThanOrEqual(3)
       for (const line of modelLines) {
         expect(
           Object.keys(line).filter(
-            (key) => !['level', 'time', 'pid', 'hostname', 'msg', 'modelId'].includes(key),
+            (key) =>
+              !['level', 'time', 'pid', 'hostname', 'msg', 'modelId', 'engine'].includes(key),
           ),
         ).toEqual([])
       }
@@ -777,9 +786,12 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const base = new URL(postgres.getConnectionUri())
       base.pathname = `/${name}`
       const old = createDatabase(base.toString(), createLogger({ level: 'silent' }))
-      cleanups.push(() =>
-        database.db.execute(sql.raw(`drop database ${name}`)).then(() => undefined),
-      )
+      cleanups.push(async () => {
+        const admin = new Client({ connectionString: postgres.getConnectionUri() })
+        await admin.connect()
+        await admin.query(`drop database ${name} with (force)`)
+        await admin.end()
+      })
       cleanups.push(() => old.close())
 
       const real = join(import.meta.dirname, '../migrations')
@@ -816,26 +828,22 @@ describe('009-transcription-models: model choice and transcribe again against a 
         values (${user?.id ?? ''}, ${entry?.id ?? ''}, 'media/x/recordings/x.wav', 'audio/wav', 1, 1, 'hu', 'done')
         returning id`)
       const recording = recordingRows.rows[0]
-      await old.db.insert(transcripts).values({
-        userId: user?.id ?? '',
-        recordingId: recording?.id ?? '',
-        model: testModelId,
-        language: 'hu',
-        text: 'régi átirat',
-      })
+      await old.db.execute(sql`
+        insert into transcripts (user_id, recording_id, model, language, text)
+        values (${user?.id ?? ''}, ${recording?.id ?? ''}, ${testModelId}, 'hu', 'régi átirat')`)
 
       await old.migrate(real)
       expect(
         (
           await old.db.execute(
-            sql`select model_download_id, model_download_error, active_model from instance_settings`,
+            sql`select model_download_id, model_download_error, active_engine from instance_settings`,
           )
         ).rows,
       ).toEqual([
         {
           model_download_id: testModelId,
           model_download_error: 'download_failed',
-          active_model: testModelId,
+          active_engine: testModelId,
         },
       ])
       const dataDir = mkdtempSync(join(tmpdir(), 'nightjar-data-'))
@@ -854,10 +862,12 @@ describe('009-transcription-models: model choice and transcribe again against a 
         events: createEvents({ databaseUrl: base.toString(), database: old, logger }),
         logger,
         models: modelServer.list,
+        providers: [],
+        keys: createKeyStore(old, createSecretBox(Buffer.alloc(32, 1))),
       })
       await service.resume()
       const status = await service.status()
-      expect(status).toMatchObject({ enabled: true, state: 'ready', activeModel: testModelId })
+      expect(status).toMatchObject({ enabled: true, state: 'ready', activeEngine: testModelId })
       expect(status.models.map((model) => [model.id, model.state])).toEqual([
         [testModelId, 'downloaded'],
         [largeModelId, 'not_downloaded'],

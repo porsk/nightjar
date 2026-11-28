@@ -32,6 +32,7 @@ describe('web entry point', () => {
         storage: createStorage('/unused'),
         events: inertEvents,
         transcription: inertTranscription,
+        providers: [],
         getAuth: () => {
           throw new Error('no auth')
         },

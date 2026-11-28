@@ -35,7 +35,7 @@ const modelRow = (page: Page, name: string) =>
 test.describe('009-transcription-models: choosing a model', () => {
   test('AC-2: turning transcription on shows the list with Turbo in use', async ({ page }) => {
     await page.goto('/settings')
-    await expect(page.getByText('Transcription model')).toBeHidden()
+    await expect(page.getByText('Transcription engine')).toBeHidden()
     await page.getByRole('switch', { name: 'Transcription' }).click()
 
     await expect(modelRow(page, 'Turbo').getByText('In use')).toBeVisible({ timeout: 30_000 })

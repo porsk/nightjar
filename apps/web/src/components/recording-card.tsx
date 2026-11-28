@@ -65,7 +65,8 @@ function RecordingMenu({ recording, onAgain }: { recording: Recording; onAgain: 
   const menu = useRef<HTMLDivElement>(null)
   const item = useRef<HTMLButtonElement>(null)
   const hintId = useId()
-  const availability = useQuery({ ...transcriptionAvailabilityQuery, enabled: open }).data?.state
+  const availabilityData = useQuery({ ...transcriptionAvailabilityQuery, enabled: open }).data
+  const availability = availabilityData?.state
 
   const close = () => {
     setOpen(false)
@@ -93,7 +94,9 @@ function RecordingMenu({ recording, onAgain }: { recording: Recording; onAgain: 
     availability === 'off'
       ? t('recording.againOff')
       : availability === 'not_ready'
-        ? t('recording.againNoModel')
+        ? availabilityData?.engine.kind === 'cloud'
+          ? t('recording.againNoKey')
+          : t('recording.againNoModel')
         : isBusy(recording)
           ? t('recording.againRunning')
           : undefined
@@ -251,16 +254,28 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
   const time = clockTime(new Date(recording.createdAt), timeZone, i18n.language)
   const spoken =
     transcript?.language ?? (recording.language === 'auto' ? undefined : recording.language)
-  const modelKnown = transcript !== null && i18n.exists(`models.${transcript.model}.name`)
+  const localKnown = transcript !== null && i18n.exists(`models.${transcript.model}.name`)
+  const cloudKnown = transcript !== null && i18n.exists(`providers.${transcript.model}.name`)
+  const reason = recording.failure
+  const failureText = (fallback: string) =>
+    reason && i18n.exists(`failure.${reason}`) ? t(`failure.${reason}`) : fallback
   const canEdit = transcript !== null && !busy && !editing
   const tags = (
     <div className="tag">
       {spoken ? <span>{t(`lang.${spoken}`)}</span> : null}
       <span>{time}</span>
-      {modelKnown ? (
+      {localKnown ? (
         <span className="mdl">
+          <Icon name="chip" />
           <span className="visually-hidden">{t('transcript.modelPrefix')} </span>
           {t(`models.${transcript.model}.name`)}
+        </span>
+      ) : null}
+      {cloudKnown ? (
+        <span className="mdl">
+          <Icon name="cloud" />
+          <span className="visually-hidden">{t('transcript.cloudPrefix')} </span>
+          {t(`providers.${transcript.model}.name`)}
         </span>
       ) : null}
       {canEdit ? (
@@ -300,7 +315,14 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
           <Icon name="alert" />
           <div>
             <b>{t('transcript.failed')}</b>
-            <p>{t('transcript.failedText')}</p>
+            {reason ? (
+              <>
+                <p>{failureText(t('transcript.failedText'))}</p>
+                <p>{t('transcript.audioKept')}</p>
+              </>
+            ) : (
+              <p>{t('transcript.failedText')}</p>
+            )}
             <button
               type="button"
               className="btn sm ghost"
@@ -391,7 +413,14 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
           <Icon name="alert" />
           <div>
             <b>{t('transcript.againFailed')}</b>
-            <p>{t('transcript.againFailedText')}</p>
+            {reason ? (
+              <>
+                <p>{failureText(t('transcript.againFailedText'))}</p>
+                <p>{t('transcript.oldKept')}</p>
+              </>
+            ) : (
+              <p>{t('transcript.againFailedText')}</p>
+            )}
             <button
               type="button"
               className="btn sm ghost"

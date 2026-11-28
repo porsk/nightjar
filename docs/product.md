@@ -73,6 +73,8 @@ audio, and the entry page shows typed text and recordings together. Search and A
 | Transcription off by default; the admin turns it on and the model downloads then | M1 |
 | The admin chooses the model (Turbo, Large-v3, Turbo full precision for older CPUs): download, switch, delete | 0.2.1 |
 | "Transcribe again" per recording with the active model; confirm first when the transcript was edited by hand; the card shows which model wrote the text | 0.2.1 |
+| Cloud engines (Soniox, Gladia): the admin enters an API key (write-only, encrypted at rest), checks it, and switches the whole installation to the provider; audio is deleted at the provider after every job; this month's use shown as an estimate; the card shows a cloud icon and the provider name | spec 010 |
+| A cloud failure (bad key, no credit, provider down, timeout) puts the recording in `failed` with a reason in plain words; no fallback to a local model; long recordings are cut in pauses for providers with a length limit | spec 010 |
 
 ### Organise and find
 | Feature | Milestone |

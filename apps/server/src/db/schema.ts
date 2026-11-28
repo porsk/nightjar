@@ -6,6 +6,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -89,7 +90,7 @@ export const instanceSettings = pgTable('instance_settings', {
     .notNull()
     .default('idle'),
   modelDownloadedBytes: bigint('model_downloaded_bytes', { mode: 'number' }).notNull().default(0),
-  activeModel: text('active_model').notNull().default('whisper-large-v3-turbo-int8'),
+  activeEngine: text('active_engine').notNull().default('whisper-large-v3-turbo-int8'),
   modelDownloadId: text('model_download_id'),
   modelDownloadUse: boolean('model_download_use').notNull().default(false),
   modelDownloadError: text('model_download_error', { enum: ['download_failed', 'disk_full'] }),
@@ -142,6 +143,16 @@ export const recordings = pgTable(
     }).notNull(),
     /** A confirmed "transcribe again" replaces a transcript the user edited. Kept here so a restart does not lose it. */
     replaceEdited: boolean('replace_edited').notNull().default(false),
+    /** Why the last attempt failed, when a cloud provider caused it. Set together with `failed`. */
+    failure: text('failure', {
+      enum: [
+        'api_key_invalid',
+        'quota_exceeded',
+        'provider_unavailable',
+        'timeout',
+        'audio_rejected',
+      ],
+    }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -151,19 +162,43 @@ export const recordings = pgTable(
   ],
 )
 
-export const transcripts = pgTable('transcripts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  recordingId: uuid('recording_id')
-    .notNull()
-    .unique()
-    .references(() => recordings.id, { onDelete: 'cascade' }),
-  model: text('model').notNull(),
-  language: text('language', { enum: ['hu', 'en'] }).notNull(),
-  text: text('text').notNull(),
-  isUserEdited: boolean('is_user_edited').notNull().default(false),
+export const transcripts = pgTable(
+  'transcripts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    recordingId: uuid('recording_id')
+      .notNull()
+      .unique()
+      .references(() => recordings.id, { onDelete: 'cascade' }),
+    model: text('model').notNull(),
+    language: text('language', { enum: ['hu', 'en'] }).notNull(),
+    text: text('text').notNull(),
+    isUserEdited: boolean('is_user_edited').notNull().default(false),
+    /** When the engine wrote the text. Hand edits do not change it. */
+    transcribedAt: timestamp('transcribed_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index('transcripts_model_time_idx').on(table.model, table.transcribedAt)],
+)
+
+/** One row per provider that has a saved key. Instance-wide, like `instance_settings`. */
+export const providerSecrets = pgTable('provider_secrets', {
+  providerId: text('provider_id').primaryKey(),
+  ciphertext: text('ciphertext').notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
+})
+
+/** A copy of a recording that may still exist at a provider. Ids only, never content. */
+export const cloudCopies = pgTable('cloud_copies', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  providerId: text('provider_id').notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  recordingId: uuid('recording_id').references(() => recordings.id, { onDelete: 'set null' }),
+  vendorRef: jsonb('vendor_ref').$type<Record<string, string>>().notNull(),
+  createdAt: createdAt(),
 })
