@@ -1,0 +1,1 @@
+ALTER TABLE "recordings" ADD COLUMN "replace_edited" boolean DEFAULT false NOT NULL;

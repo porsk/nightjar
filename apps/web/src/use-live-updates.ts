@@ -26,9 +26,11 @@ export function useLiveUpdates() {
       current.addEventListener('model.updated', (message) => {
         const parsed = liveEventSchema.safeParse(JSON.parse((message as MessageEvent<string>).data))
         if (!parsed.success || parsed.data.type !== 'model.updated') return
-        const { state, downloadedBytes, totalBytes } = parsed.data
+        const { state, downloadedBytes, totalBytes, activeModel, models } = parsed.data
         queryClient.setQueryData(transcriptionQuery.queryKey, (previous) =>
-          previous ? { ...previous, state, downloadedBytes, totalBytes } : previous,
+          previous
+            ? { ...previous, state, downloadedBytes, totalBytes, activeModel, models }
+            : previous,
         )
         if (state !== 'downloading') {
           void queryClient.invalidateQueries({ queryKey: transcriptionQuery.queryKey })

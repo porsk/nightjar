@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -87,7 +88,11 @@ export const instanceSettings = pgTable('instance_settings', {
   modelDownloadState: text('model_download_state', { enum: ['idle', 'downloading', 'failed'] })
     .notNull()
     .default('idle'),
-  modelDownloadedBytes: integer('model_downloaded_bytes').notNull().default(0),
+  modelDownloadedBytes: bigint('model_downloaded_bytes', { mode: 'number' }).notNull().default(0),
+  activeModel: text('active_model').notNull().default('whisper-large-v3-turbo-int8'),
+  modelDownloadId: text('model_download_id'),
+  modelDownloadUse: boolean('model_download_use').notNull().default(false),
+  modelDownloadError: text('model_download_error', { enum: ['download_failed', 'disk_full'] }),
   authSecret: text('auth_secret').notNull(),
   setupCodeHash: text('setup_code_hash'),
   updatedAt: updatedAt(),
@@ -135,6 +140,8 @@ export const recordings = pgTable(
     status: text('status', {
       enum: ['pending', 'transcribing', 'done', 'failed', 'skipped'],
     }).notNull(),
+    /** A confirmed "transcribe again" replaces a transcript the user edited. Kept here so a restart does not lose it. */
+    replaceEdited: boolean('replace_edited').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

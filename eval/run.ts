@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { gzipSync } from 'node:zlib';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { basename, extname, join } from 'node:path';
@@ -16,9 +17,18 @@ type Engine = {
   modelDir: string;
   config: (dir: string, language: Language) => object;
 };
-type ClipResult = { id: string; reference: string; hypothesis: string; seconds: number; audioSeconds: number };
+type ClipResult = {
+  id: string;
+  reference: string;
+  hypothesis: string;
+  seconds: number;
+  audioSeconds: number;
+  loopPieces: number;
+  loopLeft: boolean;
+};
 type RunResult = {
   engine: string;
+  variant: string;
   language: Language;
   loadSeconds: number;
   peakRamMb: number;
@@ -30,6 +40,8 @@ const CACHE = '.cache';
 const THREADS = Number(process.env.THREADS ?? 4);
 const CLIPS_PER_LANGUAGE = Number(process.env.CLIPS ?? 150);
 const MAX_UNSEGMENTED_SECONDS = 25;
+const MAX_TOKENS_PER_SECOND = '25';
+const LOOP_COMPRESSION_RATIO = 2.4;
 const SAMPLE_RATE = 16000;
 const RELEASES = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models';
 const VAD_MODEL = `${CACHE}/models/silero_vad.onnx`;
@@ -188,33 +200,91 @@ const loadFleursAudio = (language: Language, locale: string, rows: { id: string;
   });
 };
 
-const loadOwnClips = (): Clip[] => {
-  const dir = 'clips/own';
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((file) => ['.wav', '.m4a', '.webm'].includes(extname(file)))
-    .sort()
-    .map((file) => {
-      const name = basename(file, extname(file));
-      const language = name.startsWith('hu-') ? 'hu' : name.startsWith('en-') ? 'en' : undefined;
-      const referencePath = `${dir}/${name}.txt`;
-      if (!language) throw new Error(`${file}: name must start with hu- or en-`);
-      if (!existsSync(referencePath)) throw new Error(`${file}: missing ${name}.txt`);
-      const wavPath = `${CACHE}/wav/own/${name}.wav`;
-      convertToWav(`${dir}/${file}`, wavPath);
-      return { id: name, language, wavPath, reference: readFileSync(referencePath, 'utf8') };
-    });
+const loadOwnClips = (): Clip[] =>
+  (['hu', 'en'] as const).flatMap((language) => {
+    const dir = `clips/own/${language}`;
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((file) => ['.wav', '.m4a', '.webm'].includes(extname(file)))
+      .sort()
+      .map((file) => {
+        const name = basename(file, extname(file));
+        const referencePath = `${dir}/${name}.txt`;
+        if (!existsSync(referencePath)) throw new Error(`${dir}/${file}: missing ${name}.txt`);
+        const wavPath = `${CACHE}/wav/own/${language}/${name}.wav`;
+        convertToWav(`${dir}/${file}`, wavPath);
+        return { id: name, language, wavPath, reference: readFileSync(referencePath, 'utf8') };
+      });
+  });
+
+/** P0 is production. The others change one thing each, to see what helps. */
+type Variant = { id: string; label: string; vadAll: boolean; threshold: number; maxSpeech: number; loopGuard: boolean };
+const VARIANTS: Variant[] = [
+  { id: 'P0', label: 'production', vadAll: false, threshold: 0.5, maxSpeech: 20, loopGuard: false },
+  { id: 'P1a', label: 'VAD always, max 10 s', vadAll: true, threshold: 0.5, maxSpeech: 10, loopGuard: false },
+  { id: 'P1b', label: 'VAD always, max 15 s', vadAll: true, threshold: 0.5, maxSpeech: 15, loopGuard: false },
+  { id: 'P2', label: 'production + loop guard', vadAll: false, threshold: 0.5, maxSpeech: 20, loopGuard: true },
+  { id: 'P3', label: 'VAD always, threshold 0.35', vadAll: true, threshold: 0.35, maxSpeech: 20, loopGuard: false },
+  { id: 'P4', label: 'VAD always, max 15 s + loop guard', vadAll: true, threshold: 0.5, maxSpeech: 15, loopGuard: true },
+  { id: 'P5', label: 'VAD always, threshold 0.35 + loop guard', vadAll: true, threshold: 0.35, maxSpeech: 20, loopGuard: true },
+];
+
+const repeatedWordRun = (words: string[]) => {
+  for (let n = 1; n <= 8; n++) {
+    for (let i = 0; i + 3 * n <= words.length; i++) {
+      const unit = words.slice(i, i + n).join(' ');
+      let count = 1;
+      while (i + (count + 1) * n <= words.length && words.slice(i + count * n, i + (count + 1) * n).join(' ') === unit) count++;
+      if (count >= 3) return { start: i, length: n };
+    }
+  }
+  return undefined;
 };
 
-const splitBySpeech = (samples: Float32Array): Float32Array[] => {
+const CHARACTER_LOOP = /(.{3,12}?)\1{2,}/u;
+
+/** A loop is the same word group or the same 3+ characters three times in a row, or text that gzips too well. */
+const isLoop = (text: string) => {
+  const lower = text.toLowerCase();
+  if (CHARACTER_LOOP.test(lower) || repeatedWordRun(lower.split(/\s+/).filter(Boolean))) return true;
+  const bytes = Buffer.from(text);
+  return bytes.length > 0 && bytes.length / gzipSync(bytes).length > LOOP_COMPRESSION_RATIO;
+};
+
+/** Keeps one copy of a repeated character group and drops a repeated word group together with everything after it. */
+const cutLoop = (text: string) => {
+  const collapsed = text.replace(new RegExp(CHARACTER_LOOP, 'giu'), '$1');
+  const words = collapsed.split(/\s+/).filter(Boolean);
+  const run = repeatedWordRun(words.map((word) => word.toLowerCase()));
+  return (run ? words.slice(0, run.start + run.length) : words).join(' ');
+};
+
+const quietestSplit = (samples: Float32Array) => {
+  const frame = SAMPLE_RATE / 50;
+  const from = Math.floor((samples.length * 0.3) / frame);
+  const to = Math.floor((samples.length * 0.7) / frame);
+  let best = Math.floor((from + to) / 2);
+  let bestEnergy = Infinity;
+  for (let f = from; f < to; f++) {
+    let energy = 0;
+    for (let i = f * frame; i < (f + 1) * frame; i++) energy += samples[i] * samples[i];
+    if (energy < bestEnergy) {
+      bestEnergy = energy;
+      best = f;
+    }
+  }
+  return best * frame + frame / 2;
+};
+
+const splitBySpeech = (samples: Float32Array, variant: Variant): Float32Array[] => {
   const vad = new sherpa.Vad(
     {
       sileroVad: {
         model: VAD_MODEL,
-        threshold: 0.5,
+        threshold: variant.threshold,
         minSpeechDuration: 0.25,
         minSilenceDuration: 0.5,
-        maxSpeechDuration: 20,
+        maxSpeechDuration: variant.maxSpeech,
         windowSize: 512,
       },
       sampleRate: SAMPLE_RATE,
@@ -238,39 +308,55 @@ const splitBySpeech = (samples: Float32Array): Float32Array[] => {
   return segments;
 };
 
-const decode = (recognizer: any, samples: Float32Array) => {
+const decode = (recognizer: any, samples: Float32Array, whisper: boolean) => {
   const stream = recognizer.createStream();
+  if (whisper) stream.setOption('max_tokens_per_second', MAX_TOKENS_PER_SECOND);
   stream.acceptWaveform({ sampleRate: SAMPLE_RATE, samples });
   recognizer.decode(stream);
   return recognizer.getResult(stream).text.trim() as string;
 };
 
-const worker = (engineId: string, language: Language, clips: Clip[]): RunResult => {
+const worker = (engineId: string, language: Language, clips: Clip[], variantId: string): RunResult => {
   const engine = ENGINES.find((candidate) => candidate.id === engineId)!;
+  const variant = VARIANTS.find((candidate) => candidate.id === variantId)!;
+  const whisper = engineId.startsWith('whisper');
   const loadStart = performance.now();
   const recognizer = new sherpa.OfflineRecognizer(engine.config(`${CACHE}/models/${engine.modelDir}`, language));
   const loadSeconds = (performance.now() - loadStart) / 1000;
+
+  let loopPieces = 0;
+  const decodePiece = (samples: Float32Array): string => {
+    const text = decode(recognizer, samples, whisper);
+    if (!isLoop(text)) return text;
+    loopPieces++;
+    if (!variant.loopGuard) return text;
+    const split = quietestSplit(samples);
+    const halves = [samples.subarray(0, split), samples.subarray(split)].map((half) => decode(recognizer, half, whisper));
+    return halves.map((half) => (isLoop(half) ? cutLoop(half) : half)).join(' ');
+  };
 
   let vadClips = 0;
   const results = clips.map((clip) => {
     const { samples } = sherpa.readWave(clip.wavPath);
     const audioSeconds = samples.length / SAMPLE_RATE;
+    loopPieces = 0;
     const start = performance.now();
     let hypothesis: string;
-    if (audioSeconds > MAX_UNSEGMENTED_SECONDS) {
+    if (variant.vadAll || audioSeconds > MAX_UNSEGMENTED_SECONDS) {
       vadClips++;
-      hypothesis = splitBySpeech(samples)
-        .map((segment) => decode(recognizer, segment))
+      hypothesis = splitBySpeech(samples, variant)
+        .map((segment) => decodePiece(segment))
         .join(' ');
     } else {
-      hypothesis = decode(recognizer, samples);
+      hypothesis = decodePiece(samples);
     }
     const seconds = (performance.now() - start) / 1000;
-    return { id: clip.id, reference: clip.reference, hypothesis, seconds, audioSeconds };
+    return { id: clip.id, reference: clip.reference, hypothesis, seconds, audioSeconds, loopPieces, loopLeft: isLoop(hypothesis) };
   });
 
   return {
     engine: engineId,
+    variant: variantId,
     language,
     loadSeconds,
     peakRamMb: process.resourceUsage().maxRSS / 1024,
@@ -279,14 +365,14 @@ const worker = (engineId: string, language: Language, clips: Clip[]): RunResult 
   };
 };
 
-const runWorker = (engineId: string, language: Language, clips: Clip[], clipsFile: string): RunResult => {
+const runWorker = (engineId: string, language: Language, clips: Clip[], clipsFile: string, variantId: string): RunResult => {
   writeFileSync(clipsFile, JSON.stringify(clips));
-  const result = spawnSync(process.execPath, [import.meta.filename, 'worker', engineId, language, clipsFile], {
+  const result = spawnSync(process.execPath, [import.meta.filename, 'worker', engineId, language, clipsFile, variantId], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
     maxBuffer: 64 * 1024 * 1024,
   });
-  if (result.status !== 0) throw new Error(`worker ${engineId} ${language} failed`);
+  if (result.status !== 0) throw new Error(`worker ${engineId} ${language} ${variantId} failed`);
   return JSON.parse(result.stdout.trim().split('\n').pop()!);
 };
 
@@ -362,6 +448,31 @@ const buildReport = (results: RunResult[], clipCounts: Record<Language, number>,
   ].join('\n');
 };
 
+/** Numbers only, no transcripts. Own clips are private. */
+const buildOwnReport = (results: RunResult[]) => {
+  const clipLabels = results[0]?.clips.map((clip, index) => `c${index + 1}`) ?? [];
+  const rows = results.map((result) => {
+    const scores = scoreRun(result);
+    const t = totals(scores);
+    const audio = result.clips.reduce((sum, clip) => sum + clip.audioSeconds, 0);
+    const decodeSeconds = result.clips.reduce((sum, clip) => sum + clip.seconds, 0);
+    const loopPieces = result.clips.reduce((sum, clip) => sum + clip.loopPieces, 0);
+    const loopLeft = result.clips.filter((clip) => clip.loopLeft).length;
+    const perClip = scores.map((score) => pct(score.wordErrors / score.referenceWords)).join(' | ');
+    const label = VARIANTS.find((variant) => variant.id === result.variant)?.label ?? result.variant;
+    return `| ${result.engine} | ${result.variant} ${label} | ${pct(t.wer)} | ${pct(t.cer)} | ${loopPieces} / ${loopLeft} | ${(decodeSeconds / audio).toFixed(2)} | ${result.peakRamMb.toFixed(0)} MB | ${perClip} |`;
+  });
+  return [
+    '# Own clips',
+    '',
+    `Date: ${new Date().toISOString().slice(0, 10)}. Loops: pieces flagged on first decode / clips still flagged in the final text.`,
+    '',
+    `| Engine | Variant | WER | CER | Loops | RTF | Peak RAM | ${clipLabels.join(' | ')} |`,
+    `|---|---|---|---|---|---|---|${clipLabels.map(() => '---').join('|')}|`,
+    ...rows,
+  ].join('\n');
+};
+
 const evaluate = (set: string) => {
   const reportOnly = set === 'report';
   const resultsSet = set === 'own' ? 'own' : 'public-round2';
@@ -382,20 +493,25 @@ const evaluate = (set: string) => {
     if (languageClips.length === 0) continue;
     for (const engine of engines) {
       if (engine.languages && !engine.languages.includes(language)) continue;
-      const resultFile = `${resultsDir}/${engine.id}-${language}.json`;
+      const own = set === 'own';
+      const wanted = process.env.VARIANTS?.split(',');
+      const variants = (own && engine.id.startsWith('whisper') ? VARIANTS : [VARIANTS[0]]).filter((variant) => !wanted || wanted.includes(variant.id));
+      for (const variant of variants) {
+      const resultFile = `${resultsDir}/${engine.id}-${language}${own ? `-${variant.id}` : ''}.json`;
       const cached = existsSync(resultFile) ? (JSON.parse(readFileSync(resultFile, 'utf8')) as RunResult) : undefined;
       if (cached && cached.clips.length === languageClips.length && !process.env.FORCE) {
         results.push(cached);
         continue;
       }
       if (reportOnly) continue;
-      console.error(`${engine.id} ${language}`);
+      console.error(`${engine.id} ${language} ${variant.id}`);
       try {
-        const result = runWorker(engine.id, language, languageClips, `${resultsDir}/clips-${language}.json`);
+        const result = runWorker(engine.id, language, languageClips, `${resultsDir}/clips-${language}.json`, variant.id);
         writeFileSync(resultFile, JSON.stringify(result, null, 2));
         results.push(result);
       } catch (error) {
-        console.error(`FAILED ${engine.id} ${language}: ${(error as Error).message}`);
+        console.error(`FAILED ${engine.id} ${language} ${variant.id}: ${(error as Error).message}`);
+      }
       }
     }
   }
@@ -409,14 +525,14 @@ const evaluate = (set: string) => {
   mkdirSync('reports', { recursive: true });
   const prefix = set === 'own' ? 'own' : 'public-round2';
   const reportPath = `reports/${prefix}-${new Date().toISOString().slice(0, 10)}.md`;
-  writeFileSync(reportPath, buildReport(results, clipCounts, audioSeconds));
+  writeFileSync(reportPath, set === 'own' ? buildOwnReport(results) : buildReport(results, clipCounts, audioSeconds));
   console.error(`wrote ${reportPath}`);
 };
 
 const [mode, ...args] = process.argv.slice(2);
 if (mode === 'worker') {
-  const [engineId, language, clipsFile] = args;
-  console.log(JSON.stringify(worker(engineId, language as Language, JSON.parse(readFileSync(clipsFile, 'utf8')))));
+  const [engineId, language, clipsFile, variantId] = args;
+  console.log(JSON.stringify(worker(engineId, language as Language, JSON.parse(readFileSync(clipsFile, 'utf8')), variantId)));
 } else {
   evaluate(mode ?? 'public');
 }

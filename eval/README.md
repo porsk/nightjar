@@ -39,13 +39,25 @@ docker compose run --rm --build eval
 
 ## Own clips
 
-Put files in `clips/own/`:
+Put files in a language folder, `clips/own/hu/` or `clips/own/en/` (`.wav`, `.m4a` or `.webm`), each with a `.txt`
+reference next to it. Any file name works (the app's recording UUIDs are fine):
 
-- `hu-morning-walk.wav` (or `.m4a` / `.webm`)
-- `hu-morning-walk.txt` with the reference text
+- `clips/own/hu/morning-walk.webm`
+- `clips/own/hu/morning-walk.txt`
 
-The name must start with `hu-` or `en-`. Then run `docker compose run --rm --build eval own`.
-Report: `reports/own-<date>.md`.
+Then run `docker compose run --rm --build eval own`. Clips, cached results and `reports/own-*` are gitignored: they are private.
+Report: `reports/own-<date>.md`, numbers only (no transcripts). Transcripts are in `.cache/results/own/`.
+
+Whisper engines run with the production decoder settings (`max_tokens_per_second` 25, clips up to 25 s decoded whole, longer ones split
+by Silero VAD) and are run once per pipeline variant (`VARIANTS=P0,P2` to pick some). Other engines run P0 only.
+
+| Variant | What changes |
+|---|---|
+| P0 | production |
+| P1a / P1b | VAD on every clip, pieces up to 10 s / 15 s |
+| P2 | P0 plus loop guard: a piece whose output loops (same word group or 3+ characters three times in a row, or gzip ratio above 2.4) is decoded again in two halves split at the quietest point; a half that still loops has the repeat cut |
+| P3 | VAD on every clip, threshold 0.35 |
+| P4 / P5 | P1b / P3 plus loop guard |
 
 ## Scoring (`score.ts`)
 
@@ -61,7 +73,7 @@ Both the old (round 1) and the new scoring are reported.
   inconsistent output.
 - Accents are kept: a missing accent is a wrong word.
 - WER and CER are errors summed over all clips divided by reference length.
-- Clips longer than 25 s are split with Silero VAD.
+- Clips longer than 25 s are split with Silero VAD. Whisper decodes with `max_tokens_per_second` 25, like the app (cached public results from before this setting are not re-run).
 - RTF is decode time divided by audio length (model load excluded). Peak RAM is the worker process max RSS.
 
 ## Adding a cloud engine later (for example Soniox)

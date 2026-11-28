@@ -28,6 +28,8 @@ describe('003-voice-entries: shared schemas', () => {
         state: 'downloading',
         downloadedBytes: 10,
         totalBytes: 100,
+        activeModel: 'm1',
+        models: [],
       }).success,
     ).toBe(true)
     expect(liveEventSchema.safeParse({ type: 'other' }).success).toBe(false)
@@ -72,6 +74,18 @@ describe('003-voice-entries: shared schemas', () => {
         downloadedBytes: 1,
         totalBytes: 1,
         backlogCount: 0,
+        activeModel: 'm1',
+        models: [
+          {
+            id: 'm1',
+            state: 'downloaded',
+            downloadBytes: 1,
+            diskBytes: 1,
+            downloadedBytes: 0,
+            useWhenReady: false,
+            error: null,
+          },
+        ],
       }).success,
     ).toBe(true)
   })

@@ -42,3 +42,11 @@ export const formatTimer = (milliseconds: number) => {
 /** "3.2 MB" or "3,2 MB". */
 export const formatSize = (bytes: number, language: Language) =>
   `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(bytes / 1_000_000)} MB`
+
+/** "564 MB" under 1 GB, "1,1 GB" or "1.1 GB" from 1 GB. A non-breaking space keeps the unit with the number. */
+export function formatModelSize(bytes: number, language: Language) {
+  if (bytes < 1_000_000_000) {
+    return `${new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(bytes / 1_000_000)}\u00a0MB`
+  }
+  return `${new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1_000_000_000)}\u00a0GB`
+}

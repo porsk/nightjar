@@ -195,6 +195,14 @@ try {
   if (found.total !== 1 || !found.results[0]?.snippet.includes('<mark>ztűrő</mark>')) {
     throw new Error(`search after the upgrade did not find the old entry: ${JSON.stringify(found)}`)
   }
+  const transcription = (await api('/api/v1/admin/transcription', { cookie: upgradedCookie }))
+    .json as { activeModel: string; models: { id: string }[] }
+  if (
+    transcription.activeModel !== 'whisper-large-v3-turbo-int8' ||
+    transcription.models.length < 2
+  ) {
+    throw new Error(`model settings after the upgrade are wrong: ${JSON.stringify(transcription)}`)
+  }
   console.log(`ok: ${String(after.length)} entries intact and searchable after the upgrade`)
 } catch (error) {
   console.error(error)

@@ -1,0 +1,1 @@
+ALTER TABLE "instance_settings" ALTER COLUMN "model_downloaded_bytes" SET DATA TYPE bigint;

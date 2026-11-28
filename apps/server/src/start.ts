@@ -6,7 +6,7 @@ import { serializeFullError, type Logger } from './logger.ts'
 import { createAuth, type Auth } from './modules/auth/auth.ts'
 import { issueSetupCode } from './modules/auth/setup-code.ts'
 import { createFakeTranscriber } from './modules/transcription/fake-transcriber.ts'
-import { defaultModel, supportedModels, type ModelList } from './modules/transcription/models.ts'
+import { supportedModels, type ModelList } from './modules/transcription/models.ts'
 import { createTranscriptionService } from './modules/transcription/service.ts'
 import { createSherpaTranscriber } from './modules/transcription/sherpa-transcriber.ts'
 import { createTranscribeHandler } from './modules/transcription/transcribe-job.ts'
@@ -56,12 +56,11 @@ export async function start({
     logger,
     models,
   })
-  const model = defaultModel(models)
   const createTranscriber: TranscriberFactory =
     transcriber ??
     (config.NIGHTJAR_TRANSCRIBER === 'fake'
       ? createFakeTranscriber().factory
-      : () => createSherpaTranscriber(model, storage.localPath(modelKey(model.id))))
+      : (model) => createSherpaTranscriber(model, storage.localPath(modelKey(model.id))))
   const transcribe = createTranscribeHandler({
     database,
     storage,
@@ -69,6 +68,7 @@ export async function start({
     metrics,
     logger,
     createTranscriber,
+    models,
     hasQueuedJobs: jobs.hasQueuedJobs,
   })
   let auth: Auth | undefined

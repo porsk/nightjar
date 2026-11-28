@@ -16,7 +16,7 @@ const once = <T>(run: () => Promise<T>) => {
 }
 
 const usersTable =
-  "create table users (id uuid); create table instance_settings (id int primary key, transcription_enabled boolean not null default false, model_download_state text not null default 'idle', model_downloaded_bytes integer not null default 0, auth_secret text not null, setup_code_hash text, updated_at timestamptz not null default now());"
+  "create table users (id uuid); create table instance_settings (id int primary key, transcription_enabled boolean not null default false, model_download_state text not null default 'idle', model_downloaded_bytes integer not null default 0, active_model text not null default 'whisper-large-v3-turbo-int8', model_download_id text, model_download_use boolean not null default false, model_download_error text, auth_secret text not null, setup_code_hash text, updated_at timestamptz not null default now());"
 const shippedMigrations = join(import.meta.dirname, '../migrations')
 
 describe('007-observability: health, migrations and metrics against a real Postgres', () => {

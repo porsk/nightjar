@@ -58,6 +58,11 @@ export function createStorage(dataDir: string) {
     /** For programs that need a real path, like ffmpeg. */
     localPath: locate,
 
+    /** Deletes a folder with everything in it. A folder that is already gone is fine. */
+    removeFolder: async (key: string) => {
+      await rm(locate(key), { recursive: true, force: true })
+    },
+
     makeFolder: async (key: string) => {
       await mkdir(locate(key), { recursive: true })
     },

@@ -19,10 +19,116 @@
         }
       ],
       "files": [
-        { "name": "turbo-encoder.int8.onnx", "bytes": 674716297 },
-        { "name": "turbo-decoder.int8.onnx", "bytes": 361080764 },
-        { "name": "turbo-tokens.txt", "bytes": 816730 },
-        { "name": "silero_vad.onnx", "bytes": 643854 }
+        {
+          "name": "turbo-encoder.int8.onnx",
+          "bytes": 674716297
+        },
+        {
+          "name": "turbo-decoder.int8.onnx",
+          "bytes": 361080764
+        },
+        {
+          "name": "turbo-tokens.txt",
+          "bytes": 816730
+        },
+        {
+          "name": "silero_vad.onnx",
+          "bytes": 643854
+        }
+      ]
+    },
+    {
+      "id": "whisper-large-v3-int8",
+      "label": "Whisper large-v3 int8",
+      "downloads": [
+        {
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-large-v3.tar.bz2",
+          "sha256": "2d0e134b3b5fc4a0533baf24a0c9d473b629aa47f030af0a165a05f461df7a03",
+          "bytes": 1068482488,
+          "archive": true
+        },
+        {
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+          "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+          "bytes": 643854,
+          "archive": false
+        }
+      ],
+      "files": [
+        {
+          "name": "large-v3-encoder.int8.onnx",
+          "bytes": 766671985
+        },
+        {
+          "name": "large-v3-decoder.int8.onnx",
+          "bytes": 1008265203
+        },
+        {
+          "name": "large-v3-tokens.txt",
+          "bytes": 816730
+        },
+        {
+          "name": "silero_vad.onnx",
+          "bytes": 643854
+        }
+      ]
+    },
+    {
+      "id": "whisper-large-v3-turbo-fp32",
+      "label": "Whisper large-v3-turbo fp32",
+      "downloads": [
+        {
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-turbo/resolve/main/turbo-encoder.onnx",
+          "sha256": "1b960f278564fb8bbacd544d4f85f4dd6d8a64d3aa89543d8f2c4021c926f976",
+          "bytes": 735920,
+          "archive": false
+        },
+        {
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-turbo/resolve/main/turbo-encoder.weights",
+          "sha256": "746f879ecf066450ab0cdecc05383380b85157270ff6c0a9fb7cfdd917036e12",
+          "bytes": 2600325120,
+          "archive": false
+        },
+        {
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-turbo/resolve/main/turbo-decoder.onnx",
+          "sha256": "b24db5d90fa230c5eaa6b823d74862ced9e0d1dc3e01ec46601968e8db0e09ec",
+          "bytes": 636209532,
+          "archive": false
+        },
+        {
+          "url": "https://huggingface.co/csukuangfj/sherpa-onnx-whisper-turbo/resolve/main/turbo-tokens.txt",
+          "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+          "bytes": 816730,
+          "archive": false
+        },
+        {
+          "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx",
+          "sha256": "9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6",
+          "bytes": 643854,
+          "archive": false
+        }
+      ],
+      "files": [
+        {
+          "name": "turbo-encoder.onnx",
+          "bytes": 735920
+        },
+        {
+          "name": "turbo-encoder.weights",
+          "bytes": 2600325120
+        },
+        {
+          "name": "turbo-decoder.onnx",
+          "bytes": 636209532
+        },
+        {
+          "name": "turbo-tokens.txt",
+          "bytes": 816730
+        },
+        {
+          "name": "silero_vad.onnx",
+          "bytes": 643854
+        }
       ]
     }
   ]

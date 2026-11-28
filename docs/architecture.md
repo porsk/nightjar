@@ -123,7 +123,8 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 - Files: `/data/media/<user_id>/recordings/<recording_id>.<ext>` (original upload, as is) and
   `/data/models/<model_id>/`. Only the storage module builds these paths.
 - Live updates (SSE `/api/v1/events`, per user): `recording.updated { entryId, recordingId, status }`;
-  admins also get `model.updated { state, downloadedBytes, totalBytes }`.
+  admins also get `model.updated { state, downloadedBytes, totalBytes, activeModel, models }` (`models` is the whole
+  list with the state of each model).
 - Jobs: pg-boss queue `transcribe` (policy `short`, key = recording id, 2 retries), taken one at a time by `worker.ts`.
   The handler only works on recordings still `pending` or `transcribing`, so a duplicate job is a no-op, and a
   transcript the user edited is never overwritten. Job log lines carry `jobId` and the `requestId` that queued it.
@@ -131,7 +132,7 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
   Postgres `NOTIFY` on channel `nightjar_events`; every web process `LISTEN`s and forwards to its own browsers.
 - Data folder: `media/<user_id>/recordings/<id>.<ext>` (original), `models/<model_id>/` (model files),
   `models/<model_id>.<n>.part` (download in progress), `tmp/` (uploads and WAVs while a job runs, emptied after).
-- The model download state (idle, downloading, failed) and its progress are saved in `instance_settings` (about once a second) and announced with `NOTIFY`, so any process can read them.
+- `instance_settings` also holds `active_model` (id of the model new jobs use) and the download slot: `model_download_state` (idle, downloading, failed), `model_downloaded_bytes`, `model_download_id` (which model), `model_download_use` (switch when done) and `model_download_error` (`download_failed` / `disk_full`). Progress is saved about once a second and announced with `NOTIFY`, so any process can read it. One download at a time.
 - Limits: uploads up to 200 MB and recordings up to 3 hours (one constant, `maxRecordingMs`), so a recording is never too big to hold in memory while it is transcribed. A job that runs longer than 5 times the audio length (at least 10 minutes) counts as stuck and is retried; on start, recordings left in `transcribing` are queued again.
 - Not in M1: journals, title, mood, favourites, tags, photos, prompts, suggestions, access tokens, `entries.time_zone`
   (journals and title are open questions in `docs/specs/m1-summary.md`).
@@ -157,8 +158,12 @@ instance_settings (one row, no user)       pg-boss jobs { userId, recordingId }
 
 Transcription is off by default (D-23). When the admin turns it on in Settings, the model downloads
 (checksum-verified, with progress) into `/data/models`, or is used as is if already there. Nothing is baked into the
-image (hundreds of MB). A small JSON list in the repo names the supported models. Default model: Whisper large-v3-turbo
-int8 (D-20); the final pick comes after the owner's own clips.
+image (hundreds of MB). A small JSON list in the repo names the supported models: Whisper large-v3-turbo int8 (default,
+D-20), large-v3 int8 and turbo full precision for older CPUs (D-47, spec 009). The admin picks the active model in
+Settings; downloaded models stay on disk until deleted. A job reads the active model when it starts; the transcribe job
+drops the loaded transcriber before it creates one for another model, so only one model is in memory. Each transcript
+stores the id of the model that wrote it, and "transcribe again" (`POST /api/v1/recordings/:id/retranscribe`) queues a
+recording again with the active model; the old transcript stays until the new one is saved. A confirmed replace of an edited transcript is kept in `recordings.replace_edited` (cleared when the job ends), so a restart that queues the recording again does not lose it.
 
 ## 7. Search
 

@@ -3,7 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSyn
 import path from 'node:path'
 import { request as playwrightRequest } from '@playwright/test'
 import { Client } from 'pg'
-import { modelFiles, testModelId } from '../../apps/server/test/support/model-server.ts'
+import { modelFilesOf, testModelId } from '../../apps/server/test/support/model-server.ts'
 import { e2eServerFiles } from './server-files.ts'
 
 export const password = 'correct horse battery'
@@ -24,8 +24,10 @@ export async function resetDatabase() {
   try {
     await client.query('truncate users cascade')
     await client.query(
-      'update instance_settings set transcription_enabled = false, setup_code_hash = $1',
-      [createHash('sha256').update(setupCodeFromLog()).digest('hex')],
+      `update instance_settings set transcription_enabled = false, setup_code_hash = $1,
+         active_model = $2, model_download_state = 'idle', model_downloaded_bytes = 0,
+         model_download_id = null, model_download_use = false, model_download_error = null`,
+      [createHash('sha256').update(setupCodeFromLog()).digest('hex'), testModelId],
     )
   } finally {
     await client.end()
@@ -204,10 +206,10 @@ export const uniqueIp = () =>
 const fixtureFolder = path.join(import.meta.dirname, '..', 'fixtures')
 
 /** Puts files of the right size where the model is expected, so transcription counts as ready. */
-export function seedModelFiles() {
-  const folder = path.join(e2eServerFiles.dataDir, 'models', testModelId)
+export function seedModelFiles(modelId = testModelId) {
+  const folder = path.join(e2eServerFiles.dataDir, 'models', modelId)
   mkdirSync(folder, { recursive: true })
-  for (const [name, data] of Object.entries(modelFiles)) {
+  for (const [name, data] of Object.entries(modelFilesOf[modelId] ?? {})) {
     writeFileSync(path.join(folder, name), Buffer.alloc(data.length))
   }
 }
@@ -236,7 +238,7 @@ export async function seedRecording(options: {
   entryId: string
   status: 'pending' | 'transcribing' | 'done' | 'failed' | 'skipped'
   language?: 'hu' | 'en' | 'auto'
-  transcript?: { text: string; language: 'hu' | 'en'; isUserEdited?: boolean }
+  transcript?: { text: string; language: 'hu' | 'en'; isUserEdited?: boolean; model?: string }
   clip?: 'en-sample.wav' | 'hu-sample.wav'
 }) {
   return withDatabase(async (client) => {
@@ -267,10 +269,11 @@ export async function seedRecording(options: {
     if (options.transcript) {
       await client.query(
         `insert into transcripts (user_id, recording_id, model, language, text, is_user_edited)
-         values ($1, $2, 'fake', $3, $4, $5)`,
+         values ($1, $2, $3, $4, $5, $6)`,
         [
           userId,
           id,
+          options.transcript.model ?? 'fake',
           options.transcript.language,
           options.transcript.text,
           options.transcript.isUserEdited ?? false,
@@ -296,9 +299,12 @@ export async function readRecordings() {
 
 export async function readTranscripts() {
   return withDatabase(async (client) => {
-    const result = await client.query<{ text: string; language: string; is_user_edited: boolean }>(
-      'select text, language, is_user_edited from transcripts order by created_at',
-    )
+    const result = await client.query<{
+      text: string
+      language: string
+      is_user_edited: boolean
+      model: string
+    }>('select text, language, is_user_edited, model from transcripts order by created_at')
     return result.rows
   })
 }

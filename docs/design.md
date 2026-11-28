@@ -32,6 +32,9 @@ entries beside the record button, Entry as timeline list + reading pane side by 
 M1 mockups (all screens and states, 390 / 1280 / 1440, dark + light, screen switcher): `design/alkony/m1.html`
 (screenshots in `design/alkony/screenshots/m1/`).
 
+Spec 009 mockups (model list in Settings, recording menu with "Átírás újra", edited-transcript confirm, model label):
+`design/alkony/009-transcription-models.html` (screenshots at 390 / 1280, dark + light in `design/alkony/screenshots/009/`).
+
 ## Direction feedback
 
 | Round | Feedback |

@@ -1,11 +1,3 @@
-| D-45 | 11-27 | Faster CI: skip CI for docs-only changes, split verify into parallel jobs (checks + unit, API, e2e per browser), open a PR only when the branch is verified locally and review fixes are in, fix flaky tests at the root. Parallel e2e within one browser later | Owner |
-| D-44 | 11-27 | M1 round 2 screens approved as they are (small differences from the mockups accepted). Claude may open and merge the pre-0.2.0 PRs and the 0.2.0 release PR once smoke test and CI are green | Owner |
-| D-43 | 11-27 | Sign in with username + password instead of email (no email can be sent). Setup asks for a username, a name ("What should we call you?") and a password; the name is used in the greeting and can be changed in Settings. Email is not collected for now; it can be added later for OAuth or a hosted version. Breaking DB change is fine: nobody has installed 0.1.0 | Owner |
-| D-40 | 11-27 | Maximum recording length 3 hours (recorder and uploads), file size limit stays 200 MB. Keeps transcription RAM around 3 GB peak on an 8 GB box. Behind Cloudflare proxy, uploads above 100 MB fail at Cloudflare | Owner has a 1.5 h recording |
-| D-41 | 11-27 | No real-model accuracy check in nightly for now (Hungarian: one short clip is too noisy; English dropped too). The real model is exercised by the release smoke test | Owner |
-| D-42 | 11-27 | Release 0.2.0 (voice + search) after a smoke test of the real image | Owner OK |
-| D-38 | 11-26 | Visual checks: a side-by-side page (mockup vs real app, phone + desktop, dark + light, with a list of differences) for the owner after each round of screens; once the owner approves the real screens, Playwright reference screenshots (toHaveScreenshot) guard them against unintended changes | Owner |
-| D-39 | 11-26 | Replaces the reference-screenshot part of D-38: no pixel reference images (too much churn while the UI grows). Instead, e2e has automatic layout checks (no sideways scroll, nothing clipped or overlapping) at phone and desktop width, and the owner reviews the side-by-side page after each round of screens | Owner |
 # Decisions
 
 Newest at the bottom. To change a decision, add a new entry that replaces the old one.
@@ -14,6 +6,7 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 
 | # | Question | Options |
 |---|---|---|
+| O-6 | Model folders of a model that a later release removes from `models.json` stay on disk with no Delete button | Leave, or list and delete unknown folders in Settings. Decide when a model is first dropped |
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
 
 ## Requirements the owner asked for
@@ -56,6 +49,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-21 | Public demo instance: log in and try it, sample data, reset on a schedule | backlog. Keep sample data as a seed script and allow a demo flag later |
 | S-22 | Ready-made Grafana dashboard file in the repo | backlog (owner: good for later) |
 | S-23 | Admin "System" page: queue length, transcription speed, recent errors | backlog (owner: good for later) |
+| S-24 | Transcribe all recordings again in bulk (for example after switching to Large-v3) | suggested (not in spec 009) |
+| S-25 | Check the host's free RAM and warn before switching to a heavy model like Large-v3 | suggested (not in spec 009) |
 
 ## Decided
 
@@ -99,6 +94,16 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-36 | 11-26 | Spec 001 engineering calls: auth secret generated on first start and stored in `instance_settings`; `NIGHTJAR_TRUST_PROXY` is a hop count for reverse proxies (the proxy must keep the Host header); global 300/min per-IP limit, 10/min on sign-in and setup; fonts bundled; only sign-in, sign-out and get-session exposed, sign-up off; setup code stored as a hash in `instance_settings`; the wizard's transcription-on saves the flag, the download comes with 003 | Orchestrator, owner informed |
 | D-37 | 11-26 | Logo: the minimalist mockup bird (option A), `design/logo/nightjar.svg` | Owner pick |
 | D-46 | 11-27 | Search matches anywhere inside words (`pg_trgm`), no stemming; owner chose B over word-start matching on 2026-11-27. Replaces the full-text part of P-04 | Owner: "egy" found but not highlighted, "beje" found nothing in 0.2.0 |
+| D-47 | 11-27 | Second transcription model: Whisper large-v3 int8 (sherpa-onnx) next to turbo; turbo stays the default. Instance-wide, admin-only model list in Settings > Transcription: download, use, delete. Picking a model that is not downloaded downloads it, then makes it active; downloaded models are kept when switching; the active one can't be deleted. A job uses the model active when it starts, switching never interrupts a running job, one model in memory at a time. A third model, Turbo full precision (fp32, 3,2 GB, about 4 GB RAM), is for older CPUs without int8 acceleration (owner's i5-6500T, no VNNI); no loop guard for them. Spec 009 | Owner's 4-core / 8 GB box, own Hungarian clips: large-v3 ~18% WER vs turbo ~26%, but RTF ~2.7 vs 0.4 and peak RAM ~4.7 GB vs 2.1 GB |
+| D-48 | 11-27 | "Transcribe again" per recording (entry owner, recording menu) with the active model: confirm first if the transcript was edited by hand, the old transcript stays until the new one arrives and stays on failure. Every transcript keeps the id of the model that wrote it and the card shows it quietly (existing transcripts are turbo). Bulk re-transcribe and RAM checks are not in scope (S-24, S-25). Spec 009 | Owner: redo old recordings with the better model and compare |
+| D-45 | 11-27 | Faster CI: skip CI for docs-only changes, split verify into parallel jobs (checks + unit, API, e2e per browser), open a PR only when the branch is verified locally and review fixes are in, fix flaky tests at the root. Parallel e2e within one browser later | Owner |
+| D-44 | 11-27 | M1 round 2 screens approved as they are (small differences from the mockups accepted). Claude may open and merge the pre-0.2.0 PRs and the 0.2.0 release PR once smoke test and CI are green | Owner |
+| D-43 | 11-27 | Sign in with username + password instead of email (no email can be sent). Setup asks for a username, a name ("What should we call you?") and a password; the name is used in the greeting and can be changed in Settings. Email is not collected for now; it can be added later for OAuth or a hosted version. Breaking DB change is fine: nobody has installed 0.1.0 | Owner |
+| D-40 | 11-27 | Maximum recording length 3 hours (recorder and uploads), file size limit stays 200 MB. Keeps transcription RAM around 3 GB peak on an 8 GB box. Behind Cloudflare proxy, uploads above 100 MB fail at Cloudflare | Owner has a 1.5 h recording |
+| D-41 | 11-27 | No real-model accuracy check in nightly for now (Hungarian: one short clip is too noisy; English dropped too). The real model is exercised by the release smoke test | Owner |
+| D-42 | 11-27 | Release 0.2.0 (voice + search) after a smoke test of the real image | Owner OK |
+| D-38 | 11-26 | Visual checks: a side-by-side page (mockup vs real app, phone + desktop, dark + light, with a list of differences) for the owner after each round of screens; once the owner approves the real screens, Playwright reference screenshots (toHaveScreenshot) guard them against unintended changes | Owner |
+| D-39 | 11-26 | Replaces the reference-screenshot part of D-38: no pixel reference images (too much churn while the UI grows). Instead, e2e has automatic layout checks (no sideways scroll, nothing clipped or overlapping) at phone and desktop width, and the owner reviews the side-by-side page after each round of screens | Owner |
 
 ## Proposed (approved together with the plan)
 

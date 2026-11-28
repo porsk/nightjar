@@ -4,41 +4,58 @@ import { createWriteStream } from 'node:fs'
 import { readdir, rename, rm } from 'node:fs/promises'
 import { basename, join, relative, sep } from 'node:path'
 import { Readable, Transform } from 'node:stream'
+import type { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { ReadableStream as WebStream } from 'node:stream/web'
 import type { Logger } from '../../logger.ts'
 import { modelKey, type Storage } from '../../storage.ts'
 import { downloadBytes, isModelReady, type ModelInfo } from './models.ts'
 
+export type DownloadError = 'download_failed' | 'disk_full'
+
 export interface DownloadStatus {
+  /** The model that is downloading or failed. `undefined` when nothing is going on. */
+  modelId: string | undefined
   state: 'idle' | 'downloading' | 'failed'
   downloadedBytes: number
   totalBytes: number
+  error: DownloadError | null
 }
 
 interface Options {
   storage: Storage
-  model: ModelInfo
   logger: Logger
   /** Called when the state changes and while bytes arrive, at most a few times a second. */
   onChange: (status: DownloadStatus) => void
-  /** Called once the model files are in place. */
-  onReady: () => void
+  /** Called once the files of a model are in place. */
+  onReady: (modelId: string) => void
+  /** Opens the file a download is written to. Tests replace it to simulate a full disk. */
+  createWriter?: (path: string) => Writable
 }
 
-class DownloadError extends Error {}
+class DownloadFailure extends Error {}
 
 const progressIntervalMs = 1000
+
+const isDiskFull = (error: unknown) => (error as NodeJS.ErrnoException).code === 'ENOSPC'
 
 /** Unpacks into `folder`. Paths are relative to it, which keeps tar happy on every platform. */
 function untar(archive: string, folder: string): Promise<void> {
   const relativeArchive = relative(folder, archive).split(sep).join('/')
   return new Promise((resolve, reject) => {
-    const child = spawn('tar', ['-xf', relativeArchive], { cwd: folder, stdio: 'ignore' })
+    const child = spawn('tar', ['-xf', relativeArchive], {
+      cwd: folder,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    let diskFull = false
+    child.stderr.on('data', (chunk: Buffer) => {
+      if (chunk.toString().includes('No space left on device')) diskFull = true
+    })
     child.once('error', reject)
     child.once('close', (code) => {
       if (code === 0) resolve()
-      else reject(new DownloadError('the archive could not be unpacked'))
+      else if (diskFull) reject(Object.assign(new Error('the disk is full'), { code: 'ENOSPC' }))
+      else reject(new DownloadFailure('the archive could not be unpacked'))
     })
   })
 }
@@ -51,9 +68,20 @@ async function findFile(folder: string, name: string): Promise<string | undefine
 }
 
 /** Downloads the model files into the data folder, one download at a time. */
-export function createModelManager({ storage, model, logger, onChange, onReady }: Options) {
-  const totalBytes = downloadBytes(model)
-  let status: DownloadStatus = { state: 'idle', downloadedBytes: 0, totalBytes }
+export function createModelManager({
+  storage,
+  logger,
+  onChange,
+  onReady,
+  createWriter = (path) => createWriteStream(path),
+}: Options) {
+  let status: DownloadStatus = {
+    modelId: undefined,
+    state: 'idle',
+    downloadedBytes: 0,
+    totalBytes: 0,
+    error: null,
+  }
   let abort: AbortController | undefined
   let lastReport = 0
 
@@ -67,7 +95,7 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
 
   async function fetchTo(url: string, target: string, expectedHash: string, signal: AbortSignal) {
     const response = await fetch(url, { signal })
-    if (!response.ok || !response.body) throw new DownloadError('the download was refused')
+    if (!response.ok || !response.body) throw new DownloadFailure('the download was refused')
     const hash = createHash('sha256')
     const counter = new Transform({
       transform(chunk: Buffer, _encoding, done) {
@@ -76,16 +104,19 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
         done(null, chunk)
       },
     })
-    await pipeline(
-      Readable.fromWeb(response.body as WebStream),
-      counter,
-      createWriteStream(target),
-      { signal },
-    )
-    if (hash.digest('hex') !== expectedHash) throw new DownloadError('the checksum does not match')
+    await pipeline(Readable.fromWeb(response.body as WebStream), counter, createWriter(target), {
+      signal,
+    })
+    if (hash.digest('hex') !== expectedHash)
+      throw new DownloadFailure('the checksum does not match')
   }
 
-  async function place(item: ModelInfo['downloads'][number], downloaded: string, work: string) {
+  async function place(
+    model: ModelInfo,
+    item: ModelInfo['downloads'][number],
+    downloaded: string,
+    work: string,
+  ) {
     const folder = storage.localPath(modelKey(model.id))
     if (!item.archive) {
       await rename(downloaded, join(folder, basename(new URL(item.url).pathname)))
@@ -105,7 +136,7 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
     }
   }
 
-  async function run(signal: AbortSignal) {
+  async function run(model: ModelInfo, signal: AbortSignal) {
     await storage.makeFolder(modelKey(model.id))
     const work = storage.localPath(modelKey(model.id))
     const partials: string[] = []
@@ -116,27 +147,43 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
         const before = status.downloadedBytes
         await fetchTo(item.url, partial, item.sha256, signal)
         update({ downloadedBytes: before + item.bytes })
-        await place(item, partial, work)
+        await place(model, item, partial, work)
       }
-      if (!(await isModelReady(storage, model))) throw new DownloadError('files are missing')
+      if (!(await isModelReady(storage, model))) throw new DownloadFailure('files are missing')
     } finally {
       for (const partial of partials) await rm(partial, { force: true })
     }
   }
 
-  async function download(signal: AbortSignal) {
+  async function download(model: ModelInfo, signal: AbortSignal) {
     try {
-      await run(signal)
-      update({ state: 'idle', downloadedBytes: totalBytes })
+      await run(model, signal)
+      update({ state: 'idle', downloadedBytes: status.totalBytes })
       logger.info({ modelId: model.id }, 'model download finished')
-      onReady()
+      onReady(model.id)
     } catch (error) {
-      if (signal.aborted) return
+      if (signal.aborted) {
+        await storage.removeFolder(modelKey(model.id)).catch(() => undefined)
+        return
+      }
+      const diskFull = isDiskFull(error)
       logger.warn(
-        { modelId: model.id, reason: error instanceof DownloadError ? error.message : 'network' },
+        {
+          modelId: model.id,
+          reason: diskFull
+            ? 'disk_full'
+            : error instanceof DownloadFailure
+              ? error.message
+              : 'network',
+        },
         'model download failed',
       )
-      update({ state: 'failed', downloadedBytes: 0 })
+      await storage.removeFolder(modelKey(model.id)).catch(() => undefined)
+      update({
+        state: 'failed',
+        downloadedBytes: 0,
+        error: diskFull ? 'disk_full' : 'download_failed',
+      })
     }
   }
 
@@ -146,23 +193,29 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
     status: (): DownloadStatus => status,
 
     /**
-     * Starts downloading unless the files are already there or a download is running.
+     * Starts downloading a model unless its files are already there or a download is running.
      * Returns once the download has started, not when it is done.
      */
-    start: async () => {
+    start: async (model: ModelInfo) => {
       if (status.state === 'downloading') return
-      status = { ...status, state: 'downloading', downloadedBytes: 0 }
+      status = {
+        modelId: model.id,
+        state: 'downloading',
+        downloadedBytes: 0,
+        totalBytes: downloadBytes(model),
+        error: null,
+      }
       await running
-      if (status.state !== 'downloading') return
+      if (status.state !== 'downloading' || status.modelId !== model.id) return
       if (await isModelReady(storage, model)) {
-        update({ state: 'idle', downloadedBytes: totalBytes })
-        onReady()
+        status = { ...status, modelId: undefined, state: 'idle' }
+        onReady(model.id)
         return
       }
       abort = new AbortController()
       update({ state: 'downloading', downloadedBytes: 0 })
       logger.info({ modelId: model.id }, 'model download started')
-      running = download(abort.signal)
+      running = download(model, abort.signal)
     },
 
     /** Resolves when the running download has ended, successfully or not. */
@@ -172,7 +225,9 @@ export function createModelManager({ storage, model, logger, onChange, onReady }
     cancel: () => {
       abort?.abort()
       abort = undefined
-      if (status.state === 'downloading') update({ state: 'idle', downloadedBytes: 0 })
+      if (status.state === 'downloading') {
+        update({ modelId: undefined, state: 'idle', downloadedBytes: 0, totalBytes: 0 })
+      }
     },
   }
 }
