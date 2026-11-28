@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/porsk/nightjar/compare/nightjar-v0.3.0...nightjar-v0.4.0) (2026-11-28)
+
+
+### Features
+
+* cloud transcription with Soniox and Gladia ([#56](https://github.com/porsk/nightjar/issues/56)) ([d5c04b9](https://github.com/porsk/nightjar/commit/d5c04b926aead4954cb34f2ce4bb9619af3091f6))
+
+
+### Bug Fixes
+
+* **ci:** pick the previous release that is not the commit under test ([#54](https://github.com/porsk/nightjar/issues/54)) ([005adfc](https://github.com/porsk/nightjar/commit/005adfc3d19d9e9d9f14bb06cf4c4f4c536ebba4))
+
 ## [0.3.0](https://github.com/porsk/nightjar/compare/nightjar-v0.2.0...nightjar-v0.3.0) (2026-11-28)
 
 
