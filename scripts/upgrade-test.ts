@@ -21,13 +21,38 @@ const fixtures = [
 const docker = (...args: string[]) =>
   execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
 
+const git = (...args: string[]) =>
+  execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+
+/** Newest tag that does not point at the commit under test (its image may not be published yet). */
+function pickPreviousTag(
+  tagsNewestFirst: string[],
+  commitOf: (tag: string) => string,
+  commit: string,
+) {
+  const tag = tagsNewestFirst.find((name) => commitOf(name) !== commit)
+  if (!tag) throw new Error('no previous release found')
+  return tag
+}
+
 function previousImage() {
   if (process.argv[3]) return process.argv[3]
-  const tag = execFileSync(
-    'gh',
-    ['release', 'view', '--repo', 'porsk/nightjar', '--json', 'tagName', '--jq', '.tagName'],
-    { encoding: 'utf8' },
-  ).trim()
+  const releases = JSON.parse(
+    execFileSync(
+      'gh',
+      ['release', 'list', '--repo', 'porsk/nightjar', '--limit', '10', '--json', 'tagName'],
+      { encoding: 'utf8' },
+    ),
+  ) as { tagName: string }[]
+  const tag = pickPreviousTag(
+    releases.map((release) => release.tagName),
+    (name) =>
+      execFileSync('gh', ['api', `repos/porsk/nightjar/commits/${name}`, '--jq', '.sha'], {
+        encoding: 'utf8',
+      }).trim(),
+    process.env.GITHUB_SHA ?? git('rev-parse', 'HEAD'),
+  )
+  console.log(`previous release: ${tag}`)
   return `porsk/nightjar:${tag.slice(tag.lastIndexOf('v') + 1)}`
 }
 

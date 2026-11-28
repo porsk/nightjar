@@ -35,7 +35,7 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 - **AC-4** Given the wizard finished with "Most nem", then exactly one user exists with `is_admin = true`, the chosen `username` and `name`, the chosen `ui_language` and `time_zone`, `entry_language` equal to `ui_language`, `instance_settings.transcription_enabled = false`, and the browser is signed in and on Home.
 - **AC-5** Given the wizard finished with "Átírás bekapcsolása", then `transcription_enabled = true` and the model download has started (Settings shows the progress state from spec 003).
 - **AC-6** Given a user already exists, when `POST /api/v1/setup` is called, then it answers 409 `setup_done` and creates nothing; opening `/setup` in the browser redirects to login.
-- **AC-7** Given an empty database, when two setup requests arrive at the same time, then exactly one succeeds and the other gets 409.
+- **AC-7** Given an empty database, when two setup requests arrive at the same time, then exactly one succeeds (201), the other is refused (409 `setup_done`, or 403 `invalid_setup_code` when the first already used up the setup code), and exactly one user exists.
 - **AC-8** Given any state, when Better Auth's own sign-up endpoint is called, then it answers 403 and creates no user.
 - **AC-9** Given the admin account, when the correct username and password are submitted on the login screen, then the user lands on Home and the session cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` when served over https.
 - **AC-10** Given a wrong password, an unknown username or a username that is not valid, then the login screen shows the same alert ("Hibás felhasználónév vagy jelszó…", `role="alert"`) and the API returns the same error code and status for all cases.
@@ -62,7 +62,7 @@ Out (not now): more accounts or sign-up, password change or reset, OAuth, passke
 | AC-4 | | | DB row after setup | full wizard → Home, both languages | fake transcriber; the e2e helper reads the setup code from the captured server log |
 | AC-5 | | | flag true, download job started | wizard with transcription on → Settings shows progress | test model server (spec 003) |
 | AC-6 | | | 409 `setup_done` | `/setup` after setup → login | |
-| AC-7 | | | two parallel `POST /setup` → one 200, one 409, one user | | |
+| AC-7 | | | two parallel `POST /setup` → one 201, the other 409 or 403, one user | | |
 | AC-8 | | | sign-up route → 403, no row | | |
 | AC-9 | | | cookie flags in `Set-Cookie` | login → Home | `Secure` checked with `x-forwarded-proto: https` and trust proxy on |
 | AC-10 | | alert rendered with `role="alert"` | same status + code for wrong password, unknown and malformed username | wrong password shows alert | |

@@ -155,7 +155,9 @@ describe('001-setup-login: setup and login against a real Postgres', () => {
       setup({ username: 'first' }),
       setup({ username: 'second' }),
     ])
-    expect([first.statusCode, second.statusCode].sort()).toEqual([201, 409])
+    const codes = [first.statusCode, second.statusCode].sort()
+    expect(codes[0]).toBe(201)
+    expect([403, 409]).toContain(codes[1])
     expect(await userCount()).toBe(1)
   })
 
