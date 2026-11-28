@@ -2,6 +2,9 @@ services:
   eval:
     build: .
     cpus: 4
+    env_file:
+      - path: .env
+        required: false
     environment:
       THREADS: 4
     volumes:
