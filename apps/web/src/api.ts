@@ -17,10 +17,12 @@ import {
   recordingSchema,
   recordingsResponseSchema,
   transcriptSchema,
+  keyTestResultSchema,
   transcriptionAvailabilitySchema,
   transcriptionStatusSchema,
   type Recording,
   type Transcript,
+  type KeyTestResult,
   type TranscriptionAvailability,
   type TranscriptionStatus,
 } from '@nightjar/shared/recordings'
@@ -175,6 +177,24 @@ export const useModel = async (id: string): Promise<TranscriptionStatus> =>
 
 export const deleteModel = async (id: string): Promise<TranscriptionStatus> =>
   parse(transcriptionStatusSchema, await request('DELETE', modelPath(id)))
+
+const providerPath = (id: string) => `/api/v1/admin/transcription/providers/${id}`
+
+export const saveProviderKey = async (id: string, apiKey: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('PUT', `${providerPath(id)}/secrets`, { apiKey }))
+
+export const removeProviderKey = async (id: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('DELETE', `${providerPath(id)}/secrets`))
+
+/** Checks the typed key, or the saved one when none is given. */
+export const testProviderKey = async (id: string, apiKey?: string): Promise<KeyTestResult> =>
+  parse(
+    keyTestResultSchema,
+    await request('POST', `${providerPath(id)}/test`, apiKey === undefined ? {} : { apiKey }),
+  )
+
+export const useProvider = async (id: string): Promise<TranscriptionStatus> =>
+  parse(transcriptionStatusSchema, await request('POST', `${providerPath(id)}/use`))
 
 export const transcriptionAvailabilityQuery = queryOptions({
   queryKey: ['transcription', 'availability'],

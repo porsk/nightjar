@@ -1,4 +1,4 @@
-import type { ModelStatus, TranscriptionStatus } from '@nightjar/shared/recordings'
+import type { ModelStatus, ProviderStatus, TranscriptionStatus } from '@nightjar/shared/recordings'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -9,10 +9,12 @@ import {
   transcribeBacklog,
   transcriptionQuery,
   useModel,
+  useProvider,
 } from '../api.ts'
 import { formatModelSize } from '../format.ts'
 import { Dialog } from './dialog.tsx'
 import { Icon } from './icon.tsx'
+import { ProviderRow, RemoveKeyDialog, providerName } from './provider-row.tsx'
 import { useErrorText } from './use-error-text.ts'
 
 const megabytes = (bytes: number) => `${String(Math.round(bytes / 1_000_000))}\u00a0MB`
@@ -40,7 +42,10 @@ function ModelRow({ model, active, anyDownloading, busy, onDownload, onUse, onDe
   return (
     <div className={inUse ? 'mrow on' : 'mrow'} data-testid="model-row">
       <div className="mh">
-        <b>{name}</b>
+        <span className="nm">
+          <Icon name="chip" />
+          <b>{name}</b>
+        </span>
         {inUse ? (
           <span className="mstate on">
             <Icon name="check" />
@@ -180,7 +185,7 @@ function DeleteModelDialog({
   )
 }
 
-/** The admin block of Settings: switch transcription on, choose and download models, queue old recordings. */
+/** The admin block of Settings: switch transcription on, choose the engine, manage cloud keys, queue old recordings. */
 export function TranscriptionSettings() {
   const { t, i18n } = useTranslation()
   const errorText = useErrorText()
@@ -188,6 +193,7 @@ export function TranscriptionSettings() {
   const status = useQuery(transcriptionQuery)
   const [askHidden, setAskHidden] = useState(false)
   const [deleting, setDeleting] = useState<ModelStatus>()
+  const [removingKey, setRemovingKey] = useState<ProviderStatus>()
 
   const keep = (next: TranscriptionStatus) => {
     queryClient.setQueryData(transcriptionQuery.queryKey, next)
@@ -195,15 +201,23 @@ export function TranscriptionSettings() {
   const toggle = useMutation({ mutationFn: setTranscription, onSuccess: keep })
   const download = useMutation({ mutationFn: downloadModel, onSuccess: keep })
   const use = useMutation({ mutationFn: useModel, onSuccess: keep })
+  const useCloud = useMutation({ mutationFn: useProvider, onSuccess: keep })
   const backlog = useMutation({
     mutationFn: transcribeBacklog,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: transcriptionQuery.queryKey }),
   })
 
   if (!status.data) return null
-  const { enabled, state, totalBytes, backlogCount, activeModel, models } = status.data
+  const language = i18n.language === 'hu' ? 'hu' : 'en'
+  const { enabled, state, totalBytes, backlogCount, activeEngine, models, providers, usage } =
+    status.data
   const anyDownloading = models.some((model) => model.state === 'downloading')
-  const failure = [download, use].find((mutation) => mutation.isError)?.error
+  const failure = [download, use, useCloud].find((mutation) => mutation.isError)?.error
+  const activeProvider = providers.find((provider) => provider.id === activeEngine)
+  const activeName = activeProvider
+    ? providerName(t, (key) => i18n.exists(key), activeProvider)
+    : undefined
+  const busy = download.isPending || use.isPending || useCloud.isPending
 
   return (
     <>
@@ -214,9 +228,11 @@ export function TranscriptionSettings() {
             <div>
               <b id="transcription-label">{t('settings.transcription')}</b>
               <p>
-                {t('settings.transcriptionHint', {
-                  size: formatModelSize(totalBytes, i18n.language === 'hu' ? 'hu' : 'en'),
-                })}
+                {activeName
+                  ? t('settings.transcriptionHintCloud', { engine: activeName })
+                  : t('settings.transcriptionHint', {
+                      size: formatModelSize(totalBytes, language),
+                    })}
               </p>
             </div>
             <button
@@ -231,11 +247,19 @@ export function TranscriptionSettings() {
               }}
             />
           </div>
+          {state === 'needs_key' ? (
+            <div className="okline">
+              <Icon name="alert" />
+              {t('settings.engines.needsKey')}
+            </div>
+          ) : null}
           {state === 'ready' ? (
             <>
               <div className="okline">
-                <Icon name="check" />
-                {t('settings.model.ready')}
+                <Icon name={activeName ? 'cloud' : 'check'} />
+                {activeName
+                  ? t('settings.engines.cloudReady', { engine: activeName })
+                  : t('settings.model.ready')}
               </div>
               {backlogCount > 0 && !askHidden ? (
                 <div className="ask">
@@ -268,17 +292,21 @@ export function TranscriptionSettings() {
         </div>
         {enabled ? (
           <div className="srow">
-            <div className="fl" id="models-label">
-              {t('settings.models.title')}
+            <div className="fl" id="engines-label">
+              {t('settings.engines.title')}
             </div>
-            <div className="mlist" role="group" aria-labelledby="models-label">
+            <div className="egroup" role="group" aria-labelledby="engines-local">
+              <div className="eg-h" id="engines-local">
+                <Icon name="chip" />
+                {t('settings.engines.local')}
+              </div>
               {models.map((model) => (
                 <ModelRow
                   key={model.id}
                   model={model}
-                  active={model.id === activeModel}
+                  active={model.id === activeEngine}
                   anyDownloading={anyDownloading}
-                  busy={download.isPending || use.isPending}
+                  busy={busy}
                   onDownload={() => {
                     download.mutate(model.id)
                   }}
@@ -287,6 +315,29 @@ export function TranscriptionSettings() {
                   }}
                   onDelete={() => {
                     setDeleting(model)
+                  }}
+                />
+              ))}
+            </div>
+            <div className="egroup" role="group" aria-labelledby="engines-cloud">
+              <div className="eg-h" id="engines-cloud">
+                <Icon name="cloud" />
+                {t('settings.engines.cloud')}
+              </div>
+              <p className="eg-hint">{t('settings.engines.cloudHint')}</p>
+              {providers.map((provider) => (
+                <ProviderRow
+                  key={provider.id}
+                  provider={provider}
+                  usage={usage.find((item) => item.engine === provider.id)}
+                  active={provider.id === activeEngine}
+                  busy={busy}
+                  onSaved={keep}
+                  onUse={() => {
+                    useCloud.mutate(provider.id)
+                  }}
+                  onRemove={() => {
+                    setRemovingKey(provider)
                   }}
                 />
               ))}
@@ -309,6 +360,18 @@ export function TranscriptionSettings() {
           }}
           onCancel={() => {
             setDeleting(undefined)
+          }}
+        />
+      ) : null}
+      {removingKey ? (
+        <RemoveKeyDialog
+          provider={removingKey}
+          onDone={(next) => {
+            keep(next)
+            setRemovingKey(undefined)
+          }}
+          onCancel={() => {
+            setRemovingKey(undefined)
           }}
         />
       ) : null}

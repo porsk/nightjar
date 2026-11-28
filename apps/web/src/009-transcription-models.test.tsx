@@ -4,7 +4,7 @@ import i18n from 'i18next'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import './i18n/index.ts'
 import { formatModelSize } from './format.ts'
-import { recording } from './test-browser.ts'
+import { providerRows, recording, usageRows } from './test-browser.ts'
 import { FakeEventSource } from './test-fakes.ts'
 import { json, me, renderApp, stubApi } from './test-utils.tsx'
 
@@ -30,8 +30,10 @@ const status = (models: object[], overrides: object = {}) => ({
   downloadedBytes: 564_000_000,
   totalBytes: 564_000_000,
   backlogCount: 0,
-  activeModel: turbo,
+  activeEngine: turbo,
   models,
+  providers: providerRows(),
+  usage: usageRows(),
   ...overrides,
 })
 
@@ -73,7 +75,7 @@ describe('009-transcription-models: models in Settings', () => {
     })
     renderApp('/settings')
 
-    expect(await screen.findByText('Transcription model')).toBeInTheDocument()
+    expect(await screen.findByText('Transcription engine')).toBeInTheDocument()
     const turboRow = rowOf('Turbo')
     expect(turboRow.getByText('Fast, a good default.')).toBeInTheDocument()
     expect(turboRow.getByText('564 MB download')).toBeInTheDocument()
@@ -101,7 +103,7 @@ describe('009-transcription-models: models in Settings', () => {
     renderApp('/settings')
 
     expect(await screen.findByRole('switch', { name: 'Transcription' })).not.toBeChecked()
-    expect(screen.queryByText('Transcription model')).not.toBeInTheDocument()
+    expect(screen.queryByText('Transcription engine')).not.toBeInTheDocument()
     expect(screen.queryByTestId('model-row')).not.toBeInTheDocument()
   })
 
@@ -116,7 +118,9 @@ describe('009-transcription-models: models in Settings', () => {
     const user = userEvent.setup()
     renderApp('/settings')
     await user.click(
-      await within(await screen.findByRole('group')).findByRole('button', { name: 'Download' }),
+      await within(await screen.findByRole('group', { name: 'Local' })).findByRole('button', {
+        name: 'Download',
+      }),
     )
 
     expect(calls.some(({ key }) => key === `POST ${modelPath(large)}/download`)).toBe(true)
@@ -130,10 +134,11 @@ describe('009-transcription-models: models in Settings', () => {
     act(() => {
       FakeEventSource.instances[0]?.emit('model.updated', {
         type: 'model.updated',
+        providers: providerRows(),
         state: 'ready',
         downloadedBytes: 564_000_000,
         totalBytes: 564_000_000,
-        activeModel: turbo,
+        activeEngine: turbo,
         models: [
           row(turbo, 'downloaded'),
           row(large, 'downloading', { downloadedBytes: 550_000_000 }),
@@ -146,10 +151,11 @@ describe('009-transcription-models: models in Settings', () => {
     act(() => {
       FakeEventSource.instances[0]?.emit('model.updated', {
         type: 'model.updated',
+        providers: providerRows(),
         state: 'ready',
         downloadedBytes: 564_000_000,
         totalBytes: 564_000_000,
-        activeModel: turbo,
+        activeEngine: turbo,
         models: [row(turbo, 'downloaded'), row(large, 'downloaded')],
       })
     })
@@ -169,7 +175,9 @@ describe('009-transcription-models: models in Settings', () => {
     const user = userEvent.setup()
     renderApp('/settings')
     await user.click(
-      await within(await screen.findByRole('group')).findByRole('button', { name: 'Use' }),
+      await within(await screen.findByRole('group', { name: 'Local' })).findByRole('button', {
+        name: 'Use',
+      }),
     )
 
     expect(await screen.findByText("We'll switch to it once it's downloaded.")).toBeInTheDocument()
@@ -183,14 +191,14 @@ describe('009-transcription-models: models in Settings', () => {
       [admin]: () => json(current),
       [`POST ${modelPath(large)}/use`]: () => {
         current = status([row(turbo, 'downloaded'), row(large, 'downloaded')], {
-          activeModel: large,
+          activeEngine: large,
         })
         return json(current)
       },
     })
     const user = userEvent.setup()
     renderApp('/settings')
-    await screen.findByText('Transcription model')
+    await screen.findByText('Transcription engine')
     await user.click(rowOf('Large-v3').getByRole('button', { name: 'Use' }))
 
     await waitFor(() => {
@@ -217,7 +225,7 @@ describe('009-transcription-models: models in Settings', () => {
         ),
     })
     renderApp('/settings')
-    await screen.findByText('Transcription model')
+    await screen.findByText('Transcription engine')
 
     const largeRow = rowOf('Large-v3')
     expect(largeRow.getByRole('button', { name: 'Use' })).toBeDisabled()
@@ -237,7 +245,7 @@ describe('009-transcription-models: models in Settings', () => {
     })
     const user = userEvent.setup()
     renderApp('/settings')
-    await screen.findByText('Transcription model')
+    await screen.findByText('Transcription engine')
     expect(rowOf('Turbo').queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
 
     await user.click(rowOf('Large-v3').getByRole('button', { name: 'Delete' }))
@@ -300,17 +308,18 @@ describe('009-transcription-models: models in Settings', () => {
     let current = status([row(turbo, 'downloaded'), row(large, 'downloaded')])
     stubApi({ ...base, [admin]: () => json(current) })
     renderApp('/settings')
-    await screen.findByText('Transcription model')
+    await screen.findByText('Transcription engine')
     expect(rowOf('Turbo').getByText('In use')).toBeInTheDocument()
 
-    current = status([row(turbo, 'downloaded'), row(large, 'downloaded')], { activeModel: large })
+    current = status([row(turbo, 'downloaded'), row(large, 'downloaded')], { activeEngine: large })
     act(() => {
       FakeEventSource.instances[0]?.emit('model.updated', {
         type: 'model.updated',
+        providers: providerRows(),
         state: 'ready',
         downloadedBytes: 564_000_000,
         totalBytes: 1_100_000_000,
-        activeModel: large,
+        activeEngine: large,
         models: [row(turbo, 'downloaded'), row(large, 'downloaded')],
       })
     })
@@ -327,7 +336,7 @@ describe('009-transcription-models: models in Settings', () => {
     })
     renderApp('/settings')
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(screen.queryByText('Transcription model')).not.toBeInTheDocument()
+    expect(screen.queryByText('Transcription engine')).not.toBeInTheDocument()
   })
 })
 
@@ -349,7 +358,7 @@ describe('009-transcription-models: recording card', () => {
       transcript: { ...recording().transcript, model, ...extra },
     })
   const availability = (state: string) => ({
-    'GET /api/v1/transcription': () => json({ state }),
+    'GET /api/v1/transcription': () => json({ state, engine: { id: turbo, kind: 'local' } }),
   })
   const again = 'POST /api/v1/recordings/r1/retranscribe'
 

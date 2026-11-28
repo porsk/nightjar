@@ -201,7 +201,6 @@ export function SetupPage() {
               {t('common.next')}
             </button>
           </div>
-          <p className="privacy">{t('common.privacyNote')}</p>
         </form>
       ) : null}
 

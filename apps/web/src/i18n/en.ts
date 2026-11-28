@@ -4,7 +4,6 @@ export const en: typeof hu = {
   common: {
     next: 'Next',
     back: 'Back',
-    privacyNote: 'Your voice stays on your own server.',
     cancel: 'Cancel',
     retry: 'Try again',
   },
@@ -32,6 +31,8 @@ export const en: typeof hu = {
     file_too_large: 'The file is too large (200 MB max).',
     recording_too_long: 'The recording is longer than 3 hours.',
     recording_not_found: 'Recording not found.',
+    api_key_missing: 'Add the API key first.',
+    engine_in_use: "The key of the engine in use can't be removed. Switch to another one first.",
     model_in_use: "The model in use can't be deleted. Switch to another one first.",
     download_running: 'Only one model can download at a time.',
     model_not_ready: "Transcription isn't available right now.",
@@ -170,6 +171,9 @@ export const en: typeof hu = {
     againFailed: 'Transcribing again failed.',
     againFailedText: 'The earlier transcript is still here. Try again.',
     modelPrefix: 'Model:',
+    cloudPrefix: 'Cloud service:',
+    audioKept: 'The recording is safe.',
+    oldKept: 'The earlier transcript is still here.',
     failed: 'Transcription failed.',
     failedText: 'The recording is safe, the text is missing. Try again.',
     off: 'Not transcribed.',
@@ -183,6 +187,7 @@ export const en: typeof hu = {
     againOff: 'Transcription is off.',
     againNoModel: 'No model is downloaded yet.',
     againRunning: "It's already being transcribed.",
+    againNoKey: "There's no usable API key.",
     replaceTitle: 'Replace your edits?',
     replaceText:
       'You edited this transcript by hand. Transcribing again replaces the text and your edits are lost.',
@@ -198,6 +203,21 @@ export const en: typeof hu = {
       description:
         'Most accurate. About 3x slower than real time on a 4-core CPU, needs about 5 GB of free RAM.',
     },
+  },
+  providers: {
+    soniox: {
+      name: 'Soniox',
+      description: 'Accurate Hungarian transcripts. About {{price}} per hour.',
+    },
+    gladia: { name: 'Gladia', description: 'French provider. About {{price}} per hour.' },
+  },
+  failure: {
+    api_key_invalid:
+      "The cloud service didn't accept the API key. An admin can replace it in Settings.",
+    quota_exceeded: 'The cloud service account is out of credit.',
+    provider_unavailable: "The cloud service can't be reached right now. Try again later.",
+    timeout: 'The cloud service took too long.',
+    audio_rejected: "The cloud service couldn't process this recording.",
   },
   date: {
     today: 'Today, {{date}}',
@@ -254,6 +274,7 @@ export const en: typeof hu = {
     transcription: 'Transcription',
     transcriptionHint:
       'Turns recordings into text on your own server. Needs a one-time download of about {{size}}.',
+    transcriptionHintCloud: 'Recordings are turned into text by a cloud service ({{engine}}).',
     model: {
       downloading: 'Downloading model…',
       progress: '{{done}} / {{total}} · {{pct}}%',
@@ -261,7 +282,6 @@ export const en: typeof hu = {
       failed: 'The model download failed.',
     },
     models: {
-      title: 'Transcription model',
       size: '{{size}} download',
       notDownloaded: 'Not downloaded',
       downloaded: 'Downloaded',
@@ -274,6 +294,31 @@ export const en: typeof hu = {
       deleteTitle: 'Delete the {{name}} model?',
       deleteText:
         'Its files ({{size}}) are removed from the server. You can download it again later.',
+    },
+    engines: {
+      title: 'Transcription engine',
+      local: 'Local',
+      cloud: 'Cloud',
+      cloudHint: 'Audio is sent to the provider to be transcribed, then deleted there.',
+      noKey: 'No API key',
+      keySaved: 'Key saved',
+      addKey: 'Add API key',
+      apiKey: 'API key',
+      save: 'Save',
+      replace: 'Replace',
+      remove: 'Remove',
+      test: 'Check key',
+      testing: 'Checking…',
+      testOk: 'The key works.',
+      testInvalid: "The provider didn't accept the key.",
+      testUnreachable: "Couldn't reach the provider. Try again later.",
+      keyRequired: 'Enter the API key.',
+      keyUnreadable: "The saved key can't be read. Enter it again.",
+      removeTitle: 'Remove the {{name}} API key?',
+      removeText: 'The key is deleted from the server. You can add it again later.',
+      usage: 'This month: {{hours}} h · about {{cost}} (estimate)',
+      cloudReady: 'New recordings are transcribed in the cloud ({{engine}}).',
+      needsKey: 'Enter the API key again. New recordings wait until then.',
     },
     backlog: {
       question: '{{count}} recordings were never transcribed. Transcribe them now?',
