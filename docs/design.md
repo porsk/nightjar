@@ -35,6 +35,10 @@ M1 mockups (all screens and states, 390 / 1280 / 1440, dark + light, screen swit
 Spec 009 mockups (model list in Settings, recording menu with "Átírás újra", edited-transcript confirm, model label):
 `design/alkony/009-transcription-models.html` (screenshots at 390 / 1280, dark + light in `design/alkony/screenshots/009/`).
 
+Spec 010 mockups (engine list with Local and Cloud groups, API key entry and check, monthly estimate, cloud note on the
+record screen, cloud transcript label, failed cloud transcription): `design/alkony/010-cloud-transcription.html`
+(screenshots at 390 / 1280, dark + light in `design/alkony/screenshots/010/`).
+
 ## Direction feedback
 
 | Round | Feedback |
