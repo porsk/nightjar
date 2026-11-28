@@ -7,7 +7,7 @@ Milestone: after 0.2.1
 On the owner's own Hungarian clips Soniox makes about 3x fewer errors than the best local model (WER: Soniox 7.9%,
 Gladia 17.9%, local large-v3 17.9%, turbo 25.7%; `docs/research/cloud-transcription.md`). The admin can pick a cloud
 provider as the one transcription engine of the installation, with the API key kept safe and the audio deleted at the
-provider after each job (D-49 to D-58).
+provider after each job (D-49 to D-60).
 
 ## Scope
 In (mockups: `design/alkony/010-cloud-transcription.html`, screenshots in `design/alkony/screenshots/010/`):
@@ -21,11 +21,14 @@ In (mockups: `design/alkony/010-cloud-transcription.html`, screenshots in `desig
   "Felhő" (cloud icon). Cloud rows: API key entry (write-only: empty, saved and masked, replace, remove), "Kulcs
   ellenőrzése" (test the key, no audio sent), "Váltás erre" once a key is saved, and an estimate of this month's use
   ("Ebben a hónapban: 3,2 óra · kb. 0,32 USD (becslés)").
-- **Key at rest:** encrypted with AES-256-GCM under a key file the server makes on first start in the data folder.
-  Never returned by the API, never logged, never in error messages.
-- **Icons and hints:** cloud vs local icon in the engine list and on the transcript label (cloud icon + "Soniox"), and a
-  note on the record screen (and the desktop sidebar) saying the recording is transcribed in the cloud, while the active
-  engine is a cloud provider.
+- **Key at rest:** encrypted with AES-256-GCM under the instance secret: `NIGHTJAR_SECRET_KEY` when it is set, else a
+  key file the server makes on first start in the data folder (D-59). Never returned by the API, never logged, never in
+  error messages.
+- **Icons:** cloud vs local icon in the engine list and on the transcript label (cloud icon + "Soniox", chip icon +
+  "Turbo"). That label is the only place outside Settings that shows where an entry was processed.
+- **No privacy notes outside Settings (D-60):** the existing note "A hang a saját szervereden marad." goes away from the
+  desktop sidebar and the record screen, and its i18n key is removed. Settings keeps its notes (the switch hint and
+  the Felhő group hint).
 - **Privacy:** after every attempt the audio and the transcript are deleted at the provider. A failed delete is logged
   without content and retried by a job. Every transcript keeps the id of the engine that wrote it.
 - **Long recordings:** a recording longer than the provider's max length is split with ffmpeg (stream copy, cut in a
@@ -35,12 +38,14 @@ In (mockups: `design/alkony/010-cloud-transcription.html`, screenshots in `desig
 - **Failures:** the recording goes to `failed` with a short reason code the card explains in plain words; "Újrapróbálás"
   and "Átírás újra" work as before. No automatic fallback to a local model.
 
-Out (not now): cloud providers for the AI features (S-26), the where-transcribed note on the upload screen (S-27),
-cost per recording (owner: not on the recording screen), a provider region choice (owner: not needed, the owner's Soniox
-account is US region), more than one active engine, per-user or per-recording engine choice, rotating the key file.
+Out (not now): cloud providers for the AI features (S-26), any "where is it transcribed" note on the record or upload
+screen (owner: privacy notes only in Settings), cost per recording (owner: not on the recording screen), a provider
+region choice (owner: not needed, the owner's Soniox account is US region), more than one active engine, per-user or
+per-recording engine choice, rotating the instance secret.
 
 This spec replaces the "Multiple transcription engines: one sherpa-onnx model" and "Encrypted secrets in DB before M3"
-lines of `architecture.md` §12 when it is built. The key file it adds is the one the M3 AI key will use too (D-24).
+lines of `architecture.md` §12 when it is built. The instance secret it adds is the one the M3 AI key will use too
+(D-24).
 
 ## Flows
 
@@ -243,17 +248,28 @@ export type TranscriberFactory = (engineId: string) => Transcriber // local mode
 
 ### Key storage
 
-- On start the server reads `<data>/secret.key` (32 random bytes). If it is missing, it creates it (`0600`) before the
-  web and worker start. A file of the wrong size stops the start with a clear log line (no key content).
-- `secrets.ts`: AES-256-GCM, key = HKDF-SHA256(file bytes, info `nightjar provider secrets v1`), random 12-byte IV per
+The instance secret is 32 random bytes written as 64 hex characters (`openssl rand -hex 32`). Where it comes from
+(D-59), decided once at start, before the web and worker start:
+
+| Source | When | Rules |
+|---|---|---|
+| `NIGHTJAR_SECRET_KEY` env var | set (also when empty: then the start fails) | validated in `config.ts`: exactly 64 hex characters, else the start stops naming the variable, never its value. The key file is then neither read nor created |
+| `<data>/secret.key` file | env var not set | read if it exists (64 hex characters, one trailing newline allowed); created with mode `0600` if missing. Any other content stops the start with a clear log line (no key content) |
+
+- The log says which source is used (`instance secret from env` / `from file` / `created file`), never the value.
+- Moving from the file to the env var: copy the file's content into `NIGHTJAR_SECRET_KEY`. With a different value the
+  saved provider keys show as unreadable and must be entered again (nothing else is lost).
+- `secrets.ts`: AES-256-GCM, key = HKDF-SHA256(instance secret, info `nightjar provider secrets v1`), random 12-byte IV per
   write, additional data = provider id (a row copied to another provider does not decrypt). Stored as
   `v1.<iv>.<tag>.<ciphertext>` (base64url) in `provider_secrets.ciphertext`; the plaintext is the JSON object of the
   provider's secret fields.
-- A row that does not decrypt (file replaced, data tampered) counts as no key, with `keyError: 'unreadable'`. Nothing
+- A row that does not decrypt (secret changed, data tampered) counts as no key, with `keyError: 'unreadable'`. Nothing
   is deleted automatically; saving a new key replaces the row.
 - The decrypted key lives only inside one provider call. Pino redaction adds `apiKey`, `*.apiKey`, `secrets`,
   `*.secrets`; provider errors never carry bodies or headers; Fastify request logs have no bodies (as today).
-- `backup.md` (when built): back up `secret.key` with the data folder; without it the saved keys must be entered again.
+- Docs: `self-hosting.md` and `backup.md` describe both sources (added with this spec, marked for the release that
+  ships it). Back up `secret.key` (it is in the data folder, so the existing backup has it) or keep the env value safe;
+  a database restored without its secret keeps everything but the provider keys, which must be entered again.
 
 ### Status and engine switching
 
@@ -342,14 +358,15 @@ today's single field.
 - Failed card: the reason line replaces `transcript.failedText` / `transcript.againFailedText` for a known
   `failure` code, followed by "A felvétel megvan." (no transcript) or "A korábbi átirat megmaradt." (old transcript
   kept). "Újrapróbálás" as today.
-- Record screen and desktop sidebar: while `GET /api/v1/transcription` says `ready` or `not_ready` with a cloud engine,
-  the privacy note "A hang a saját szervereden marad." is replaced by cloud icon + "Átírás a felhőben: {{engine}}". Off,
-  or local: unchanged.
+- Desktop sidebar and record screen: the privacy note ("A hang a saját szervereden marad.", `common.privacyNote`) is
+  removed, with its key in both catalogues and its unused styles. Nothing replaces it. The setup wizard's transcription
+  step keeps its lead text (it describes the local choice being made there, like a setting).
 - "Átírás újra" disabled hint for a cloud engine that is `not_ready`: "Nincs használható API-kulcs."
 
 ## Data model
 
-Migration `0009_cloud_transcription`:
+Migration `0011_cloud_transcription` (after spec 009's `0008` to `0010`; the branch is rebased onto main once 009 is
+merged):
 
 | Table | Change |
 |---|---|
@@ -360,8 +377,8 @@ Migration `0009_cloud_transcription`:
 | `transcripts` | `transcribed_at timestamptz not null default now()`, backfilled with `created_at`; index `(model, transcribed_at)` |
 
 Docs to update when this is built: `architecture.md` (§3 Transcriber, §4 data model, §6, §10 outbound traffic, §12),
-`product.md` (settings and entry flows), `backup.md` (the key file), `self-hosting.md` (outbound traffic when a cloud
-engine is active).
+`product.md` (settings and entry flows), `self-hosting.md` (outbound traffic when a cloud engine is active; drop the
+"marked for the release" note on the instance secret section), `backup.md` (same).
 
 ## Acceptance criteria
 
@@ -381,8 +398,8 @@ Settings
 
 Key at rest
 - **AC-11** Given `secrets.ts`, then a round trip returns the input, two encryptions of the same value differ, and decryption fails for a changed ciphertext, tag or IV, for another provider id, and under another key file.
-- **AC-12** Given a data folder without `secret.key`, when the server starts, then it creates a 32-byte file (mode `0600` on POSIX) and a second start reuses it; a file of another size stops the start with a log line that holds no key bytes.
-- **AC-13** Given a saved key and a replaced `secret.key`, when the server starts, then the provider shows `keyError: 'unreadable'` and the row alert "A mentett kulcs nem olvasható. Add meg újra."; with that provider active the state is `needs_key`, new recordings stay `pending`, and saving a key queues them.
+- **AC-12** Given no `NIGHTJAR_SECRET_KEY` and a data folder without `secret.key`, when the server starts, then it creates the file (64 hex characters, mode `0600` on POSIX) and a second start reuses it; given `NIGHTJAR_SECRET_KEY` set to 64 hex characters, then that value is used and no file is read or created; an env value or a file of any other form stops the start with a log line that names the source and holds no key characters.
+- **AC-13** Given a saved key and a changed instance secret (replaced file, or an env value different from the file), when the server starts, then the provider shows `keyError: 'unreadable'` and the row alert "A mentett kulcs nem olvasható. Add meg újra."; with that provider active the state is `needs_key`, new recordings stay `pending`, and saving a key queues them.
 
 Job with a cloud engine
 - **AC-14** Given Soniox active and a Hungarian webm recording, when it is saved, then it goes `pending` → `transcribing` → `done` without a reload; the fixture received the original bytes unchanged as `audio.webm`, a create with `model: 'stt-async-v6'` and `language_hints: ['hu']`; the transcript holds the fixture text, `model = 'soniox'`, language `hu`, and the card shows cloud icon + "Soniox".
@@ -403,14 +420,14 @@ Failures
 
 Hints and labels
 - **AC-27** Given transcripts by Turbo, Soniox and an unknown id, then the meta row shows chip icon + "Turbo" (accessible "Modell: Turbo"), cloud icon + "Soniox" (accessible "Felhőszolgáltatás: Soniox") and nothing for the unknown id.
-- **AC-28** Given transcription on and Soniox active, when any user opens the recorder (and the desktop sidebar), then the note reads cloud icon + "Átírás a felhőben: Soniox" instead of "A hang a saját szervereden marad."; with a local engine or transcription off, the old note shows; `GET /api/v1/transcription` returns `engine: { id: 'soniox', kind: 'cloud' }` to a non-admin.
+- **AC-28** Given any engine (local, or Soniox active) and transcription on or off, when a user opens the recorder, Home, an entry or the upload screen at 390 and 1280, then no "where is it transcribed" note shows (no "A hang a saját szervereden marad.", no cloud note), and `common.privacyNote` exists in neither catalogue; `GET /api/v1/transcription` returns `engine: { id: 'soniox', kind: 'cloud' }` to a non-admin.
 - **AC-29** Given Soniox active with an unreadable key, then "Átírás újra" is disabled with "Nincs használható API-kulcs." and the route answers 409 `model_not_ready`.
 
 Access, privacy, accessibility, upgrade
 - **AC-30** Given a non-admin, then the provider routes answer 403 and Settings shows no engine list; an unknown provider id answers 404 `unknown_provider`; a secrets body with an extra field, an empty or blank key or one over 512 characters answers 400 and saves nothing.
 - **AC-31** Given this spec's flows (save, test, replace a key; a Soniox job, a Gladia job with a split, failing jobs, a failing delete) run with a marker (like `ZQX-PRIVATE-7781`) as the API key, in the fixture's transcript text and in the uploaded file name, then the marker appears nowhere in the captured logs or in any route response except the transcript itself, no log line or error message carries a vendor response body, and no text column of the database holds the key in plain text.
-- **AC-32** Given the engine list (local in use + cloud with key + cloud without; cloud in use with usage), the key form (empty, test ok, invalid key, unreachable, unreadable key), the remove dialog, the recorder with the cloud note, cards with cloud and local labels and the failed cloud cards, then axe reports no violations and the layout checks pass (no sideways scroll, nothing clipped or overlapping) at 390 and 1280, light and dark.
-- **AC-33** Given a database at migration `0008` with `active_model = 'whisper-large-v3-int8'`, a transcript and transcription on, when the new version starts, then `active_engine` is large-v3, the transcript's `transcribed_at` equals its `created_at`, both providers show "Nincs API-kulcs", `secret.key` is created, and nothing is downloaded or sent anywhere.
+- **AC-32** Given the engine list (local in use + cloud with key + cloud without; cloud in use with usage), the key form (empty, test ok, invalid key, unreachable, unreadable key), the remove dialog, cards with cloud and local labels and the failed cloud cards, then axe reports no violations and the layout checks pass (no sideways scroll, nothing clipped or overlapping) at 390 and 1280, light and dark.
+- **AC-33** Given a database at migration `0010` (spec 009) with `active_model = 'whisper-large-v3-int8'`, a transcript and transcription on, when the new version starts without `NIGHTJAR_SECRET_KEY`, then `active_engine` is large-v3, the transcript's `transcribed_at` equals its `created_at`, both providers show "Nincs API-kulcs", `secret.key` is created, and nothing is downloaded or sent anywhere.
 
 ## Test plan
 
@@ -437,8 +454,8 @@ and EN WAVs, a short webm/opus and m4a made from them, and `pauses-150s.ogg` (ge
 | AC-9 | | live update from `model.updated` | event carries `activeEngine`, `providers` | second page sees the switch | |
 | AC-10 | hours + cost math, month start per time zone | usage line both languages | seeded transcripts → usage | | fixed clock, admin in `Europe/Budapest` |
 | AC-11 | encrypt / decrypt / tamper / AAD / other key | | | | |
-| AC-12 | | | start creates and reuses file, wrong size stops start | | temp data folder |
-| AC-13 | | unreadable alert | replaced file → `unreadable`, `needs_key`, pending waits, save queues | | |
+| AC-12 | `config.ts` accepts 64 hex, rejects other env values without echoing them | | start creates and reuses file, env wins and no file appears, bad file / env stops start | | temp data folder |
+| AC-13 | | unreadable alert | replaced file and different env value → `unreadable`, `needs_key`, pending waits, save queues | | |
 | AC-14 | | cloud label | status sequence, bytes equal, create body, transcript row | record HU (fake mic) with Soniox → cloud icon + "Soniox" | |
 | AC-15 | `copyTargets` choice | | ogg magic + codec + duration via ffprobe, m4a as is | | |
 | AC-16 | language pick from tokens, `de` → `en` | | request bodies for auto, stored language | | |
@@ -453,12 +470,12 @@ and EN WAVs, a short webm/opus and m4a made from them, and `pauses-150s.ogg` (ge
 | AC-25 | | reason + kept-transcript line | retry and retranscribe clear `failure` | | |
 | AC-26 | expiry formula | | | | |
 | AC-27 | | three labels, accessible names | | | |
-| AC-28 | | recorder + sidebar note | availability for non-admin | recorder shows cloud note | |
+| AC-28 | catalogue has no `common.privacyNote` | recorder and shell render no note | availability for non-admin | no note on recorder, Home, entry, upload with Soniox active | |
 | AC-29 | | disabled hint | 409 `model_not_ready` | | |
 | AC-30 | | list hidden for non-admin | 403, 404, 400 cases | | |
 | AC-31 | | | marker through the flows; logs, responses, DB text columns | | `log-capture.ts` |
 | AC-32 | | | | axe + `expectLayout` on each state | `emulateMedia({ colorScheme })` |
-| AC-33 | | | real migrations to `0008`, seed, migrate, start | | also `scripts/upgrade-test.ts`: `activeEngine` after upgrade |
+| AC-33 | | | real migrations to `0010`, seed, migrate, start | | also `scripts/upgrade-test.ts`: `activeEngine` after upgrade |
 
 Also covered: both catalogues (spec 006 AC-5), the spec 003 and 009 tests keep passing with `activeEngine`.
 
@@ -487,7 +504,6 @@ New keys, in both `hu` and `en`.
 | `settings.transcriptionHintCloud` | A felvételek szöveggé alakítása felhőszolgáltatással ({{engine}}). | Recordings are turned into text by a cloud service ({{engine}}). |
 | `settings.engines.cloudReady` | Az új felvételeket a felhőben írjuk át ({{engine}}). | New recordings are transcribed in the cloud ({{engine}}). |
 | `settings.engines.needsKey` | Add meg újra az API-kulcsot. Addig az új felvételek várnak. | Enter the API key again. New recordings wait until then. |
-| `common.cloudNote` | Átírás a felhőben: {{engine}} | Transcribed in the cloud: {{engine}} |
 | `transcript.cloudPrefix` (visually hidden) | Felhőszolgáltatás: | Cloud service: |
 | `transcript.audioKept` / `.oldKept` | A felvétel megvan. / A korábbi átirat megmaradt. | The recording is safe. / The earlier transcript is still here. |
 | `failure.api_key_invalid` | A felhőszolgáltató nem fogadta el az API-kulcsot. A rendszergazda a Beállításokban cserélheti. | The cloud service didn't accept the API key. An admin can replace it in Settings. |
@@ -499,18 +515,21 @@ New keys, in both `hu` and `en`.
 | `error.api_key_missing` | Előbb add meg az API-kulcsot. | Add the API key first. |
 | `error.engine_in_use` | A használatban lévő motor kulcsát nem lehet eltávolítani. Előbb válts másikra. | The key of the engine in use can't be removed. Switch to another one first. |
 
-`settings.models.title` ("Átírási modell") is replaced by `settings.engines.title`. Reused: `settings.models.inUse`,
+`settings.models.title` ("Átírási modell") is replaced by `settings.engines.title`. Removed: `common.privacyNote`
+("A hang a saját szervereden marad." / "Your voice stays on your own server."). Reused: `settings.models.inUse`,
 `settings.models.use`, `common.cancel`, `common.retry`, `transcript.failed`, `transcript.againFailed`,
 `transcript.modelPrefix`.
 
 ## Privacy & data
-- Stored: the encrypted provider key in `provider_secrets`; the key file `secret.key` in the data folder; vendor ids of
+- Stored: the encrypted provider key in `provider_secrets`; the key file `secret.key` in the data folder (unless
+  `NIGHTJAR_SECRET_KEY` is set); vendor ids of
   copies not yet deleted in `cloud_copies`; the engine id and `transcribed_at` on each transcript; a failure code on
   failed recordings.
 - Leaves the server, only while a cloud engine is active: the recording's audio (as stored, remuxed or cut, never
   re-encoded) and the language hint go to that provider; the transcript comes back. Nothing else: no entry text, no
   user name, no file name (fixed `audio.<ext>`). "Kulcs ellenőrzése" sends only the key. Switching to a cloud engine is
-  an admin action, and the record screen says so while it is active.
+  an admin action in Settings, where the Felhő group says audio is sent out; each transcript's label shows the cloud
+  icon and the provider name.
 - Deleted at the vendor after every attempt (audio and transcript), with retries. Left behind only when Gladia's
   `start` fails after an upload (no delete API for that file; Gladia's retention applies) or a delete keeps failing (the
   row stays and is retried on every cleanup run). Soniox deletes by itself after 30 days.
@@ -520,13 +539,8 @@ New keys, in both `hu` and `en`.
 - The Soniox account is US region (owner's account); accepted for now.
 
 ## Open questions
-1. **Where the key that encrypts provider keys lives (needs the owner).** There is no server secret outside the
-   database: Better Auth's secret is `instance_settings.auth_secret`, in the same database as the encrypted keys, so a
-   database dump would hold both. Options:
-   - A (in this spec, recommended): `secret.key` file made on first start in the data folder. No setup; a database dump
-     alone does not reveal provider keys. Back up the data folder as today (`backup.md` gets one line).
-   - B: `NIGHTJAR_SECRET_KEY` env var the admin must set. Keeps the key out of both backups, but one more setup step,
-     and the app can't save keys until it is set.
-   - C: derive from `auth_secret`. No setup, but encryption then protects nothing against a database dump.
-2. Gladia's training opt-out is an account setting, not an API flag (research). The settings hint can't enforce it;
+None blocking. Decided on 11-28: the instance secret comes from `NIGHTJAR_SECRET_KEY` or a generated key file (D-59;
+Better Auth's `auth_secret` lives in the same database as the encrypted keys, so it doesn't fit), and privacy notes stay
+in Settings (D-60).
+1. Gladia's training opt-out is an account setting, not an API flag (research). The settings hint can't enforce it;
    the owner should switch it off in the Gladia profile.

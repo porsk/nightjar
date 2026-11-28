@@ -374,11 +374,6 @@ mark{background:var(--mark);color:var(--text);border-radius:4px;padding:0 2px}
 .kres.err svg{color:var(--danger)}
 .kform .macts{margin-top:4px}
 .mrow>.alert{margin:12px 0 0}
-.cloudnote{display:inline-flex;align-items:center;gap:8px;justify-content:center}
-.cloudnote svg{width:18px;height:18px;color:var(--accent-text)}
-.note .cloudnote{width:100%}
-.side .privacy .cloudnote{justify-content:flex-start;align-items:flex-start}
-.side .privacy .cloudnote svg{width:16px;height:16px;margin-top:2px}
 .tag .mdl svg{width:15px;height:15px}
 .failed p+p{margin-top:2px}
 </style>
@@ -419,7 +414,7 @@ mark{background:var(--mark);color:var(--text);border-radius:4px;padding:0 2px}
   <label>Screen <select id="s"></select></label>
   <label>Size <select id="d"><option value="m">390 mobile</option><option value="1280">1280 desktop</option><option value="1440">1440 desktop</option></select></label>
   <label>Theme <select id="t"><option value="dark">dark</option><option value="light">light</option></select></label>
-  <p>Mockup only: frames grow with their content so nothing is cut off (on a real phone the page scrolls). Same tokens and parts as the 009 mockups. Prices and usage numbers are examples.</p>
+  <p>Mockup only: frames grow with their content so nothing is cut off (on a real phone the page scrolls). Same tokens and parts as the 009 mockups. Prices and usage numbers are examples. The desktop sidebar has no privacy line any more (D-60): where audio goes is said only in Settings and by the icon on each transcript.</p>
 </div>
 <div class="stage"><div id="frame"></div></div>
 
@@ -510,26 +505,6 @@ const removeDialog=`<div class="scrim"><div class="dialog" role="alertdialog" ar
   <div class="actions"><button class="btn danger block">Eltávolítás</button><button class="btn line block">Mégse</button></div></div></div>`;
 S.keyremove={...S.engines,label:'API key: remove confirmation',over:removeDialog};
 
-/* ---- recorder with the cloud note ---- */
-const bars=n=>Array.from({length:n},(_,i)=>`<span class="${i>n*.75?'old':''}" style="height:${14+Math.abs(Math.sin(i*.55)*Math.cos(i*.21))*92}px"></span>`).join('');
-const cloudNote=`<span class="cloudnote">${ic('cloud')}Átírás a felhőben: Soniox</span>`;
-const ctrls=`<div class="ctrls">
-    <button class="ctrl del"><span class="c">${ic('trash')}</span>Elvetés</button>
-    <button class="ctrl stop"><span class="c"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span>Leállítás</button>
-    <button class="ctrl"><span class="c">${ic('pause')}</span>Szünet</button></div>`;
-S.recordcloud={label:'Recorder: cloud engine note',nav:'',tabs:0,side:1,rec:0,cloud:1,body:()=>`
-  <div class="hd"><span class="state"><b></b>Felvétel folyamatban</span></div>
-  <div class="timer" role="timer" aria-label="Eltelt idő">02:14</div>
-  <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
-  <div class="meter" aria-hidden="true">${bars(36)}</div>${ctrls}
-  <p class="note">${cloudNote}</p>`,
-  d:()=>`<div class="main rec-main" style="align-items:center;justify-content:center;flex:1">
-  <span class="state"><b></b>Felvétel folyamatban</span>
-  <div class="timer" role="timer" aria-label="Eltelt idő">02:14</div>
-  <p class="sub">Beszélj nyugodtan, nem sietünk.</p>
-  <div class="meter" aria-hidden="true">${bars(56)}</div>${ctrls}
-  <p class="note">${cloudNote}</p></div>`};
-
 /* ---- entry: labels and failed states ---- */
 const chipBtn=t=>`<button class="chip">${ic('cal',18)}${t}</button>`;
 const more=`<button class="icbtn more" aria-label="Felvétel műveletei" aria-haspopup="menu" aria-expanded="false">${ic('more')}</button>`;
@@ -575,13 +550,12 @@ function render(id,dev,theme){
   const sc=S[id];const m=dev==='m';const w=m?390:+dev;
   const f=document.getElementById('frame');
   const cls=`frame ${m?'m':'d'} ${theme==='light'?'light':''} ${!m&&sc.bare?'bare':''}`;
-  const privacy=sc.cloud?`<p class="privacy">${cloudNote}</p>`:`<p class="privacy">A hang a saját szervereden marad.</p>`;
   let h='';
   if(m){
     h+=`<div class="status"><span>21:14</span><span>5G ▮▮▮</span></div><div class="scroll">${sc.body()}</div>`;
     if(sc.tabs)h+=`<nav class="tabs" aria-label="Fő navigáció">${nav.map(([k,i,l])=>`<a href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}</nav>`;
   }else{
-    h+=`<nav class="side" aria-label="Fő navigáció"><div class="brand">${ic('bird')}Nightjar</div>${nav.map(([k,i,l])=>`<a class="nav" href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}<div class="grow"></div>${sc.rec?`<button class="newrec">${ic('mic')}Felvétel indítása</button>`:''}${privacy}</nav>`;
+    h+=`<nav class="side" aria-label="Fő navigáció"><div class="brand">${ic('bird')}Nightjar</div>${nav.map(([k,i,l])=>`<a class="nav" href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}<div class="grow"></div>${sc.rec?`<button class="newrec">${ic('mic')}Felvétel indítása</button>`:''}</nav>`;
     h+=`<main class="main">${sc.d?sc.d():`<div class="page"><div class="col">${sc.body()}</div></div>`}</main>`;
   }
   if(sc.over)h+=sc.over;

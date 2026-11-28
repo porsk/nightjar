@@ -32,6 +32,20 @@ Image tag in `docker/compose.yaml`:
 
 Back both up, see the [backup guide](backup.md).
 
+### Instance secret (from the release with cloud transcription, spec 010)
+
+API keys for cloud transcription providers are stored encrypted. The key that encrypts them is the instance secret:
+32 random bytes written as 64 hex characters.
+
+| Where it comes from | When |
+|---|---|
+| `NIGHTJAR_SECRET_KEY` env var on the `nightjar` service | When set. Make one with `openssl rand -hex 32`. Any other format stops the start |
+| `/data/secret.key` | When the env var is not set. The app makes it on first start (mode `0600`) and reuses it |
+
+Nothing to do if you are happy with the file. Keep it with your backups: a database restored without the same secret
+keeps everything except the saved provider keys, which you then enter again in Settings. To move from the file to the
+env var, put the file's content into `NIGHTJAR_SECRET_KEY`.
+
 ## 3. Traefik
 
 Remove the `ports:` section from the `nightjar` service (Traefik reaches it on the Docker network) and join Traefik's

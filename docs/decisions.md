@@ -7,7 +7,6 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 | # | Question | Options |
 |---|---|---|
 | O-6 | Model folders of a model that a later release removes from `models.json` stay on disk with no Delete button | Leave, or list and delete unknown folders in Settings. Decide when a model is first dropped |
-| O-7 | Where the key that encrypts provider API keys lives (spec 010). Better Auth's secret sits in the same database as the encrypted keys, so it doesn't fit | A (in the spec, recommended): `secret.key` file made on first start in the data folder, no setup, a database dump alone reveals nothing. B: `NIGHTJAR_SECRET_KEY` env var, one more setup step. C: derive from `auth_secret`, protects nothing against a database dump |
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
 
 ## Requirements the owner asked for
@@ -53,7 +52,6 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-24 | Transcribe all recordings again in bulk (for example after switching to Large-v3) | suggested (not in spec 009) |
 | S-25 | Check the host's free RAM and warn before switching to a heavy model like Large-v3 | suggested (not in spec 009) |
 | S-26 | Cloud providers for the AI features (M3), reusing the provider registry and the encrypted key store | suggested (not in spec 010) |
-| S-27 | Show the "transcribed in the cloud" note on the upload screen too (spec 010 puts it on the record screen and the desktop sidebar) | suggested (not in spec 010) |
 
 ## Decided
 
@@ -109,6 +107,8 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-56 | 11-28 | Cloud failures (bad key, no credit, provider down, timeout) put the recording in `failed` with a plain-words reason; "transcribe again" works; no automatic fallback to local (it would silently change where audio goes). Retries follow the pg-boss settings, except permanent errors fail at once; job expiry becomes at least 30 min for every job | Owner |
 | D-57 | 11-28 | Cost: not on the recording screen. Each cloud engine row in Settings shows "This month: X h, about $Y (estimate)" = audio length of transcripts made by that engine this month x the provider's declared price | Owner |
 | D-58 | 11-28 | The owner's Soniox account is US region; fine for now. No provider region choice | Owner |
+| D-59 | 11-28 | Provider API keys are encrypted under an instance secret: `NIGHTJAR_SECRET_KEY` (64 hex characters, `openssl rand -hex 32`) when set, else a `secret.key` file the server makes on first start in the data folder. Back the file up with the database (the existing data-folder backup has it); without it the provider keys must be entered again. Better Auth's `auth_secret` is not used (same database as the keys). Spec 010 | Owner picked A with an env override |
+| D-60 | 11-28 | Privacy notes only in Settings. No "your voice stays on your server" or "transcribed in the cloud" note anywhere else: the existing sidebar and record-screen note goes away. The cloud / local icon on the transcript label stays. Replaces the record-screen hint of D-52. Spec 010 | Owner |
 | D-45 | 11-27 | Faster CI: skip CI for docs-only changes, split verify into parallel jobs (checks + unit, API, e2e per browser), open a PR only when the branch is verified locally and review fixes are in, fix flaky tests at the root. Parallel e2e within one browser later | Owner |
 | D-44 | 11-27 | M1 round 2 screens approved as they are (small differences from the mockups accepted). Claude may open and merge the pre-0.2.0 PRs and the 0.2.0 release PR once smoke test and CI are green | Owner |
 | D-43 | 11-27 | Sign in with username + password instead of email (no email can be sent). Setup asks for a username, a name ("What should we call you?") and a password; the name is used in the greeting and can be changed in Settings. Email is not collected for now; it can be added later for OAuth or a hosted version. Breaking DB change is fine: nobody has installed 0.1.0 | Owner |
