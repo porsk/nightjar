@@ -511,6 +511,42 @@ describe('009-transcription-models: recording card', () => {
     )
   })
 
+  it('AC-20: a 409 on a failed card without a transcript shows its text, and the item waits for the availability answer', async () => {
+    stubApi({
+      ...signedIn,
+      'GET /api/v1/transcription': () => new Promise<Response>(() => undefined),
+      'GET /api/v1/entries/e1/recordings': () =>
+        json([recording({ status: 'failed', transcript: null })]),
+      [again]: () => json({ error: { code: 'model_not_ready', message: 'x' } }, 409),
+    })
+    const user = userEvent.setup()
+    renderApp('/entries/e1')
+    await user.click(await screen.findByRole('button', { name: 'Recording actions' }))
+    const item = await screen.findByRole('menuitem', { name: 'Transcribe again' })
+    expect(item).toHaveAttribute('aria-disabled', 'true')
+    await user.click(item)
+    expect(screen.queryByText("Transcription isn't available right now.")).not.toBeInTheDocument()
+  })
+
+  it('AC-20: a 409 on a failed card without a transcript shows its text', async () => {
+    stubApi({
+      ...signedIn,
+      ...availability('ready'),
+      'GET /api/v1/entries/e1/recordings': () =>
+        json([recording({ status: 'failed', transcript: null })]),
+      [again]: () => json({ error: { code: 'model_not_ready', message: 'x' } }, 409),
+    })
+    const user = userEvent.setup()
+    renderApp('/entries/e1')
+    await user.click(await screen.findByRole('button', { name: 'Recording actions' }))
+    const item = await screen.findByRole('menuitem', { name: 'Transcribe again' })
+    await waitFor(() => {
+      expect(item).not.toHaveAttribute('aria-disabled')
+    })
+    await user.click(item)
+    expect(await screen.findByText("Transcription isn't available right now.")).toBeInTheDocument()
+  })
+
   it('AC-21: a failed transcribe again keeps the old text, can be edited and Try again does the same as the menu', async () => {
     const calls = stubApi({
       ...signedIn,

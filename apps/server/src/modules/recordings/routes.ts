@@ -274,6 +274,7 @@ export function registerRecordingRoutes(
       .where(and(eq(transcripts.recordingId, id), eq(transcripts.userId, user.id)))
       .returning()
     if (!row) throw new AppError(404, 'recording_not_found')
+    await db.update(recordings).set({ replaceEdited: false }).where(eq(recordings.id, id))
     return toTranscript(row)
   })
 

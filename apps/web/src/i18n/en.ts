@@ -37,6 +37,8 @@ export const en: typeof hu = {
     model_not_ready: "Transcription isn't available right now.",
     transcript_edited: 'This transcript was edited by hand in the meantime.',
     already_transcribing: "It's already being transcribed.",
+    unknown_model: "This model doesn't exist.",
+    model_downloading: 'This model is downloading right now.',
   },
   setup: {
     step: 'Step {{n}} of 3',

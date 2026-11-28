@@ -135,7 +135,7 @@ All admin routes answer 401 without a session, 403 for a non-admin, and return t
 | `GET /api/v1/admin/transcription` | admin | | status, now with `activeModel` and `models` |
 | `PUT /api/v1/admin/transcription` | admin | `{ enabled }` | unchanged (turning on downloads the active model if missing) |
 | `POST /api/v1/admin/transcription/backlog` | admin | | unchanged |
-| `POST /api/v1/admin/transcription/models/:id/download` | admin | | starts a download. Already downloaded: nothing happens. 409 `download_running` if another model is downloading |
+| `POST /api/v1/admin/transcription/models/:id/download` | admin | | starts a download. Already downloaded: nothing happens. 409 `model_not_ready` while transcription is off, 409 `download_running` if another model is downloading |
 | `POST /api/v1/admin/transcription/models/:id/use` | admin | | downloaded: becomes active at once. Not downloaded: starts a download that makes it active when done (or marks the running download of this model "then use"). 409 `download_running` if another model is downloading |
 | `DELETE /api/v1/admin/transcription/models/:id` | admin | | removes `models/<id>/`. 409 `model_in_use` for the active model, 409 `model_downloading` while it downloads. Not downloaded: nothing happens |
 | `GET /api/v1/transcription` | any signed-in user | | `{ state: 'off' \| 'not_ready' \| 'ready' }`: off, on but the active model is not on disk, or ready |
@@ -263,6 +263,16 @@ Migration `0008`:
 | `transcripts` | no change. `model` exists since spec 003 and every transcript written by a release holds `whisper-large-v3-turbo-int8`, the only model so far, so the backfill D-48 asks for is already true |
 
 `model_download_state` and `model_downloaded_bytes` keep their meaning, now for the model in `model_download_id`.
+
+Migration `0009`: `recordings.replace_edited boolean not null default false`. A confirmed "transcribe again" of an
+edited transcript is kept here, so a restart that queues the recording again keeps it. It is cleared when the job ends
+(done or failed for good), when the recording is set to skipped, and when the user saves a transcript edit.
+
+Migration `0010`: `instance_settings.model_downloaded_bytes` becomes `bigint` (an `integer` overflows at 2.1 GB, and
+Turbo full precision is 3,2 GB).
+
+Folders of a model that a later release drops from `models.json` stay on disk and have no Delete button (open item in
+`decisions.md`).
 
 Docs to update when this is built: `architecture.md` (data model table, events, data folder, transcription
 section), `product.md` (settings and entry flows).

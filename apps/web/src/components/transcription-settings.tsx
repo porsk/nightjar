@@ -182,7 +182,7 @@ function DeleteModelDialog({
 
 /** The admin block of Settings: switch transcription on, choose and download models, queue old recordings. */
 export function TranscriptionSettings() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const errorText = useErrorText()
   const queryClient = useQueryClient()
   const status = useQuery(transcriptionQuery)
@@ -213,7 +213,11 @@ export function TranscriptionSettings() {
           <div className="trow">
             <div>
               <b id="transcription-label">{t('settings.transcription')}</b>
-              <p>{t('settings.transcriptionHint', { size: megabytes(totalBytes) })}</p>
+              <p>
+                {t('settings.transcriptionHint', {
+                  size: formatModelSize(totalBytes, i18n.language === 'hu' ? 'hu' : 'en'),
+                })}
+              </p>
             </div>
             <button
               type="button"

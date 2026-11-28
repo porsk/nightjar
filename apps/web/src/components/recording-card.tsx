@@ -88,6 +88,7 @@ function RecordingMenu({ recording, onAgain }: { recording: Recording; onAgain: 
     }
   }, [open])
 
+  const loading = availability === undefined
   const hint =
     availability === 'off'
       ? t('recording.againOff')
@@ -138,10 +139,10 @@ function RecordingMenu({ recording, onAgain }: { recording: Recording; onAgain: 
             type="button"
             role="menuitem"
             className="mi"
-            aria-disabled={hint ? true : undefined}
+            aria-disabled={hint || loading ? true : undefined}
             aria-describedby={hint ? hintId : undefined}
             onClick={() => {
-              if (hint) return
+              if (hint || loading) return
               close()
               onAgain()
             }}
@@ -225,7 +226,6 @@ function Player({ recording, menu }: { recording: Recording; menu: ReactNode }) 
 function Transcript({ recording, again }: { recording: Recording; again: TranscribeAgain }) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
-  const errorText = useErrorText()
   const timeZone = useQuery(meQuery).data?.timeZone ?? 'UTC'
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -263,12 +263,12 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
           {t(`models.${transcript.model}.name`)}
         </span>
       ) : null}
-      {canEdit || (status === 'done' && !editing) ? (
+      {canEdit ? (
         <button
           type="button"
           className="btn text"
           onClick={() => {
-            setDraft(transcript?.text ?? '')
+            setDraft(transcript.text)
             setEditing(true)
           }}
         >
@@ -404,12 +404,6 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
           </div>
         </div>
       ) : null}
-      {again.mutation.isError ? (
-        <div className="alert" role="alert">
-          <Icon name="alert" />
-          <span>{errorText(again.mutation.error)}</span>
-        </div>
-      ) : null}
       <p className={busy ? 'tr old' : 'tr'} data-testid="transcript">
         {transcript?.text}
       </p>
@@ -420,6 +414,7 @@ function Transcript({ recording, again }: { recording: Recording; again: Transcr
 
 export function RecordingCard({ recording }: { recording: Recording }) {
   const { t } = useTranslation()
+  const errorText = useErrorText()
   const again = useTranscribeAgain(recording)
   return (
     <div className="rcard" data-testid="recording-card">
@@ -427,6 +422,12 @@ export function RecordingCard({ recording }: { recording: Recording }) {
         recording={recording}
         menu={<RecordingMenu recording={recording} onAgain={again.request} />}
       />
+      {again.mutation.isError ? (
+        <div className="alert" role="alert">
+          <Icon name="alert" />
+          <span>{errorText(again.mutation.error)}</span>
+        </div>
+      ) : null}
       <Transcript recording={recording} again={again} />
       {again.confirming ? (
         <Dialog

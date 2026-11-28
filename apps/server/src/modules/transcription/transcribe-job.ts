@@ -85,6 +85,10 @@ export function createTranscribeHandler({
       })
       .from(instanceSettings)
     if (!settings?.enabled) {
+      await db
+        .update(recordings)
+        .set({ replaceEdited: false })
+        .where(eq(recordings.id, recording.id))
       await setStatus(recording, 'skipped')
       return 'skipped'
     }

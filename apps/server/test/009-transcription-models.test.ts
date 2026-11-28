@@ -278,8 +278,16 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const modelServer = await startModelServer()
       cleanups.push(() => modelServer.close())
       const app = await launch({ modelServer })
+      const events = app.hubEvents(app.alice.id, true)
       await app.call(app.alice, 'PUT', adminPath, { enabled: true })
-      await waitFor(async () => (await statusOf(app)).state === 'ready', 'a ready model')
+      await waitFor(
+        () => events.some((event) => event.type === 'model.updated' && event.state === 'ready'),
+        'the ready event',
+      )
+      await waitFor(async () => {
+        const [saved] = await database.db.select().from(instanceSettings)
+        return saved?.modelDownloadId === null && saved.modelDownloadState === 'idle'
+      }, 'the download slot to be cleared')
       await database.db.update(instanceSettings).set({
         modelDownloadState: 'downloading',
         modelDownloadId: largeModelId,
@@ -288,6 +296,8 @@ describe('009-transcription-models: model choice and transcribe again against a 
       })
       const models = join(app.dataDir, 'models')
       writeFileSync(join(models, `${largeModelId}.0.part`), 'half')
+      mkdirSync(join(models, largeModelId))
+      writeFileSync(join(models, largeModelId, 'large-encoder.onnx'), 'verified but incomplete')
       mkdirSync(join(models, `${largeModelId}.unpacked`))
       writeFileSync(join(models, `${largeModelId}.unpacked`, 'x'), 'half')
 
@@ -313,6 +323,79 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const third = await launchAgain(second)
       await waitFor(async () => (await statusOf(third)).state === 'ready', 'the active model again')
       expect(filesOnDisk(third, testModelId)).toHaveLength(4)
+    })
+
+    it('AC-3: byte counts above 2 GB are stored and read back', async () => {
+      const app = await launch()
+      await database.db.update(instanceSettings).set({
+        transcriptionEnabled: true,
+        modelDownloadState: 'downloading',
+        modelDownloadId: largeModelId,
+        modelDownloadedBytes: 3_238_731_176,
+      })
+      expect(rowOf(await statusOf(app), largeModelId).downloadedBytes).toBe(3_238_731_176)
+    })
+
+    it('AC-6: download and use answer 409 while transcription is off', async () => {
+      const app = await launch()
+      for (const action of ['download', 'use']) {
+        const response = await app.call(
+          app.alice,
+          'POST',
+          `${adminPath}/models/${largeModelId}/${action}`,
+        )
+        expect(response.statusCode).toBe(409)
+        expect(response.json()).toMatchObject({ error: { code: 'model_not_ready' } })
+      }
+    })
+
+    it('AC-5: Use and Delete of the same model at once never leave an active model without files', async () => {
+      const app = await launch()
+      await turnOn(app)
+      await app.seedModel(largeModelId)
+      await Promise.all([
+        app.call(app.alice, 'DELETE', `${adminPath}/models/${largeModelId}`),
+        app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`),
+      ])
+      await app.transcription.whenIdle()
+      await waitFor(
+        async () => (await statusOf(app)).models.every((row) => row.state !== 'downloading'),
+        'no download',
+      )
+      const status = await statusOf(app)
+      expect(rowOf(status, status.activeModel).state).toBe('downloaded')
+    })
+
+    it('AC-5: switching at once cancels the then-use of a running download', async () => {
+      const app = await launch()
+      await turnOn(app)
+      await app.seedModel(largeModelId)
+      await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
+      app.modelServer.behaviour.slowMs = 20
+      await app.call(app.alice, 'DELETE', `${adminPath}/models/${testModelId}`)
+      await app.call(app.alice, 'POST', `${adminPath}/models/${testModelId}/use`)
+      expect(rowOf(await statusOf(app), testModelId)).toMatchObject({
+        state: 'downloading',
+        useWhenReady: true,
+      })
+      await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/use`)
+      await waitForModel(app, testModelId, 'downloaded')
+      expect((await statusOf(app)).activeModel).toBe(largeModelId)
+    })
+
+    it('AC-9: a finished download of another model does not queue jobs while the active model is missing', async () => {
+      const app = await launch()
+      app.modelServer.behaviour.corrupt = true
+      await app.call(app.alice, 'PUT', adminPath, { enabled: true })
+      await waitForModel(app, testModelId, 'failed')
+      const waiting = await app.uploadVoice(app.alice)
+      app.modelServer.behaviour.corrupt = false
+      await app.call(app.alice, 'POST', `${adminPath}/models/${largeModelId}/download`)
+      await waitForModel(app, largeModelId, 'downloaded')
+      await app.transcription.whenIdle()
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      expect(app.fake.state.calls).toHaveLength(0)
+      expect(await app.statusOf(waiting.id)).toBe('pending')
     })
 
     it('AC-12: turning transcription off stops a running download and removes its files', async () => {
@@ -516,6 +599,34 @@ describe('009-transcription-models: model choice and transcribe again against a 
       expect(row?.replaceEdited).toBe(false)
     })
 
+    it('AC-19: the confirmed replace is dropped when the recording is skipped or the user edits again', async () => {
+      const app = await launch()
+      const saved = await withTranscript(app)
+      await database.db
+        .update(recordings)
+        .set({ status: 'pending', replaceEdited: true })
+        .where(eq(recordings.id, saved.id))
+      await app.call(app.alice, 'PUT', adminPath, { enabled: false })
+      const [skipped] = await database.db
+        .select()
+        .from(recordings)
+        .where(eq(recordings.id, saved.id))
+      expect(skipped).toMatchObject({ status: 'skipped', replaceEdited: false })
+
+      await database.db
+        .update(recordings)
+        .set({ replaceEdited: true })
+        .where(eq(recordings.id, saved.id))
+      await app.call(app.alice, 'PATCH', `/api/v1/recordings/${saved.id}/transcript`, {
+        text: 'mine',
+      })
+      const [edited] = await database.db
+        .select()
+        .from(recordings)
+        .where(eq(recordings.id, saved.id))
+      expect(edited?.replaceEdited).toBe(false)
+    })
+
     it('AC-20: it is refused while transcription is off, the model is missing or the recording is busy', async () => {
       const app = await launch()
       const saved = await withTranscript(app)
@@ -666,6 +777,9 @@ describe('009-transcription-models: model choice and transcribe again against a 
       const base = new URL(postgres.getConnectionUri())
       base.pathname = `/${name}`
       const old = createDatabase(base.toString(), createLogger({ level: 'silent' }))
+      cleanups.push(() =>
+        database.db.execute(sql.raw(`drop database ${name}`)).then(() => undefined),
+      )
       cleanups.push(() => old.close())
 
       const real = join(import.meta.dirname, '../migrations')

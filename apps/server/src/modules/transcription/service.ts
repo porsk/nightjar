@@ -231,7 +231,7 @@ export function createTranscriptionService({
         })
         if (useIt) logger.info({ modelId }, 'model switched')
         await publishModels()
-        await queueWaiting()
+        if ((await availability()).state === 'ready') await queueWaiting()
       })
     },
   })
@@ -245,12 +245,18 @@ export function createTranscriptionService({
   const downloadingId = () =>
     manager.status().state === 'downloading' ? manager.status().modelId : undefined
 
-  /** Download requests are handled one after the other, so two at once cannot both start. */
+  /** Download, switch and delete requests are handled one after the other, so they cannot undo each other. */
   let starting: Promise<unknown> = Promise.resolve()
-  const startDownload = (model: ModelInfo, useWhenReady: boolean) => {
-    const result = starting.then(() => startDownloadNow(model, useWhenReady))
+  const serialized = <T>(work: () => Promise<T>): Promise<T> => {
+    const result = starting.then(work)
     starting = result.catch(() => undefined)
     return result
+  }
+  const startDownload = (model: ModelInfo, useWhenReady: boolean) =>
+    serialized(() => startDownloadNow(model, useWhenReady))
+
+  const requireEnabled = async () => {
+    if (!(await readSettings())?.enabled) throw new AppError(409, 'model_not_ready')
   }
 
   /** Starts the download of a model, or throws when another model is already downloading. */
@@ -303,7 +309,7 @@ export function createTranscriptionService({
         await publishing
         const stopped = await db
           .update(recordings)
-          .set({ status: 'skipped' })
+          .set({ status: 'skipped', replaceEdited: false })
           .where(eq(recordings.status, 'pending'))
           .returning({ id: recordings.id, userId: recordings.userId, entryId: recordings.entryId })
         for (const recording of stopped) {
@@ -320,33 +326,40 @@ export function createTranscriptionService({
 
     /** Starts downloading a model without using it. */
     download: async (id: string) => {
-      await startDownload(findModel(id), false)
+      const model = findModel(id)
+      await requireEnabled()
+      await startDownload(model, false)
       return status()
     },
 
     /** Makes a model active at once, or downloads it first and then makes it active. */
     use: async (id: string) => {
       const model = findModel(id)
-      if (await isModelReady(storage, model)) {
-        await saveSettings({ activeModel: model.id })
-        logger.info({ modelId: model.id }, 'model switched')
-        await inOrder(publishModels)
-      } else {
-        await startDownload(model, true)
-      }
+      await requireEnabled()
+      await serialized(async () => {
+        if (await isModelReady(storage, model)) {
+          await saveSettings({ activeModel: model.id, modelDownloadUse: false })
+          logger.info({ modelId: model.id }, 'model switched')
+          await inOrder(publishModels)
+        } else {
+          await startDownloadNow(model, true)
+        }
+      })
       return status()
     },
 
     /** Removes the files of a model that is not in use and not downloading. */
     remove: async (id: string) => {
       const model = findModel(id)
-      const settings = await readSettings()
-      if (activeModelOf(settings).id === model.id) throw new AppError(409, 'model_in_use')
-      if (downloadingId() === model.id) throw new AppError(409, 'model_downloading')
-      await storage.removeFolder(modelKey(model.id))
-      if (settings?.downloadId === model.id) await saveSettings(noDownload)
-      logger.info({ modelId: model.id }, 'model deleted')
-      await inOrder(publishModels)
+      await serialized(async () => {
+        const settings = await readSettings()
+        if (activeModelOf(settings).id === model.id) throw new AppError(409, 'model_in_use')
+        if (downloadingId() === model.id) throw new AppError(409, 'model_downloading')
+        await storage.removeFolder(modelKey(model.id))
+        if (settings?.downloadId === model.id) await saveSettings(noDownload)
+        logger.info({ modelId: model.id }, 'model deleted')
+        await inOrder(publishModels)
+      })
       return status()
     },
 
@@ -404,6 +417,7 @@ export function createTranscriptionService({
           modelDownloadedBytes: 0,
           modelDownloadError: 'download_failed',
         })
+        await storage.removeFolder(modelKey(settings.downloadId))
         logger.warn(
           { modelId: settings.downloadId, reason: 'server_stopped' },
           'model download failed',

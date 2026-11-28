@@ -6,6 +6,7 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 
 | # | Question | Options |
 |---|---|---|
+| O-6 | Model folders of a model that a later release removes from `models.json` stay on disk with no Delete button | Leave, or list and delete unknown folders in Settings. Decide when a model is first dropped |
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
 
 ## Requirements the owner asked for

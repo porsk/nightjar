@@ -35,6 +35,8 @@ export const hu = {
     model_not_ready: 'Az átírás most nem érhető el.',
     transcript_edited: 'Ezt az átiratot közben kézzel javították.',
     already_transcribing: 'Az átírás már folyamatban van.',
+    unknown_model: 'Ez a modell nem létezik.',
+    model_downloading: 'A modell éppen töltődik le.',
   },
   setup: {
     step: '{{n}}. lépés a 3-ból',
