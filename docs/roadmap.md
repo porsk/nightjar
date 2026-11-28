@@ -1,7 +1,7 @@
 # Roadmap
 
-**Now:** spec 010 cloud transcription providers (Soniox, Gladia) built and verified in branch `feat/cloud-transcription` (migration `0011`), waiting for the owner to push and open the PR. 0.2.1 (search partial matches, spec 009 model choice and transcribe again) is merged.
-**Next:** review and merge the branch. Owner installs the next release and journals for a week (M1 done-when). Then M2 planning. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser, owner speech clips + Soniox yardstick.
+**Now:** 0.4.0 released: cloud transcription (Soniox, Gladia; spec 010). 0.3.0 shipped search partial matches (spec 005 update) and model choice + transcribe again (spec 009). Owner's server (i5-6500T, no VNNI) transcribes badly with local int8 Whisper; owner tries Soniox (7.9% WER on own clips vs 17.9% Gladia / local large-v3, 25.7% turbo).
+**Next:** owner switches to Soniox on 0.4.0 and journals for a week (M1 done-when), then M2 planning. Owner rotates the Soniox and Gladia keys shared in chat. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
