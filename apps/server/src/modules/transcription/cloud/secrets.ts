@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto'
-import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { chmod, link, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Logger } from '../../../logger.ts'
 
@@ -50,14 +50,19 @@ export async function resolveInstanceSecret({
   if (content === undefined) {
     const made = randomBytes(32).toString('hex')
     await mkdir(dataDir, { recursive: true })
+    // written complete under a temporary name and linked into place, so no reader sees half a file
+    const temporary = `${path}.${randomBytes(6).toString('hex')}.tmp`
     try {
-      await writeFile(path, `${made}\n`, { flag: 'wx', mode: 0o600 })
-      await chmod(path, 0o600)
+      await writeFile(temporary, `${made}\n`, { flag: 'wx', mode: 0o600 })
+      await chmod(temporary, 0o600)
+      await link(temporary, path)
       logger.info({ source: 'file' }, 'instance secret created file')
       return Buffer.from(made, 'hex')
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
       content = await read()
+    } finally {
+      await unlink(temporary).catch(() => undefined)
     }
   }
   if (!isInstanceSecret(content)) {

@@ -6,7 +6,12 @@ import { cloudCopies } from '../../../db/schema.ts'
 import type { Storage } from '../../../storage.ts'
 import type { Transcriber, TranscriptResult } from '../transcriber.ts'
 import type { CopyCleaner } from './cleanup.ts'
-import { ProviderError, type CloudProvider, type VendorCopy } from './provider.ts'
+import {
+  KeyUnavailableError,
+  ProviderError,
+  type CloudProvider,
+  type VendorCopy,
+} from './provider.ts'
 import { containerFor } from './registry.ts'
 import type { KeyStore } from './key-store.ts'
 import { makeParts } from './split.ts'
@@ -73,7 +78,7 @@ export function createCloudTranscriber({
 
     transcribe: async (audio, language, signal): Promise<TranscriptResult> => {
       const saved = await keys.read(provider.id)
-      if (saved.state !== 'ready') throw new ProviderError('api_key_invalid')
+      if (saved.state !== 'ready') throw new KeyUnavailableError()
       const call = { secrets: saved.secrets, fetch: fetchFn, signal }
       await cleaner.removeRows(await cleaner.forRecording(audio.recordingId))
 

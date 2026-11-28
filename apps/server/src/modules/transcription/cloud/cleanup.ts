@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../../../database.ts'
 import { cloudCopies, recordings } from '../../../db/schema.ts'
 import type { CleanupJob } from '../../../jobs.ts'
@@ -6,6 +6,9 @@ import type { Logger } from '../../../logger.ts'
 import { ProviderError, type CloudProvider } from './provider.ts'
 import { providerById } from './registry.ts'
 import type { KeyStore } from './key-store.ts'
+
+/** The longest one delete may take, all of a copy's calls together. */
+const removeLimitMs = 2 * 60_000
 
 type CopyRow = typeof cloudCopies.$inferSelect
 
@@ -57,7 +60,7 @@ export function createCopyCleaner({
       }
       try {
         const outcome = await provider.remove(
-          { secrets: saved.secrets, fetch: fetchFn, signal: new AbortController().signal },
+          { secrets: saved.secrets, fetch: fetchFn, signal: AbortSignal.timeout(removeLimitMs) },
           row.vendorRef,
         )
         if (outcome === 'no_delete_api') {
@@ -83,29 +86,33 @@ export function createCopyCleaner({
           .from(cloudCopies)
           .where(inArray(cloudCopies.id, [...ids]))
 
-  /** Rows old enough whose recording is not being transcribed right now (or is gone). */
-  async function due(): Promise<CopyRow[]> {
-    const cutoff = new Date(now().getTime() - minAgeMs)
+  /** Rows whose recording is not being transcribed right now (or is gone), split by whether they are old enough. */
+  async function idle(): Promise<{ due: CopyRow[]; young: CopyRow[] }> {
+    const cutoff = now().getTime() - minAgeMs
     const rows = await db
       .select({ copy: cloudCopies })
       .from(cloudCopies)
       .leftJoin(recordings, eq(recordings.id, cloudCopies.recordingId))
-      .where(
-        and(
-          lt(cloudCopies.createdAt, cutoff),
-          or(isNull(recordings.id), sql`${recordings.status} <> 'transcribing'`),
-        ),
-      )
-    return rows.map((row) => row.copy)
+      .where(or(isNull(recordings.id), sql`${recordings.status} <> 'transcribing'`))
+    const copies = rows.map((row) => row.copy)
+    return {
+      due: copies.filter((copy) => copy.createdAt.getTime() < cutoff),
+      young: copies.filter((copy) => copy.createdAt.getTime() >= cutoff),
+    }
   }
 
   return {
     removeRows,
     forRecording,
     byIds,
-    due,
-    /** One cleanup run. Returns how many copies could not be deleted. */
-    run: async () => removeRows(await due()),
+    /**
+     * One cleanup run. Returns how many copies are still there: those that could not be deleted and those
+     * still too young to touch, so the job fails and the queue tries again later.
+     */
+    run: async () => {
+      const { due, young } = await idle()
+      return (await removeRows(due)) + young.length
+    },
   }
 }
 

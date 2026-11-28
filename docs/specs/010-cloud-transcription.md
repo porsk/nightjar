@@ -227,10 +227,10 @@ export type TranscriberFactory = (engineId: string) => Transcriber // local mode
 ### Split
 
 `split.ts`, used only when `durationMs > maxAudioMs`:
-- `n = ceil(duration / (0.9 x max))`; target cut `i` is at `i x duration / n`.
+- `n = ceil(duration / (0.89 x max))`; target cut `i` is at `i x duration / n`.
 - One ffmpeg `silencedetect=noise=-35dB:d=0.4` pass over the file. Each cut goes to the middle of the silence closest
   to its target within `min(60 s, 0.05 x max)`; with none in reach it stays on the target. Every part stays under the
-  max (the 0.9 factor leaves room for the window).
+  max (the 0.89 factor leaves room for the window).
 - `ffmpeg -protocol_whitelist file -f <format> -i <file> -vn -c:a copy -f segment -segment_times t1,t2,…
   -reset_timestamps 1 -segment_format <container> tmp/<id>-%03d.<ext>`. Stream copy cuts on packet boundaries (20 ms for
   opus), no re-encode.

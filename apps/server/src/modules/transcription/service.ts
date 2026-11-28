@@ -497,21 +497,24 @@ export function createTranscriptionService({
       await keys.save(provider.id, secrets)
       logger.info({ provider: provider.id }, 'provider key saved')
       await inOrder(publishModels)
-      if (settings?.enabled && activeEngineOf(settings).kind === 'cloud') {
+      const engine = activeEngineOf(settings)
+      if (settings?.enabled && engine.kind === 'cloud' && engine.provider.id === provider.id) {
         if ((await availability()).state === 'ready') await queueWaiting()
       }
     },
 
     /** Removes the saved key. The key of the engine in use stays. */
     removeSecrets: async (id: string) => {
-      const { provider, settings } = await providerOfKeyRoute(id)
-      const engine = activeEngineOf(settings)
-      if (engine.kind === 'cloud' && engine.provider.id === provider.id) {
-        throw new AppError(409, 'engine_in_use')
-      }
-      await keys.remove(provider.id)
-      logger.info({ provider: provider.id }, 'provider key removed')
-      await inOrder(publishModels)
+      const provider = findProvider(id)
+      await serialized(async () => {
+        const engine = activeEngineOf(await readSettings())
+        if (engine.kind === 'cloud' && engine.provider.id === provider.id) {
+          throw new AppError(409, 'engine_in_use')
+        }
+        await keys.remove(provider.id)
+        logger.info({ provider: provider.id }, 'provider key removed')
+        await inOrder(publishModels)
+      })
     },
 
     /** Checks a typed key, or the saved one when none is given. Sends no audio and saves nothing. */

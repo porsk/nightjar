@@ -39,7 +39,7 @@ await start({
   exit: (code) => process.exit(code),
   models: modelServer.list,
   providers: cloudServer.providers(),
-  cloud: { pollIntervalMs: 100, cleanupMinAgeMs: 0 },
+  cloud: { pollIntervalMs: 100 },
   transcriber: createFakeTranscriber({ delayMs: 1500 }).factory,
   jobs: { pollingIntervalSeconds: 0.5, retryDelaySeconds: 1 },
 })

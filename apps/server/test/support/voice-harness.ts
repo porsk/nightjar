@@ -117,6 +117,7 @@ export function createVoiceHarness(context: {
       pollIntervalMs?: number
       partDeadlineMs?: (partDurationMs: number) => number
       cleanupMinAgeMs?: number
+      now?: () => Date
     }
     /** Replaces `NIGHTJAR_SECRET_KEY`, for tests that stand in for a changed secret. */
     secretKey?: string
@@ -164,6 +165,7 @@ export function createVoiceHarness(context: {
       logger,
       fetch,
       minAgeMs: options.cloud?.cleanupMinAgeMs ?? 0,
+      ...(options.cloud?.now ? { now: options.cloud.now } : {}),
     })
     const fake = createFakeTranscriber(options.fake)
     const auth = await createAuth(database)

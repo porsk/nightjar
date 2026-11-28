@@ -3,8 +3,7 @@ import {
   audioForm,
   checkWith,
   deleteWith,
-  readJson,
-  vendorRequest,
+  vendorJson,
   ProviderError,
   type CloudProvider,
   type ProviderCall,
@@ -53,19 +52,19 @@ export function createSonioxProvider({
       checkWith(call, { url: `${baseUrl}/files?limit=1`, headers: headers(call) }),
 
     upload: async (call, file) => {
-      const response = await vendorRequest(call, {
+      const answer = await vendorJson(call, {
         method: 'POST',
         url: `${baseUrl}/files`,
         headers: headers(call),
         body: await audioForm('file', file),
         step: 'upload',
       })
-      return { fileId: stringField(await readJson(response), 'id') }
+      return { fileId: stringField(answer, 'id') }
     },
 
     start: async (call, copy, language) => {
       const auto = language === 'auto'
-      const response = await vendorRequest(call, {
+      const answer = await vendorJson(call, {
         method: 'POST',
         url: `${baseUrl}/transcriptions`,
         headers: json(call),
@@ -77,27 +76,23 @@ export function createSonioxProvider({
         }),
         step: 'start',
       })
-      return { ...copy, transcriptionId: stringField(await readJson(response), 'id') }
+      return { ...copy, transcriptionId: stringField(answer, 'id') }
     },
 
     poll: async (call, copy) => {
-      const id = copy.transcriptionId ?? ''
-      const status = await readJson(
-        await vendorRequest(call, {
-          method: 'GET',
-          url: `${baseUrl}/transcriptions/${id}`,
-          headers: headers(call),
-        }),
-      )
+      const id = encodeURIComponent(copy.transcriptionId ?? '')
+      const status = await vendorJson(call, {
+        method: 'GET',
+        url: `${baseUrl}/transcriptions/${id}`,
+        headers: headers(call),
+      })
       if (status.status === 'error') throw new ProviderError('audio_rejected')
       if (status.status !== 'completed') return { state: 'running' }
-      const transcript = await readJson(
-        await vendorRequest(call, {
-          method: 'GET',
-          url: `${baseUrl}/transcriptions/${id}/transcript`,
-          headers: headers(call),
-        }),
-      )
+      const transcript = await vendorJson(call, {
+        method: 'GET',
+        url: `${baseUrl}/transcriptions/${id}/transcript`,
+        headers: headers(call),
+      })
       return {
         state: 'done',
         text: typeof transcript.text === 'string' ? transcript.text : '',
@@ -113,7 +108,10 @@ export function createSonioxProvider({
       ] as const) {
         if (!id) continue
         try {
-          await deleteWith(call, { url: `${baseUrl}/${path}/${id}`, headers: headers(call) })
+          await deleteWith(call, {
+            url: `${baseUrl}/${path}/${encodeURIComponent(id)}`,
+            headers: headers(call),
+          })
         } catch (error) {
           failure ??= error
         }

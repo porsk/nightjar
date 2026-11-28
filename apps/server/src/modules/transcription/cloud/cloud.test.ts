@@ -1,4 +1,6 @@
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeAll, afterAll, describe, expect, it, vi } from 'vitest'
@@ -384,5 +386,43 @@ describe('010-cloud-transcription: providers, keys and splitting', () => {
       expect(fromFile).toMatchObject({ source: 'file' })
       expect((fromFile as Error).message).not.toContain(bad)
     })
+  })
+})
+
+describe('010-cloud-transcription: safe requests and a safe secret file', () => {
+  it('AC-12: many starts at once on an empty data folder all get the same complete secret', async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), 'nightjar-race-'))
+    const logger = createLogger({ level: 'silent' })
+    const secrets = await Promise.all(
+      Array.from({ length: 8 }, () => resolveInstanceSecret({ env: undefined, dataDir, logger })),
+    )
+    for (const secret of secrets) expect(secret.equals(secrets[0] ?? Buffer.alloc(0))).toBe(true)
+    expect(readFileSync(join(dataDir, 'secret.key'), 'utf8')).toMatch(/^[0-9a-f]{64}\n$/)
+    expect(readdirSync(dataDir)).toEqual(['secret.key'])
+  })
+
+  it('AC-31: a redirect is never followed, so the key header and the audio stay with the vendor', async () => {
+    const seen: string[] = []
+    const server = createServer((request, response) => {
+      seen.push(request.url ?? '')
+      if (request.url === '/v/files') {
+        response.writeHead(307, { location: '/elsewhere/files' }).end()
+      } else {
+        response.writeHead(200).end('{}')
+      }
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const base = `http://127.0.0.1:${String((server.address() as AddressInfo).port)}/v`
+    const dir = mkdtempSync(join(tmpdir(), 'nightjar-redirect-'))
+    writeFileSync(join(dir, 'a.ogg'), 'OggS')
+    const error = await createSonioxProvider({ baseUrl: base })
+      .upload(
+        { secrets: { apiKey: 'k' }, fetch, signal: new AbortController().signal },
+        { path: join(dir, 'a.ogg'), extension: 'ogg' },
+      )
+      .catch((caught: unknown) => caught)
+    expect((error as ProviderError).code).toBe('provider_unavailable')
+    expect(seen).toEqual(['/v/files'])
+    server.close()
   })
 })

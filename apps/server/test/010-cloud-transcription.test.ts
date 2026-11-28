@@ -332,6 +332,30 @@ describe('010-cloud-transcription: cloud providers against a real Postgres', () 
       })
     })
 
+    it('AC-13: a job that finds the key unreadable leaves the recording pending and calls no vendor', async () => {
+      const app = await launch()
+      await turnOnCloud(app)
+      const first = await upload(app, sampleAs('webm'))
+      await waitForStatus(app, first.id, 'done')
+      const again = await launchAgain(app, { secretKey: 'ef'.repeat(32) })
+      const [row] = await database.db.select().from(recordings).where(eq(recordings.id, first.id))
+      await database.db
+        .update(recordings)
+        .set({ status: 'pending' })
+        .where(eq(recordings.id, first.id))
+      again.cloudServer.requests.length = 0
+      await again.jobs.enqueueTranscription(
+        { userId: row?.userId ?? '', recordingId: first.id },
+        row?.durationMs ?? 0,
+      )
+      await new Promise((resolve) => setTimeout(resolve, 2500))
+      expect(await again.statusOf(first.id)).toBe('pending')
+      expect((await recordingRow(first.id))?.failure).toBeNull()
+      expect(again.cloudServer.requests).toEqual([])
+      await putKey(again, 'soniox')
+      await waitForStatus(again, first.id, 'done')
+    })
+
     it('AC-29: with an unreadable key transcribing again is refused', async () => {
       const app = await launch()
       await turnOnCloud(app)
@@ -545,6 +569,30 @@ describe('010-cloud-transcription: cloud providers against a real Postgres', () 
       )
       expect(await app.statusOf(saved.id)).toBe('done')
       expect((await copyRows()).length).toBe(1)
+    })
+
+    it('AC-19: with the real minimum age a copy that could not be deleted is retried until it is old enough', async () => {
+      let skewMs = 0
+      const app = await launch({
+        jobs: { cleanupRetryDelaySeconds: 1 },
+        cloud: { cleanupMinAgeMs: 60_000, now: () => new Date(Date.now() + skewMs) },
+      })
+      await turnOnCloud(app)
+      const server = app.cloudServer
+      server.behaviour.failDeletes = 2
+      const saved = await upload(app, sampleAs('webm'))
+      await waitForStatus(app, saved.id, 'done')
+      await waitFor(
+        () => app.capture.lines().some((line) => line.msg === 'provider cleanup failed'),
+        'the first failed delete',
+      )
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+      expect((await copyRows()).length).toBe(1)
+      expect(server.undeleted()).toBeGreaterThan(0)
+
+      skewMs = 61_000
+      await waitFor(async () => (await copyRows()).length === 0, 'the retry to delete the copy')
+      expect(server.undeleted()).toBe(0)
     })
 
     it('AC-20: a copy left by a stopped server is deleted when the server starts', async () => {

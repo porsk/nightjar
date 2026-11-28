@@ -2,8 +2,7 @@ import {
   audioForm,
   checkWith,
   deleteWith,
-  readJson,
-  vendorRequest,
+  vendorJson,
   ProviderError,
   type CloudProvider,
   type ProviderCall,
@@ -42,18 +41,18 @@ export function createGladiaProvider({
       checkWith(call, { url: `${baseUrl}/pre-recorded?limit=1`, headers: headers(call) }),
 
     upload: async (call, file) => {
-      const response = await vendorRequest(call, {
+      const answer = await vendorJson(call, {
         method: 'POST',
         url: `${baseUrl}/upload`,
         headers: headers(call),
         body: await audioForm('audio', file),
         step: 'upload',
       })
-      return { audioUrl: stringField(await readJson(response), 'audio_url') }
+      return { audioUrl: stringField(answer, 'audio_url') }
     },
 
     start: async (call, copy, language) => {
-      const response = await vendorRequest(call, {
+      const answer = await vendorJson(call, {
         method: 'POST',
         url: `${baseUrl}/pre-recorded`,
         headers: { ...headers(call), 'content-type': 'application/json' },
@@ -64,17 +63,15 @@ export function createGladiaProvider({
         }),
         step: 'start',
       })
-      return { ...copy, jobId: stringField(await readJson(response), 'id') }
+      return { ...copy, jobId: stringField(answer, 'id') }
     },
 
     poll: async (call, copy) => {
-      const job = await readJson(
-        await vendorRequest(call, {
-          method: 'GET',
-          url: `${baseUrl}/pre-recorded/${copy.jobId ?? ''}`,
-          headers: headers(call),
-        }),
-      )
+      const job = await vendorJson(call, {
+        method: 'GET',
+        url: `${baseUrl}/pre-recorded/${encodeURIComponent(copy.jobId ?? '')}`,
+        headers: headers(call),
+      })
       if (job.status === 'error') throw new ProviderError('audio_rejected')
       if (job.status !== 'done') return { state: 'running' }
       const transcription = record(record(job.result).transcription)
@@ -92,7 +89,7 @@ export function createGladiaProvider({
     remove: async (call, copy) => {
       if (!copy.jobId) return 'no_delete_api'
       await deleteWith(call, {
-        url: `${baseUrl}/pre-recorded/${copy.jobId}`,
+        url: `${baseUrl}/pre-recorded/${encodeURIComponent(copy.jobId)}`,
         headers: headers(call),
       })
       return 'deleted'

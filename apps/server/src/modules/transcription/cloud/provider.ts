@@ -20,6 +20,14 @@ export class ProviderError extends Error {
   }
 }
 
+/** The saved key is missing or unreadable, so the vendor was never called and the recording should wait. */
+export class KeyUnavailableError extends Error {
+  constructor() {
+    super('no usable key')
+    this.name = 'KeyUnavailableError'
+  }
+}
+
 export interface SecretField {
   id: 'apiKey'
   kind: 'secret'
@@ -100,40 +108,8 @@ export interface VendorRequest {
   accept?: readonly number[]
 }
 
-/**
- * One vendor call with its own timeout joined with the job's signal. A non-success status or a
- * network error becomes a ProviderError; the response body is never read into an error.
- */
-export async function vendorRequest(call: ProviderCall, request: VendorRequest): Promise<Response> {
-  const step = request.step ?? 'other'
-  const timeout = new AbortController()
-  const timer = setTimeout(
-    () => {
-      timeout.abort()
-    },
-    request.timeoutMs ?? (step === 'upload' ? uploadTimeoutMs : callTimeoutMs),
-  )
-  let response: Response
-  try {
-    response = await call.fetch(request.url, {
-      method: request.method,
-      headers: request.headers,
-      ...(request.body === undefined ? {} : { body: request.body }),
-      signal: AbortSignal.any([call.signal, timeout.signal]),
-    })
-  } catch (error) {
-    if (call.signal.aborted) throw error
-    throw new ProviderError('provider_unavailable')
-  } finally {
-    clearTimeout(timer)
-  }
-  if (response.ok || request.accept?.includes(response.status)) return response
-  await response.body?.cancel().catch(() => undefined)
-  throw new ProviderError(codeForStatus(response.status, step), response.status)
-}
-
 /** The JSON body of a vendor answer, or a ProviderError when it is not what we expect. */
-export async function readJson(response: Response): Promise<Record<string, unknown>> {
+async function readJson(response: Response): Promise<Record<string, unknown>> {
   try {
     const value: unknown = await response.json()
     if (typeof value === 'object' && value !== null) return value as Record<string, unknown>
@@ -142,6 +118,57 @@ export async function readJson(response: Response): Promise<Record<string, unkno
   }
   throw new ProviderError('provider_unavailable', response.status)
 }
+
+/**
+ * One vendor call with its own timeout, joined with the job's signal and kept until the body is read.
+ * A non-success status or a network error becomes a ProviderError; the response body is never read into
+ * an error. Redirects are refused, so a key header or the audio never goes to another address.
+ */
+async function perform<T>(
+  call: ProviderCall,
+  request: VendorRequest,
+  consume: (response: Response) => Promise<T>,
+): Promise<T> {
+  const step = request.step ?? 'other'
+  const timeout = new AbortController()
+  const timer = setTimeout(
+    () => {
+      timeout.abort()
+    },
+    request.timeoutMs ?? (step === 'upload' ? uploadTimeoutMs : callTimeoutMs),
+  )
+  try {
+    const response = await call.fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      redirect: 'error',
+      ...(request.body === undefined ? {} : { body: request.body }),
+      signal: AbortSignal.any([call.signal, timeout.signal]),
+    })
+    if (!response.ok && !request.accept?.includes(response.status)) {
+      await response.body?.cancel().catch(() => undefined)
+      throw new ProviderError(codeForStatus(response.status, step), response.status)
+    }
+    return await consume(response)
+  } catch (error) {
+    if (error instanceof ProviderError) throw error
+    if (call.signal.aborted) throw error
+    throw new ProviderError('provider_unavailable')
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/** A vendor call whose answer body is not needed. */
+export async function vendorRequest(call: ProviderCall, request: VendorRequest): Promise<void> {
+  await perform(call, request, async (response) => {
+    await response.body?.cancel().catch(() => undefined)
+  })
+}
+
+/** A vendor call that answers with a JSON object. */
+export const vendorJson = (call: ProviderCall, request: VendorRequest) =>
+  perform(call, request, readJson)
 
 /** A multipart body whose file part streams from disk and always has the name `audio.<ext>`. */
 export async function audioForm(

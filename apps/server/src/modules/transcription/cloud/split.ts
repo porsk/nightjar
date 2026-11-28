@@ -15,8 +15,8 @@ const muxers: Record<AudioExtension, string> = {
   flac: 'flac',
 }
 
-/** Parts are cut for 90% of the limit, so the search window around a cut still leaves them under it. */
-const targetShare = 0.9
+/** Parts are cut for 89% of the limit, so the search window around a cut still leaves them under it. */
+const targetShare = 0.89
 
 /** Cut times in seconds, one fewer than the parts. Empty when the recording fits in one part. */
 export function planCuts(

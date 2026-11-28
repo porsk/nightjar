@@ -11,7 +11,7 @@ import type { Logger } from '../../logger.ts'
 import type { Metrics } from '../../metrics.ts'
 import type { Storage } from '../../storage.ts'
 import type { AudioExtension, CloudProvider } from './cloud/provider.ts'
-import { ProviderError } from './cloud/provider.ts'
+import { KeyUnavailableError, ProviderError } from './cloud/provider.ts'
 import { providerById } from './cloud/registry.ts'
 import { modelById, type ModelList } from './models.ts'
 import type { AudioFile, Transcriber, TranscriberFactory } from './transcriber.ts'
@@ -120,7 +120,7 @@ export function createTranscribeHandler({
     if (transcriber && transcriber.modelId !== engineId) await dropModel()
 
     await setStatus(recording, 'transcribing')
-    const wav = await storage.tempFile('wav')
+    let wav: Awaited<ReturnType<Storage['tempFile']>> | undefined
     try {
       transcriber ??= createTranscriber(engineId)
       const extension = extname(recording.filePath).slice(1) as AudioExtension
@@ -132,6 +132,7 @@ export function createTranscribeHandler({
         userId,
       }
       if (transcriber.input === 'wav') {
+        wav = await storage.tempFile('wav')
         await convertToWav(audio.path, wav.path, ffmpegFormatFor(extension) ?? '')
         audio.path = wav.path
         audio.extension = 'wav'
@@ -182,6 +183,10 @@ export function createTranscribeHandler({
       })
       return 'completed'
     } catch (error) {
+      if (error instanceof KeyUnavailableError) {
+        await setStatus(recording, 'pending')
+        return 'skipped'
+      }
       const failure = failureOf(error)
       const lastAttempt = job.retryCount >= job.retryLimit
       log.warn(
@@ -205,7 +210,7 @@ export function createTranscribeHandler({
       if (lastAttempt) await fail(recording, failure)
       throw error
     } finally {
-      await wav.remove()
+      await wav?.remove()
     }
   }
 
