@@ -249,8 +249,13 @@ describe('010-cloud-transcription: cloud providers against a real Postgres', () 
       await putKey(app, 'gladia')
       await useProvider(app, 'soniox')
       await app.call(app.alice, 'DELETE', `${providerPath('gladia')}/secrets`)
-      await waitFor(() => seen.length >= 4, 'four events')
-      const models = seen.filter((event) => event.type === 'model.updated')
+      const published = () => seen.filter((event) => event.type === 'model.updated')
+      await waitFor(() => {
+        const last = published().at(-1)
+        return last?.activeEngine === 'soniox' && !last.providers[1]?.configured
+      }, 'the last event')
+      // a late event of turning transcription on may come first, so the four that count are the last four
+      const models = published().slice(-4)
       expect(models.map((event) => event.activeEngine)).toEqual([
         testModelId,
         testModelId,
@@ -381,9 +386,10 @@ describe('010-cloud-transcription: cloud providers against a real Postgres', () 
       const webm = sampleAs('webm')
       const saved = await upload(app, webm)
       await waitForStatus(app, saved.id, 'done')
-      expect(
-        events.filter((event) => event.type === 'recording.updated').map((event) => event.status),
-      ).toEqual(['pending', 'transcribing', 'done'])
+      const states = () =>
+        events.filter((event) => event.type === 'recording.updated').map((event) => event.status)
+      await waitFor(() => states().includes('done'), 'the done event')
+      expect(states()).toEqual(['pending', 'transcribing', 'done'])
 
       const server = app.cloudServer
       const [file] = [...server.files.values()]
