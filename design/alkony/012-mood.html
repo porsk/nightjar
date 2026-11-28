@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nightjar Alkony: 012 mood</title>
+<title>Nightjar Alkony: 012 mood (faces)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -383,8 +383,6 @@ mark{background:var(--mark);color:var(--text);border-radius:4px;padding:0 2px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip.addm{border-style:dashed;color:var(--text)}
 .chip .fc{width:22px;height:22px}
-.chip .dot{width:12px;height:12px}
-.chip svg.i.sky{width:20px;height:20px;color:var(--mc)}
 
 /* where the picker sits */
 .moodbox{margin-top:18px}
@@ -414,47 +412,10 @@ svg.fc.tint .o{stroke:var(--mc);fill:color-mix(in srgb,var(--mc) 18%,transparent
 svg.fc.tint .f{fill:var(--mc)}
 svg.fc.tint .mo{stroke:var(--mc)}
 
-/* B: colour scale */
-.moodB .mb-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
-.moodB .mb-top b{font:600 18px 'Fraunces',serif}
-.moodB .mb-top b.none{font:italic 400 16px 'Fraunces',serif;color:var(--muted)}
-.mbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.mbar button{position:relative;height:48px;border:0;border-radius:14px;background:color-mix(in srgb,var(--mc) var(--mix),var(--surface));display:grid;place-items:center;padding:0}
-.mbar button:first-child{border-radius:24px 14px 14px 24px}
-.mbar button:last-child{border-radius:14px 24px 24px 14px}
-.mbar button[aria-checked="true"]{background:var(--mc);box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--mc)}
-.mbar button svg{width:22px;height:22px;color:var(--surface);stroke-width:3}
-.ends{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--muted);font-weight:600}
-.d .moodB{max-width:520px}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--mc);flex:none}
-
-/* C: words */
-.moodC{display:flex;flex-wrap:wrap;gap:8px}
-.moodC button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 12px;border-radius:22px;border:1.5px solid var(--field);background:var(--surface);font-weight:600;font-size:15px;color:var(--text)}
-.moodC button svg{width:22px;height:22px;color:var(--mc)}
-.moodC button[aria-checked="true"]{border-color:var(--mc);background:color-mix(in srgb,var(--mc) 20%,var(--surface));box-shadow:0 0 0 1.5px var(--mc);font-weight:700}
-.mprompt .moodC button,.moodbox .moodC button{background:var(--surface2);border-color:transparent}
-.mprompt .moodC button[aria-checked="true"],.moodbox .moodC button[aria-checked="true"]{border-color:var(--mc);background:color-mix(in srgb,var(--mc) 22%,var(--surface))}
-
 /* on cards and rows */
 .mm{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:600}
 .mm svg.fc{width:18px;height:18px}
-.mm svg.i{width:17px;height:17px;color:var(--mc)}
 .meta .sep{opacity:.5}
-
-/* compare board */
-.board{grid-column:1/-1;padding:32px 40px 40px}
-.m .board{padding:0 20px 28px}
-.bgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.m .bgrid{grid-template-columns:1fr;gap:16px}
-.bcard{background:var(--surface);border-radius:24px;padding:20px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
-.bcard h2{font:600 20px 'Fraunces',serif;margin-bottom:4px}
-.bcard>p{color:var(--muted);font-size:14px;margin-bottom:16px}
-.bcard h3{font-size:13px;font-weight:700;color:var(--muted);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.04em}
-.bcard .card{background:var(--bg);margin:0}
-.board .title{margin-bottom:6px}
-.board .lead{margin:0 0 22px;max-width:70ch}
-.d .board .bcard .moodA svg.fc{width:40px;height:40px}
 
 </style>
 </head>
@@ -487,20 +448,15 @@ svg.fc.tint .mo{stroke:var(--mc)}
     <symbol id="chip" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></symbol>
     <symbol id="key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></symbol>
     <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="sky1" viewBox="0 0 24 24"><path d="M7 14.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.4 5.2 4.7 4.7 0 0 0 7 14.5zM9 17.5l-1 3M13 17.5l-1 3M17 17.5l-1 3"/></symbol>
-    <symbol id="sky2" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.4 9.2 4.7 4.7 0 0 0 7 18.5z"/></symbol>
-    <symbol id="sky3" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.8v1.4M2.8 9h1.4M4.6 4.6l1 1M13.4 4.6l-1 1M11 20.5h7a3.3 3.3 0 0 0 .3-6.6 4.6 4.6 0 0 0-8.7 1A3 3 0 0 0 11 20.5z"/></symbol>
-    <symbol id="sky4" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></symbol>
-    <symbol id="sky5" viewBox="0 0 24 24"><circle cx="10" cy="14" r="3.6"/><path d="M10 7v1.6M10 19.4V21M3 14h1.6M15.4 14H17M5 9l1.1 1.1M13.9 17.9 15 19M15 9l-1.1 1.1M6.1 17.9 5 19M19 2.5v5M16.5 5h5"/></symbol>
   </defs>
 </svg>
 
 <div class="bar">
-  <h1>Alkony: 012 mood, three variants</h1>
+  <h1>Alkony: 012 mood (faces)</h1>
   <label>Screen <select id="s"></select></label>
   <label>Size <select id="d"><option value="m">390 mobile</option><option value="1280">1280 desktop</option><option value="1440">1440 desktop</option></select></label>
   <label>Theme <select id="t"><option value="dark">dark</option><option value="light">light</option></select></label>
-  <p>Mockup only, waiting for owner approval. One optional mood per entry, on a 1 to 5 scale in every variant (1 Nehéz, 2 Borongós, 3 Rendben, 4 Jó, 5 Nagyszerű), so stats and the calendar in 0.8 can chart it the same way whichever look wins. The colours go from cool blue (low) to warm amber (high): no red anywhere. Every value always has a word next to it, so nothing relies on colour alone. Tapping the chosen value again clears it.</p>
+  <p>Approved 2026-11-28 (variant A, faces). One optional mood per entry on a 1 to 5 scale (1 Nehéz, 2 Borongós, 3 Rendben, 4 Jó, 5 Nagyszerű; EN Rough, Low, Okay, Good, Great), ready to chart in 0.8. The colours go from cool blue (low) to warm amber (high): no red anywhere. Every face always has its word next to it, so nothing relies on colour alone. Tapping the chosen face again clears it.</p>
 </div>
 <div class="stage"><div id="frame"></div></div>
 
@@ -515,32 +471,22 @@ const WORDS=()=>[null,L('Nehéz','Rough'),L('Borongós','Low'),L('Rendben','Okay
 const mc=v=>`--mc:var(--m${v})`;
 const MOUTH={1:'M13 28.5Q20 22.5 27 28.5',2:'M14 27Q20 24.6 26 27',3:'M14 26H26',4:'M14 25Q20 28.6 26 25',5:'M13 24Q20 31.5 27 24'};
 const face=(v,cls='')=>`<svg class="fc ${cls}" viewBox="0 0 40 40" style="${mc(v)}" aria-hidden="true"><circle class="o" cx="20" cy="20" r="17"/><circle class="f" cx="14.5" cy="16" r="1.9"/><circle class="f" cx="25.5" cy="16" r="1.9"/><path class="mo" d="${MOUTH[v]}"/></svg>`;
-const sky=v=>`<svg class="i sky" style="${mc(v)}" aria-hidden="true"><use href="#sky${v}"/></svg>`;
-const dot=v=>`<span class="dot" style="${mc(v)}" aria-hidden="true"></span>`;
 
 /* pickers: sel = 0 (none) or 1..5 */
 const rg=lab=>`role="radiogroup" aria-label="${lab}"`;
 const pick={
   face:sel=>`<div class="moodA" ${rg(L('Hangulat','Mood'))}>${[1,2,3,4,5].map(v=>`<button role="radio" aria-checked="${v===sel}">${face(v,v===sel?'on':'')}<span>${WORDS()[v]}</span></button>`).join('')}</div>`,
-  color:sel=>`<div class="moodB"><div class="mb-top"><span class="vh">${L('Kiválasztva','Selected')}: </span><b class="${sel?'':'none'}" aria-live="polite">${sel?WORDS()[sel]:L('Válassz a skálán','Pick a point on the scale')}</b></div>
-    <div class="mbar" ${rg(L('Hangulat','Mood'))}>${[1,2,3,4,5].map(v=>`<button role="radio" aria-checked="${v===sel}" aria-label="${WORDS()[v]}" style="${mc(v)}">${v===sel?ic('check'):''}</button>`).join('')}</div>
-    <div class="ends" aria-hidden="true"><span>${WORDS()[1]}</span><span>${WORDS()[5]}</span></div></div>`,
-  word:sel=>`<div class="moodC" ${rg(L('Hangulat','Mood'))}>${[1,2,3,4,5].map(v=>`<button role="radio" aria-checked="${v===sel}" style="${mc(v)}">${ic('sky'+v)}${WORDS()[v]}</button>`).join('')}</div>`,
 };
 /* small mark for timeline cards / rows */
 const mark={
   face:v=>`<span class="mm">${face(v,'tint')}<span class="vh">${L('Hangulat','Mood')}: </span>${WORDS()[v]}</span>`,
-  color:v=>`<span class="mm">${dot(v)}<span class="vh">${L('Hangulat','Mood')}: </span>${WORDS()[v]}</span>`,
-  word:v=>`<span class="mm" style="${mc(v)}">${ic('sky'+v)}<span class="vh">${L('Hangulat','Mood')}: </span>${WORDS()[v]}</span>`,
 };
 /* chip on the entry page */
 const chip={
   face:v=>`<button class="chip" aria-label="${L('Hangulat','Mood')}: ${WORDS()[v]}. ${L('Módosítás','Change')}">${face(v,'tint')}${WORDS()[v]}</button>`,
-  color:v=>`<button class="chip" aria-label="${L('Hangulat','Mood')}: ${WORDS()[v]}. ${L('Módosítás','Change')}">${dot(v)}${WORDS()[v]}</button>`,
-  word:v=>`<button class="chip" style="${mc(v)}" aria-label="${L('Hangulat','Mood')}: ${WORDS()[v]}. ${L('Módosítás','Change')}">${sky(v)}${WORDS()[v]}</button>`,
 };
 const addChip=()=>`<button class="chip addm">${ic('plus',18)}${L('Hangulat','Mood')}</button>`;
-const NAMES={face:'A · Arcok',color:'B · Színskála',word:'C · Szavak, égbolt-ikonnal'};
+const NAMES={face:'Faces'};
 
 /* ---- shared content ---- */
 const chipCal=t=>`<button class="chip">${ic('cal',18)}${t}</button>`;
@@ -572,7 +518,7 @@ const entryPage=(k,label,inner,curMood)=>({label,nav:'ido',tabs:0,side:1,rec:1,
   d:()=>`<div class="split"><section class="list" aria-label="Idővonal">${rows(k,curMood)}</section>
    <article class="read"><div class="read-in"><div class="topbar">${acts}</div>${inner()}</div></article></div>`});
 
-for(const k of ['face','color','word']){
+for(const k of ['face']){
   const n=NAMES[k];
   S[k+'write']={label:`${n}: writing an entry (picked "Jó")`,nav:'ma',tabs:0,side:1,rec:1,
     body:()=>`<div class="wr-top"><button class="back">${ic('back')}Vissza</button><button class="btn sm">Kész</button></div>
@@ -591,19 +537,6 @@ for(const k of ['face','color','word']){
     body:()=>`<h1 class="title">Idővonal</h1>${DAYS.map(([d,items])=>`<h2 class="day">${d}</h2>${items.map(it=>tcard(k,it)).join('')}`).join('')}`};
 }
 
-/* ---- compare board ---- */
-const board=en=>({label:en?'All three side by side, in English (length check)':'All three side by side',board:1,
-  body:()=>{EN=en;const h=`<h1 class="title">${L('Hangulat: három változat','Mood: three variants')}</h1>
-  <p class="lead">${L('Ugyanaz az 1-5 skála mindháromban. Fent a választó, alatta hogyan látszik az idővonalon és a bejegyzésen.','Same 1 to 5 scale in all three. The picker on top, then how it shows on the timeline and on the entry.')}</p>
-  <div class="bgrid">${['face','color','word'].map(k=>`<section class="bcard"><h2>${{face:L('A · Arcok','A · Faces'),color:L('B · Színskála','B · Colour scale'),word:L('C · Szavak','C · Words')}[k]}</h2>
-    <p>${{face:L('Öt egyszerű arc, alattuk a szó.','Five simple faces, each with its word.'),color:L('Hideg kéktől meleg borostyánig, a szó fölötte.','Cool blue to warm amber, the word above it.'),word:L('Szavak égbolt-ikonnal, esőtől napsütésig.','Words with a sky icon, from rain to sunshine.')}[k]}</p>
-    <h3>${L('Választás','Picking')}</h3>${pick[k](4)}
-    <h3>${L('Idővonal','Timeline')}</h3><div class="card">${meta(k,'mic','20:42 · 1:48',4)}<p class="ex">${L('Hosszú nap, de jó értelemben.','A long day, but a good one.')}</p></div>
-    <div class="card" style="margin-top:8px">${meta(k,'pen','13:05',1)}<p class="ex">${L('Rosszul aludtam, és fáj a fejem.','Slept badly and my head hurts.')}</p></div>
-    <h3>${L('Bejegyzés','Entry')}</h3><div class="chips">${chip[k](4)}${addChip()}</div></section>`).join('')}</div>`;EN=false;return h;}});
-S.compare=board(false);
-S.compareen=board(true);
-
 /* ---- render (same as 010, plus a full-width board) ---- */
 const nav=[['ma','home','Ma'],['ido','list','Idővonal'],['kereses','search','Keresés'],['beall','gear','Beállítások']];
 function render(id,dev,theme){
@@ -611,9 +544,7 @@ function render(id,dev,theme){
   const f=document.getElementById('frame');
   const cls=`frame ${m?'m':'d'} ${theme==='light'?'light':''}`;
   let h='';
-  if(sc.board){
-    h+=m?`<div class="status"><span>21:14</span><span>5G ▮▮▮</span></div><div class="board">${sc.body()}</div>`:`<main class="main board">${sc.body()}</main>`;
-  }else if(m){
+  if(m){
     h+=`<div class="status"><span>21:14</span><span>5G ▮▮▮</span></div><div class="scroll">${sc.body()}</div>`;
     if(sc.tabs)h+=`<nav class="tabs" aria-label="Fő navigáció">${nav.map(([k,i,l])=>`<a href="#" ${sc.nav===k?'aria-current="page"':''}>${ic(i)}${l}</a>`).join('')}</nav>`;
   }else{
@@ -627,7 +558,7 @@ const sel=document.getElementById('s');
 sel.innerHTML=Object.entries(S).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 const q=new URLSearchParams(location.hash.slice(1));
 if(q.get('chrome')==='0')document.body.classList.add('nochrome');
-sel.value=q.get('s')||'compare';document.getElementById('d').value=q.get('d')||'m';document.getElementById('t').value=q.get('t')||'dark';
+sel.value=q.get('s')||'facewrite';document.getElementById('d').value=q.get('d')||'m';document.getElementById('t').value=q.get('t')||'dark';
 const go=()=>render(sel.value,document.getElementById('d').value,document.getElementById('t').value);
 ['s','d','t'].forEach(i=>document.getElementById(i).addEventListener('change',go));
 go();

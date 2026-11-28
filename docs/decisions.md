@@ -8,6 +8,13 @@ Newest at the bottom. To change a decision, add a new entry that replaces the ol
 |---|---|---|
 | O-6 | Model folders of a model that a later release removes from `models.json` stay on disk with no Delete button | Leave, or list and delete unknown folders in Settings. Decide when a model is first dropped |
 | O-8 | After a timeout the cloud job gives up on a copy it could not delete, and cleanup retries stop after about 7 minutes. The copy stays at the vendor until the next restart (the start-up cleanup deletes it) | Leave (rare), or add a daily cleanup run. Decide if it ever shows up |
+| O-9 | 0.5: can a username be changed later? | **Recommended: no.** The username is fixed once the account exists (the edit dialog shows it read-only). Specs 012 assume this |
+| O-10 | 0.5: can an admin delete or demote themselves in Settings > Users? | **Recommended:** no self-delete from Users; demoting yourself is allowed only while another admin exists. Spec 012 assumes this |
+| O-11 | 0.5: editing yourself in Users, can you set your own password there? | **Recommended: no.** The dialog points to Account, where the current password is always checked. Specs 011, 012 assume this |
+| O-12 | 0.5: does a password change sign the user out on other devices? | **Recommended: yes**, for both your own change (this device stays signed in) and an admin reset (all of that user's sessions end). Specs 011, 012 assume this |
+| O-13 | 0.5: downloaded file type for uploaded recordings | **Recommended:** keep the stored file as it is, so an uploaded .m4a downloads as .m4a (no conversion). Spec 014 assumes this |
+| O-14 | 0.5: should basic users see where transcription runs? | **Recommended: yes**, one read-only line in Settings > General (local model or the cloud provider, or off). Not in the mockup yet. Spec 011 assumes this |
+| O-15 | 0.5: mood placement | **Recommended:** as designed: picker under the text in the writer, plus a one-time card on the entry right after a recording. Spec 013 assumes this |
 | O-5 | Speech recognition approach | Round 2 done (150 FLEURS sentences/lang, fairer scoring, `eval/reports/public-round2-2026-11-26.md`): Whisper turbo HU 15.5% / EN 5.2% WER at RTF 0.39; large-v3 13.6% and BuzzASR 12.4% HU but ~6x slower (RTF 2.2, 5 GB RAM); Canary 16.3%; Parakeet 30.9%. Lean: turbo. Owner decides after own clips + Soniox yardstick |
 
 ## Requirements the owner asked for
@@ -30,7 +37,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-1 | Search (Hungarian-aware) | in scope |
 | S-2 | Export zip + backup guide | backlog |
 | S-3 | Import from Day One / Journiv / Markdown | backlog |
-| S-4 | Mood | in scope |
+| S-4 | Mood | in scope, 0.5 (D-64, spec 013) |
 | S-5 | Manual tags + filters (AI tags exist either way) | in scope |
 | S-6 | Calendar view + gentle stats | in scope |
 | S-7 | Multiple journals, favourites | in scope |
@@ -40,7 +47,7 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | S-11 | Playback with word highlighting | backlog |
 | S-12 | Ask your journal (semantic search + answers) | backlog |
 | S-13 | Monthly summaries | backlog |
-| S-14 | More users per instance (family) | backlog |
+| S-14 | More users per instance (family) | in scope, 0.5 (D-63, spec 012) |
 | S-15 | Passkeys | backlog |
 | S-16 | AI photo captions | backlog |
 | S-17 | Native app wrapper (Capacitor) | backlog |
@@ -110,6 +117,12 @@ Owner's answer (2026-11-26): **in scope** S-1, S-4, S-5, S-6, S-7, S-8, S-9. **B
 | D-58 | 11-28 | The owner's Soniox account is US region; fine for now. No provider region choice | Owner |
 | D-59 | 11-28 | Provider API keys are encrypted under an instance secret: `NIGHTJAR_SECRET_KEY` (64 hex characters, `openssl rand -hex 32`) when set, else a `secret.key` file the server makes on first start in the data folder. Back the file up with the database (the existing data-folder backup has it); without it the provider keys must be entered again. Better Auth's `auth_secret` is not used (same database as the keys). Spec 010 | Owner picked A with an env override |
 | D-60 | 11-28 | Privacy notes only in Settings. No "your voice stays on your server" or "transcribed in the cloud" note anywhere else: the existing sidebar and record-screen note goes away. The cloud / local icon on the transcript label stays. Replaces the record-screen hint of D-52. Spec 010 | Owner |
+| D-61 | 11-28 | Settings in tabs: Általános (General), Átírás (Transcription, admin), Felhasználók (Users, admin), Fiók (Account). One URL per tab (`/settings/general`, `/transcription`, `/users`, `/account`; `/settings` opens General). Tabs sit at the top of the page on phone and desktop, so they don't clash with the bottom tab bar or the sidebar. A basic user sees General and Account only. Mockup `design/alkony/011-settings-users.html`, spec 011 | Owner approved the mockups |
+| D-62 | 11-28 | Appearance switch in General: Rendszer (System, default) / Világos (Light) / Sötét (Dark), saved per user like the UI language, applied at once without a reload and with no flash on load. Replaces "no theme setting" (design.md, spec 006 AC-9). Spec 011 | Owner |
+| D-63 | 11-28 | Several users per instance (S-14). No public sign-up: an admin creates accounts in Settings > Users (name, username, role user/admin, a starting password the admin sets, not forced to change). Admins edit name and role and set a new password; delete removes the user with all their entries, recordings, transcripts and files, confirmed by typing the username. There is always at least one admin. Admins can't read other users' entries anywhere (no "view as"). Every user changes their own password in Account (current password needed). Specs 011, 012 | Owner approved the mockups |
+| D-64 | 11-28 | Mood: variant A (faces). One optional mood per entry on a 1-5 scale (Nehéz, Borongós, Rendben, Jó, Nagyszerű / Rough, Low, Okay, Good, Great), cool blue to warm amber, no red, always with its word. Picked in the writer and on the entry (one-time card after a recording), shown as a chip on the entry and in the timeline card. Stored as 1-5 so 0.8 can chart it. B (colour scale) and C (words) dropped. Spec 013 | Owner pick |
+| D-65 | 11-28 | Download a recording from the recording card's "…" menu ("Letöltés", next to "Átírás újra"), file named `nightjar-YYYY-MM-DD-HHMM.<ext>`. Spec 014 | Owner |
+| D-66 | 11-28 | M2 ships as smaller releases: 0.5 settings tabs, appearance, users, mood, download; 0.6 journals, tags, favourites; 0.7 photos; 0.8 calendar and stats, look-backs, prompts. Mood moves from M2's list into 0.5 | Owner |
 | D-45 | 11-27 | Faster CI: skip CI for docs-only changes, split verify into parallel jobs (checks + unit, API, e2e per browser), open a PR only when the branch is verified locally and review fixes are in, fix flaky tests at the root. Parallel e2e within one browser later | Owner |
 | D-44 | 11-27 | M1 round 2 screens approved as they are (small differences from the mockups accepted). Claude may open and merge the pre-0.2.0 PRs and the 0.2.0 release PR once smoke test and CI are green | Owner |
 | D-43 | 11-27 | Sign in with username + password instead of email (no email can be sent). Setup asks for a username, a name ("What should we call you?") and a password; the name is used in the greeting and can be changed in Settings. Email is not collected for now; it can be added later for OAuth or a hosted version. Breaking DB change is fine: nobody has installed 0.1.0 | Owner |

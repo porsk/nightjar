@@ -1,7 +1,7 @@
 # Roadmap
 
 **Now:** 0.4.0 released: cloud transcription (Soniox, Gladia; spec 010). 0.3.0 shipped search partial matches (spec 005 update) and model choice + transcribe again (spec 009). Owner's server (i5-6500T, no VNNI) transcribes badly with local int8 Whisper; owner tries Soniox (7.9% WER on own clips vs 17.9% Gladia / local large-v3, 25.7% turbo).
-**Next:** owner switches to Soniox on 0.4.0 and journals for a week (M1 done-when), then M2 planning. Owner rotates the Soniox and Gladia keys shared in chat. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser.
+**Next:** 0.5 (D-66): mockups approved 2026-11-28 (mood = faces). Specs 011 to 014 are drafts on branch `design/0.5`; they use the recommended answers to O-9 to O-15 until the owner answers, then get approved and built. Owner switches to Soniox on 0.4.0 and journals for a week (M1 done-when). Owner rotates the Soniox and Gladia keys shared in chat. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 
@@ -54,13 +54,27 @@ Done when: the owner journals daily for a week on phone + desktop.
 Tests: every AC has a unit, API or e2e test. E2E records a HU and an EN WAV through the fake mic and sees the transcript. `/readyz` and `/metrics` are tested.
 
 ## M2 Journaling
-- [ ] Photos
-- [ ] Mood
-- [ ] Manual tags + filters
+
+Shipped as smaller releases (D-66).
+
+### 0.5 Accounts, mood, download
+Mockups approved 2026-11-28 (`design/alkony/011-settings-users.html`, `012-mood.html`). Specs are drafts until the owner answers O-9 to O-15.
+- [ ] 011 Settings tabs, appearance (System / Light / Dark), change own password (spec draft)
+- [ ] 012 Users and roles: admin creates, edits, deletes users; last-admin rules; no reading other users' entries (spec draft)
+- [ ] 013 Mood (faces, 1-5) (spec draft)
+- [ ] 014 Download a recording (spec draft)
+
+### 0.6 Organise
 - [ ] Multiple journals + favourites
-- [ ] Calendar + gentle stats
-- [ ] Prompts (HU + EN library, daily prompt, custom prompts)
+- [ ] Manual tags + filters
+
+### 0.7 Photos
+- [ ] Photos
+
+### 0.8 Reflect
+- [ ] Calendar + gentle stats (mood over time)
 - [ ] Look-backs (on this day, 1 month / 1 year ago)
+- [ ] Prompts (HU + EN library, daily prompt, custom prompts)
 
 Done when: the owner can attach photos, tag and filter entries, switch journals and get a daily prompt.
 Tests: API tests for tags, filters, journals and look-back dates (fixed clock and time zone). E2E for photo upload, calendar and prompt flow.
@@ -82,5 +96,5 @@ Done when: a recording made with no connection uploads and transcribes once the 
 Tests: e2e with the network switched off and on, queue survives a reload. Full `pnpm verify` and the release smoke test are green on the release build.
 
 ## Backlog (not planned)
-S-2, S-3, S-10 to S-18 in `decisions.md`: export zip and backups, imports, share target and widgets, word-highlight playback,
-ask your journal, monthly summaries, family accounts, passkeys, AI photo captions, Capacitor, GHCR.
+S-2, S-3, S-10 to S-13, S-15 to S-18 in `decisions.md`: export zip and backups, imports, share target and widgets, word-highlight playback,
+ask your journal, monthly summaries, passkeys, AI photo captions, Capacitor, GHCR. (Family accounts, S-14, moved into 0.5.)

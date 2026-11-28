@@ -61,7 +61,7 @@ audio, and the entry page shows typed text and recordings together. Search and A
 | Text entry with Markdown editor | M1 |
 | Entry date picker (write about yesterday) | M1 |
 | Upload an existing audio file (voice memo from phone) | M1 |
-| Photos: attach from camera/gallery, thumbnails | M2 |
+| Photos: attach from camera/gallery, thumbnails | 0.7 |
 | Offline recording queue: record with no connection, queue persists across reloads (IndexedDB) | M4 |
 
 ### Transcription
@@ -81,10 +81,10 @@ audio, and the entry page shows typed text and recordings together. Search and A
 |---|---|
 | Timeline (grouped by day, infinite scroll) | M1 |
 | Search across text + transcripts: matches anywhere inside words, accents and case optional | M1 |
-| Mood | M2 |
-| Manual tags + filters (tag, mood, journal, date range, has audio/photos) | M2 |
-| Multiple journals, favourites | M2 |
-| Calendar view (days with entries, mood colour) | M2 |
+| Mood: one optional face per entry, 1-5 (D-64, spec 013) | 0.5 |
+| Manual tags + filters (tag, mood, journal, date range, has audio/photos) | 0.6 |
+| Multiple journals, favourites | 0.6 |
+| Calendar view (days with entries, mood colour) | 0.8 |
 
 ### Reflect
 | Feature | Milestone |
@@ -114,6 +114,9 @@ audio, and the entry page shows typed text and recordings together. Search and A
 | First-run setup wizard: setup code from the server log, owner account, language, transcription now or later | M1 |
 | Login with password | M1 |
 | Settings: UI language, default entry language, time zone | M1 |
+| Settings in tabs (General, Transcription, Users, Account), one URL each; appearance System / Light / Dark per user; change own password (spec 011) | 0.5 |
+| Users: admin creates, edits and deletes accounts (no public sign-up), at least one admin, admins can't read other users' entries (spec 012) | 0.5 |
+| Download a recording from its menu (spec 014) | 0.5 |
 | Edit and delete entries (hard delete with media) | M1 |
 | Logs, health checks, metrics | M1 |
 

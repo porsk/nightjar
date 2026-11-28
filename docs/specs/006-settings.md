@@ -13,7 +13,7 @@ In (screen names from `design/alkony/m1.html`):
   username, "Kijelentkezés" from spec 001). The "Rendszergazda" section is spec 003. Changes save right away, no save button.
 - **HU/EN UI**: react-i18next, catalogues in `packages/shared`, every user-facing string through i18n, dates and times via
   `Intl` in the UI language, `<html lang>` follows the UI language. Before login the browser language is used.
-- **Theme**: follows the system light / dark setting, no theme setting (design.md).
+- **Theme**: follows the system light / dark setting, no theme setting (design.md). Replaced in 0.5 by the appearance switch of spec 011 (D-62), which also replaces AC-9.
 - **Installable app** (D-30 Q12): `vite-plugin-pwa` manifest, icons and a service worker that caches the app shell
   (static files) only. API responses and audio are never cached. The offline recording queue stays in M4.
 - **Defaults** (D-31): English is the default UI language; the default recording language follows the UI language.

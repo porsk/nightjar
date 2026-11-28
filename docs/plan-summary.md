@@ -7,12 +7,13 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 | Area | Features | Milestone |
 |---|---|---|
 | Capture | Record in the browser/PWA, type, upload an audio file | M1 |
-| Capture | Photos | M2 |
+| Capture | Photos | M2 (0.7) |
 | Capture | Offline recording queue | M4 |
 | Transcription | Offline, background, editable, HU / EN / auto | M1 |
 | Find | Timeline, search that finds any part of a word, accents optional | M1 |
-| Find | Mood, manual tags, filters, multiple journals, favourites, calendar | M2 |
-| Reflect | Prompts, look-backs, gentle stats | M2 |
+| Accounts | Settings tabs, light / dark switch, users managed by an admin, change password | 0.5 |
+| Find | Mood (0.5); manual tags, filters, multiple journals, favourites (0.6); calendar (0.8) | M2 |
+| Reflect | Prompts, look-backs, gentle stats | M2 (0.8) |
 | AI (opt-in) | Claude or Ollama suggest summary, tags, people, places | M3 |
 | MCP (opt-in) | Claude reads (then writes) your journal with an access token | M3 |
 
@@ -35,7 +36,7 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 | Part | Choice |
 |---|---|
 | Server | Node 26 (runs `.ts` directly), Fastify, Zod, Drizzle, pg-boss (jobs in Postgres), Better Auth |
-| Web | React 19, Vite, React Router, TanStack Query, i18next, PWA. Follows system light/dark |
+| Web | React 19, Vite, React Router, TanStack Query, i18next, PWA. Light / dark follows the system or a per-user choice (0.5) |
 | Speech | Whisper via sherpa-onnx, off by default; you turn it on in Settings and the model downloads then. Choose in Settings between Turbo (int8, default), Turbo full precision (older CPUs) and Large-v3; transcribe again per recording (D-20, D-23, D-47, D-48) |
 | Search | Postgres `pg_trgm` substring search, accents and case ignored (D-46) |
 | AI | Claude (official SDK) or Ollama, provider and key set in Settings (stored encrypted, M3), off by default |
@@ -50,7 +51,7 @@ A self-hosted journal you can talk to. Hungarian + English, transcribed offline 
 |---|---|---|
 | M0 | Foundations | Spikes reported, test harness, Docker image, CI publishes `edge`, design + M1 specs approved |
 | M1 | Speak and keep | Setup, login, text + voice entries, upload audio, timeline, search, settings, HU/EN, logs/health/metrics |
-| M2 | Journaling | Photos, mood, tags + filters, journals + favourites, calendar + stats, prompts, look-backs |
+| M2 | Journaling | In releases (D-66): 0.5 settings tabs, light / dark, users, mood, download; 0.6 journals, tags, favourites; 0.7 photos; 0.8 calendar + stats, look-backs, prompts |
 | M3 | AI and MCP | Claude/Ollama suggestions, MCP server with tokens |
 | M4 | Offline capture, then 1.0 | Offline recording queue, hardening, 1.0 release |
 
