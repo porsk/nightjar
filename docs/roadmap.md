@@ -1,7 +1,7 @@
 # Roadmap
 
-**Now:** 0.2.1: search partial matches (merged), transcription model choice (Turbo, Turbo full precision, Large-v3) and transcribe again (spec 009, built and verified in branch `feat/transcription-models`). The loop guard was dropped.
-**Next:** spec 010 cloud transcription providers (Soniox, Gladia; approved, `docs/specs/010-cloud-transcription.md`, build after 0.2.1 on top of main once spec 009 is merged; new migrations start at `0011`). Owner installs 0.2.0 and journals for a week (M1 done-when). Then M2 planning. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser, owner speech clips + Soniox yardstick.
+**Now:** spec 010 cloud transcription providers (Soniox, Gladia) built and verified in branch `feat/cloud-transcription` (migration `0011`), waiting for the owner to push and open the PR. 0.2.1 (search partial matches, spec 009 model choice and transcribe again) is merged.
+**Next:** review and merge the branch. Owner installs the next release and journals for a week (M1 done-when). Then M2 planning. Open: local-only flakes in model-manager.test.ts and the /readyz db_down test under full-suite load (cause not found). Later: parallel e2e within one browser, owner speech clips + Soniox yardstick.
 
 Legend: `[ ]` todo, `[~]` in progress, `[x]` done. Each milestone ends with something usable.
 

@@ -32,7 +32,7 @@ Image tag in `docker/compose.yaml`:
 
 Back both up, see the [backup guide](backup.md).
 
-### Instance secret (from the release with cloud transcription, spec 010)
+### Instance secret
 
 API keys for cloud transcription providers are stored encrypted. The key that encrypts them is the instance secret:
 32 random bytes written as 64 hex characters.

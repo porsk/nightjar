@@ -1,6 +1,6 @@
 # 010 Cloud transcription providers
 
-Status: approved
+Status: done
 Milestone: after 0.2.1
 
 ## Why
@@ -134,8 +134,9 @@ export interface CloudProvider {
   upload(call: ProviderCall, file: { path: string; extension: AudioExtension }): Promise<VendorCopy>
   start(call: ProviderCall, copy: VendorCopy, language: EntryLanguage): Promise<VendorCopy> // adds the job id
   poll(call: ProviderCall, copy: VendorCopy): Promise<PollResult>
-  /** Deletes everything the copy names. "Not found" counts as deleted. Throws ProviderError otherwise. */
-  remove(call: ProviderCall, copy: VendorCopy): Promise<void>
+  /** Deletes everything the copy names. "Not found" counts as deleted. Throws ProviderError otherwise.
+   *  `no_delete_api` means the vendor cannot delete what the copy names (Gladia upload without a job). */
+  remove(call: ProviderCall, copy: VendorCopy): Promise<'deleted' | 'no_delete_api'>
 }
 ```
 
@@ -238,7 +239,7 @@ export type TranscriberFactory = (engineId: string) => Transcriber // local mode
 ### Cleanup
 
 - `cloud_copies` holds one row per vendor copy that may still exist. Rows hold vendor ids only, never content.
-- Queue `cloud-cleanup` (pg-boss, `retryLimit: 3`, `retryDelay: 60`, `retryBackoff: true`, singleton per minute):
+- Queue `cloud-cleanup` (pg-boss, `retryLimit: 3`, `retryDelay: 60`, `retryBackoff: true`; the queue holds at most one waiting job, `policy: 'short'`, so a failure right after another run is never dropped):
   deletes every row older than 1 minute whose recording is not `transcribing` (or is gone), with that provider's saved
   key. Success removes the row. A failure logs `{ provider, reason }` at `warn` ("provider cleanup failed"); after the
   last retry it logs "provider cleanup gave up" and the row stays for the next run.

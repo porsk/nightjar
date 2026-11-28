@@ -171,6 +171,7 @@ variable and never prints its value.
 | `LOG_LEVEL` | `info` | `fatal`, `error`, `warn`, `info`, `debug` or `trace` |
 | `NIGHTJAR_WEB_DIR` | unset | Built web app to serve (the image sets it) |
 | `NIGHTJAR_DATA_DIR` | `/data` | Folder for files (recordings, later models). The image has it as a volume |
+| `NIGHTJAR_SECRET_KEY` | unset | Instance secret for the saved cloud provider keys: 64 hex characters (`openssl rand -hex 32`). Any other value stops the start. Unset: the app makes `secret.key` in `NIGHTJAR_DATA_DIR` on first start |
 | `NIGHTJAR_TRANSCRIBER` | `sherpa` | `sherpa` runs the real model, `fake` returns fixed text per language (tests) |
 | `NIGHTJAR_TRUST_PROXY` | `0` | Number of reverse proxies in front of the server (`1` behind one). 0 ignores `X-Forwarded-*`. With 1 the client IP (login rate limit) and https (Secure cookie) come from what that proxy added; a client-set leftmost `X-Forwarded-For` is never trusted. The proxy must keep the original `Host` header |
 
