@@ -374,7 +374,7 @@ test.describe('004-timeline: timeline and Home', () => {
     await expect(bar.getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page')
     if (isWide(page)) {
       await expect(page.locator('nav.tabs')).toBeHidden()
-      await expect(bar.getByText('Your voice stays on your own server.')).toBeVisible()
+      await expect(bar.getByText('Your voice stays on your own server.')).toHaveCount(0)
       await expect(bar.getByRole('link', { name: 'New recording' })).toHaveCount(0)
     } else {
       await expect(page.locator('nav.side')).toBeHidden()

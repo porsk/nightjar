@@ -23,17 +23,36 @@ export async function resetDatabase() {
   await client.connect()
   try {
     await client.query('truncate users cascade')
+    await client.query('delete from provider_secrets')
+    await client.query('delete from cloud_copies')
     await client.query(
       `update instance_settings set transcription_enabled = false, setup_code_hash = $1,
-         active_model = $2, model_download_state = 'idle', model_downloaded_bytes = 0,
+         active_engine = $2, model_download_state = 'idle', model_downloaded_bytes = 0,
          model_download_id = null, model_download_use = false, model_download_error = null`,
       [createHash('sha256').update(setupCodeFromLog()).digest('hex'), testModelId],
     )
   } finally {
     await client.end()
   }
+  await cloudServer('reset')
   rmSync(path.join(e2eServerFiles.dataDir, 'models'), { recursive: true, force: true })
   rmSync(path.join(e2eServerFiles.dataDir, 'media'), { recursive: true, force: true })
+}
+
+const cloudOrigin = () => readFileSync(e2eServerFiles.cloudUrl, 'utf8')
+
+/** Talks to the vendor fixture server of the e2e server: reset it, change how it answers, or read what it got. */
+export async function cloudServer(action: 'reset'): Promise<void>
+export async function cloudServer(action: 'behaviour', body: object): Promise<void>
+export async function cloudServer(
+  action: 'requests',
+): Promise<{ vendor: string; method: string; path: string; auth: string; fileName?: string }[]>
+export async function cloudServer(action: string, body: object = {}): Promise<unknown> {
+  const response = await fetch(`${cloudOrigin()}/control/${action}`, {
+    method: action === 'requests' ? 'GET' : 'POST',
+    ...(action === 'behaviour' ? { body: JSON.stringify(body) } : {}),
+  })
+  return action === 'requests' ? ((await response.json()) as unknown) : undefined
 }
 
 export async function readTranscriptionFlag() {
@@ -240,6 +259,8 @@ export async function seedRecording(options: {
   language?: 'hu' | 'en' | 'auto'
   transcript?: { text: string; language: 'hu' | 'en'; isUserEdited?: boolean; model?: string }
   clip?: 'en-sample.wav' | 'hu-sample.wav'
+  failure?:
+    'api_key_invalid' | 'quota_exceeded' | 'provider_unavailable' | 'timeout' | 'audio_rejected'
 }) {
   return withDatabase(async (client) => {
     const user = await client.query<{ id: string }>('select id from users limit 1')
@@ -253,8 +274,8 @@ export async function seedRecording(options: {
     copyFileSync(path.join(fixtureFolder, clip), target)
     const size = readFileSync(target).length
     await client.query(
-      `insert into recordings (id, user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status)
-       values ($1, $2, $3, $4, 'audio/wav', $5, $6, $7, $8)`,
+      `insert into recordings (id, user_id, entry_id, file_path, mime_type, size_bytes, duration_ms, language, status, failure)
+       values ($1, $2, $3, $4, 'audio/wav', $5, $6, $7, $8, $9)`,
       [
         id,
         userId,
@@ -264,6 +285,7 @@ export async function seedRecording(options: {
         Math.round(((size - 44) / 32000) * 1000),
         options.language ?? 'en',
         options.status,
+        options.failure ?? null,
       ],
     )
     if (options.transcript) {
