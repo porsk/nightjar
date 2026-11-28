@@ -92,6 +92,13 @@ export async function waitFor<T>(
   }
 }
 
+/** A finished download still holds the download slot until the final save, so wait for that before acting on the model. */
+export const waitForDownloadSlotFree = (database: Database) =>
+  waitFor(async () => {
+    const [saved] = await database.db.select().from(instanceSettings)
+    return saved?.modelDownloadId === null && saved.modelDownloadState === 'idle'
+  }, 'the download slot to be cleared')
+
 /** The server pieces of a voice test: app, worker, fake transcriber, model server and two users. */
 export function createVoiceHarness(context: {
   postgres: () => StartedPostgreSqlContainer
