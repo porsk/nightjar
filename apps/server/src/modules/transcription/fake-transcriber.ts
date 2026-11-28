@@ -35,16 +35,17 @@ export function createFakeTranscriber(options: FakeTranscriberOptions = {}) {
     delayMs: options.delayMs ?? 0,
   }
 
-  const factory: TranscriberFactory = (model) => {
+  const factory: TranscriberFactory = (engineId) => {
     state.liveInstances++
     state.maxLiveInstances = Math.max(state.maxLiveInstances, state.liveInstances)
     state.createdInstances++
-    state.createdFor[model.id] = (state.createdFor[model.id] ?? 0) + 1
-    state.liveFor[model.id] = (state.liveFor[model.id] ?? 0) + 1
+    state.createdFor[engineId] = (state.createdFor[engineId] ?? 0) + 1
+    state.liveFor[engineId] = (state.liveFor[engineId] ?? 0) + 1
     let disposed = false
     const transcriber: Transcriber = {
-      modelId: model.id,
-      transcribe: async (_wavPath, language): Promise<TranscriptResult> => {
+      modelId: engineId,
+      input: 'wav',
+      transcribe: async (_audio, language): Promise<TranscriptResult> => {
         state.calls.push({ language })
         state.parallel++
         state.maxParallel = Math.max(state.maxParallel, state.parallel)
@@ -58,7 +59,7 @@ export function createFakeTranscriber(options: FakeTranscriberOptions = {}) {
           const spoken: Language = language === 'auto' ? (options.detected ?? 'hu') : language
           const text = options.text ?? fakeTexts[spoken]
           return {
-            text: options.textNamesModel ? `${text} [${model.id}]` : text,
+            text: options.textNamesModel ? `${text} [${engineId}]` : text,
             language: spoken,
           }
         } finally {
@@ -69,7 +70,7 @@ export function createFakeTranscriber(options: FakeTranscriberOptions = {}) {
         if (!disposed) {
           disposed = true
           state.liveInstances--
-          state.liveFor[model.id] = (state.liveFor[model.id] ?? 1) - 1
+          state.liveFor[engineId] = (state.liveFor[engineId] ?? 1) - 1
         }
         return Promise.resolve()
       },

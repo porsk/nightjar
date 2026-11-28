@@ -8,11 +8,22 @@ import { liveEventSchema, type LiveEvent } from '@nightjar/shared/recordings'
 import { eq } from 'drizzle-orm'
 import { expect } from 'vitest'
 import type { Database } from '../../src/database.ts'
-import { instanceSettings, recordings } from '../../src/db/schema.ts'
+import { cloudCopies, instanceSettings, providerSecrets, recordings } from '../../src/db/schema.ts'
 import { createEvents } from '../../src/events.ts'
-import { createJobs } from '../../src/jobs.ts'
+import { createJobs, type JobsOptions } from '../../src/jobs.ts'
 import { createLogger } from '../../src/logger.ts'
 import { createAuth } from '../../src/modules/auth/auth.ts'
+import {
+  createCleanupHandler,
+  createCopyCleaner,
+} from '../../src/modules/transcription/cloud/cleanup.ts'
+import type { CloudProvider } from '../../src/modules/transcription/cloud/provider.ts'
+import { createKeyStore } from '../../src/modules/transcription/cloud/key-store.ts'
+import {
+  createSecretBox,
+  resolveInstanceSecret,
+} from '../../src/modules/transcription/cloud/secrets.ts'
+import { createEngineFactory } from '../../src/modules/transcription/engines.ts'
 import {
   createFakeTranscriber,
   type FakeTranscriberOptions,
@@ -23,6 +34,7 @@ import type { TranscriberFactory } from '../../src/modules/transcription/transcr
 import { createStorage } from '../../src/storage.ts'
 import { startWorker } from '../../src/worker.ts'
 import { captureLogs } from './log-capture.ts'
+import { startCloudServer, type CloudServer } from './cloud-server.ts'
 import { modelFilesOf, startModelServer, testModelId, type ModelServer } from './model-server.ts'
 import { buildTestApp } from './test-app.ts'
 import { createUserWithSession, signInExistingUser } from './users.ts'
@@ -32,16 +44,19 @@ export const enWav = readFileSync(join(fixtures, 'en-sample.wav'))
 export const huWav = readFileSync(join(fixtures, 'hu-sample.wav'))
 
 /** Puts every setting about transcription back to a fresh install. */
-export const resetInstanceSettings = (database: Database) =>
-  database.db.update(instanceSettings).set({
+export const resetInstanceSettings = async (database: Database) => {
+  await database.db.update(instanceSettings).set({
     transcriptionEnabled: false,
-    activeModel: testModelId,
+    activeEngine: testModelId,
     modelDownloadState: 'idle',
     modelDownloadedBytes: 0,
     modelDownloadId: null,
     modelDownloadUse: false,
     modelDownloadError: null,
   })
+  await database.db.delete(providerSecrets)
+  await database.db.delete(cloudCopies)
+}
 
 export const wavSeconds = (wav: Buffer) => (wav.length - 44) / 32000
 
@@ -93,6 +108,18 @@ export function createVoiceHarness(context: {
     modelServer?: ModelServer
     now?: Date
     sameUsers?: boolean
+    /** Vendor fixture to use. A new one is started when none is given. */
+    cloudServer?: CloudServer
+    /** Replaces the providers, for tests that need another limit. They should point at the fixture server. */
+    providers?: (server: CloudServer) => CloudProvider[]
+    jobs?: JobsOptions
+    cloud?: {
+      pollIntervalMs?: number
+      partDeadlineMs?: (partDurationMs: number) => number
+      cleanupMinAgeMs?: number
+    }
+    /** Replaces `NIGHTJAR_SECRET_KEY`, for tests that stand in for a changed secret. */
+    secretKey?: string
   }
 
   async function launch(options: LaunchOptions = {}) {
@@ -103,8 +130,22 @@ export function createVoiceHarness(context: {
     const storage = createStorage(dataDir)
     const url = context.postgres().getConnectionUri()
     const events = createEvents({ databaseUrl: url, database, logger })
-    const jobs = createJobs(url, logger, { retryDelaySeconds: 1, pollingIntervalSeconds: 0.5 })
+    const jobs = createJobs(url, logger, {
+      retryDelaySeconds: 1,
+      cleanupRetryDelaySeconds: 1,
+      pollingIntervalSeconds: 0.5,
+      ...options.jobs,
+    })
     const modelServer = options.modelServer ?? (await startModelServer())
+    const cloudServer = options.cloudServer ?? (await startCloudServer())
+    if (!options.cloudServer) cleanups.push(cloudServer.close)
+    const providers = options.providers?.(cloudServer) ?? cloudServer.providers()
+    const instanceSecret = await resolveInstanceSecret({
+      env: options.secretKey,
+      dataDir,
+      logger,
+    })
+    const keys = createKeyStore(database, createSecretBox(instanceSecret))
     const transcription = createTranscriptionService({
       database,
       storage,
@@ -112,6 +153,17 @@ export function createVoiceHarness(context: {
       events,
       logger,
       models: modelServer.list,
+      providers,
+      keys,
+      now: () => options.now ?? new Date('2026-11-26T20:30:00Z'),
+    })
+    const cleaner = createCopyCleaner({
+      database,
+      keys,
+      providers,
+      logger,
+      fetch,
+      minAgeMs: options.cloud?.cleanupMinAgeMs ?? 0,
     })
     const fake = createFakeTranscriber(options.fake)
     const auth = await createAuth(database)
@@ -121,6 +173,7 @@ export function createVoiceHarness(context: {
       storage,
       events,
       transcription,
+      providers,
       capture,
       maxUploadBytes: options.maxUploadBytes,
       now: () => options.now ?? new Date('2026-11-26T20:30:00Z'),
@@ -132,8 +185,24 @@ export function createVoiceHarness(context: {
       events,
       metrics: test.metrics,
       logger: test.logger,
-      createTranscriber: options.wrapFactory?.(fake.factory) ?? fake.factory,
+      createTranscriber: createEngineFactory(
+        providers,
+        {
+          database,
+          storage,
+          keys,
+          cleaner,
+          fetch,
+          queueCleanup: jobs.enqueueCloudCleanup,
+          pollIntervalMs: options.cloud?.pollIntervalMs ?? 20,
+          ...(options.cloud?.partDeadlineMs
+            ? { partDeadlineMs: options.cloud.partDeadlineMs }
+            : {}),
+        },
+        options.wrapFactory?.(fake.factory) ?? fake.factory,
+      ),
       models: modelServer.list,
+      providers,
       hasQueuedJobs: jobs.hasQueuedJobs,
     })
     await events.start()
@@ -142,6 +211,7 @@ export function createVoiceHarness(context: {
       jobs,
       metrics: test.metrics,
       transcribe: handler,
+      cleanup: createCleanupHandler({ cleaner, logger: test.logger }),
     })
     await test.app.ready()
     await transcription.resume()
@@ -295,18 +365,26 @@ export function createVoiceHarness(context: {
       transcription,
       events,
       modelServer,
+      cloudServer,
+      providers,
+      keys,
       dataDir,
       storage,
       shutdown,
     }
   }
 
-  const launchAgain = async (previous: Awaited<ReturnType<typeof launch>>) => {
+  const launchAgain = async (
+    previous: Awaited<ReturnType<typeof launch>>,
+    options: LaunchOptions = {},
+  ) => {
     await previous.shutdown()
     return launch({
       dataDir: previous.dataDir,
       modelServer: previous.modelServer,
+      cloudServer: previous.cloudServer,
       sameUsers: true,
+      ...options,
     })
   }
 

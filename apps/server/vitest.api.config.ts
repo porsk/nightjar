@@ -19,6 +19,7 @@ export default defineConfig({
         'src/modules/recordings/*.ts',
         'src/modules/search/*.ts',
         'src/modules/transcription/*.ts',
+        'src/modules/transcription/cloud/*.ts',
         'src/events.ts',
         'src/jobs.ts',
         'src/worker.ts',

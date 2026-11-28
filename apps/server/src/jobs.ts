@@ -3,9 +3,15 @@ import type { Logger } from './logger.ts'
 
 export const transcribeQueue = 'transcribe'
 
+export const cleanupQueue = 'cloud-cleanup'
+
 /** A job that runs longer than this many seconds per second of audio, or this floor, counts as stuck. */
 const expiryPerAudioSecond = 5
-const minExpirySeconds = 600
+export const minExpirySeconds = 1800
+
+/** Seconds a job may run for a recording of this length. */
+export const expiryFor = (durationMs: number) =>
+  Math.max(minExpirySeconds, Math.ceil((durationMs / 1000) * expiryPerAudioSecond))
 
 export interface TranscribeJobData {
   userId: string
@@ -18,9 +24,14 @@ export interface TranscribeJobData {
 
 export type TranscribeJob = JobWithMetadata<TranscribeJobData>
 
+export const cleanupRetryLimit = 3
+
+export type CleanupJob = JobWithMetadata<Record<string, never>>
+
 export interface JobsOptions {
   retryLimit?: number
   retryDelaySeconds?: number
+  cleanupRetryDelaySeconds?: number
   pollingIntervalSeconds?: number
 }
 
@@ -43,6 +54,13 @@ export function createJobs(databaseUrl: string, logger: Logger, options: JobsOpt
         retryDelay: options.retryDelaySeconds ?? 30,
         expireInSeconds: 6 * 60 * 60,
       })
+      await boss.createQueue(cleanupQueue, {
+        policy: 'short',
+        retryLimit: cleanupRetryLimit,
+        retryDelay: options.cleanupRetryDelaySeconds ?? 60,
+        retryBackoff: true,
+        expireInSeconds: 15 * 60,
+      })
     },
 
     stop: () => boss.stop({ graceful: true, timeout: 10_000 }),
@@ -51,11 +69,13 @@ export function createJobs(databaseUrl: string, logger: Logger, options: JobsOpt
     enqueueTranscription: async (data: TranscribeJobData, durationMs: number) => {
       await boss.send(transcribeQueue, data, {
         singletonKey: data.recordingId,
-        expireInSeconds: Math.max(
-          minExpirySeconds,
-          Math.ceil((durationMs / 1000) * expiryPerAudioSecond),
-        ),
+        expireInSeconds: expiryFor(durationMs),
       })
+    },
+
+    /** Deletes copies left at cloud providers. The queue holds at most one waiting job. */
+    enqueueCloudCleanup: async () => {
+      await boss.send(cleanupQueue, {})
     },
 
     /** Jobs that are waiting to run, per queue. Read from the job table, so it is never behind. */

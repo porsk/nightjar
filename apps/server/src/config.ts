@@ -7,6 +7,10 @@ const configSchema = z.object({
   NIGHTJAR_WEB_DIR: z.string().min(1).optional(),
   NIGHTJAR_DATA_DIR: z.string().min(1).default('/data'),
   NIGHTJAR_TRANSCRIBER: z.enum(['sherpa', 'fake']).default('sherpa'),
+  NIGHTJAR_SECRET_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex characters')
+    .optional(),
   NIGHTJAR_TRUST_PROXY: z.coerce.number().int().min(0).max(10).default(0),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })

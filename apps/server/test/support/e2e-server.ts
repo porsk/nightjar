@@ -6,6 +6,7 @@ import { loadConfig } from '../../src/config.ts'
 import { createLogger } from '../../src/logger.ts'
 import { createFakeTranscriber } from '../../src/modules/transcription/fake-transcriber.ts'
 import { start } from '../../src/start.ts'
+import { startCloudServer } from './cloud-server.ts'
 import { startModelServer } from './model-server.ts'
 import { startPostgres } from './postgres.ts'
 
@@ -28,6 +29,8 @@ const logStream = new Writable({
 
 const modelServer = await startModelServer()
 modelServer.behaviour.slowMs = 30
+const cloudServer = await startCloudServer()
+writeFileSync(e2eServerFiles.cloudUrl, cloudServer.origin)
 
 await start({
   config,
@@ -35,6 +38,8 @@ await start({
   migrationsFolder: join(import.meta.dirname, '../../migrations'),
   exit: (code) => process.exit(code),
   models: modelServer.list,
+  providers: cloudServer.providers(),
+  cloud: { pollIntervalMs: 100, cleanupMinAgeMs: 0 },
   transcriber: createFakeTranscriber({ delayMs: 1500 }).factory,
   jobs: { pollingIntervalSeconds: 0.5, retryDelaySeconds: 1 },
 })

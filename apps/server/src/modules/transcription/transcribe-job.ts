@@ -1,4 +1,4 @@
-import type { RecordingStatus } from '@nightjar/shared/recordings'
+import type { FailureCode, RecordingStatus } from '@nightjar/shared/recordings'
 import { and, eq } from 'drizzle-orm'
 import { extname } from 'node:path'
 import { ffmpegFormatFor } from '../../audio/sniff.ts'
@@ -10,8 +10,11 @@ import type { TranscribeJob } from '../../jobs.ts'
 import type { Logger } from '../../logger.ts'
 import type { Metrics } from '../../metrics.ts'
 import type { Storage } from '../../storage.ts'
+import type { AudioExtension, CloudProvider } from './cloud/provider.ts'
+import { ProviderError } from './cloud/provider.ts'
+import { providerById } from './cloud/registry.ts'
 import { modelById, type ModelList } from './models.ts'
-import type { Transcriber, TranscriberFactory } from './transcriber.ts'
+import type { AudioFile, Transcriber, TranscriberFactory } from './transcriber.ts'
 
 interface Dependencies {
   database: Database
@@ -21,6 +24,7 @@ interface Dependencies {
   logger: Logger
   createTranscriber: TranscriberFactory
   models: ModelList
+  providers: readonly CloudProvider[]
   /** Tells whether more jobs are waiting, so the model can be released when none are. */
   hasQueuedJobs: () => Promise<boolean>
 }
@@ -28,6 +32,12 @@ interface Dependencies {
 type Outcome = 'completed' | 'skipped' | 'failed' | 'retried'
 
 const waiting: RecordingStatus[] = ['pending', 'transcribing']
+
+/** These do not get better by trying again, so the recording fails at once. */
+const permanent: FailureCode[] = ['api_key_invalid', 'quota_exceeded', 'audio_rejected']
+
+const failureOf = (error: unknown): FailureCode | null =>
+  error instanceof ProviderError ? error.code : null
 
 /**
  * Handles one transcription job. Safe to run twice: it only works on recordings that still wait for
@@ -41,6 +51,7 @@ export function createTranscribeHandler({
   logger,
   createTranscriber,
   models,
+  providers,
   hasQueuedJobs,
 }: Dependencies) {
   const { db } = database
@@ -70,6 +81,17 @@ export function createTranscribeHandler({
     if (transcriber && !(await hasQueuedJobs())) await dropModel()
   }
 
+  const fail = async (
+    recording: { id: string; userId: string; entryId: string },
+    failure: FailureCode | null,
+  ) => {
+    await db
+      .update(recordings)
+      .set({ replaceEdited: false, failure })
+      .where(eq(recordings.id, recording.id))
+    await setStatus(recording, 'failed')
+  }
+
   async function transcribe(job: TranscribeJob, log: Logger): Promise<Outcome> {
     const { recordingId, userId } = job.data
     const [recording] = await db
@@ -81,7 +103,7 @@ export function createTranscribeHandler({
     const [settings] = await db
       .select({
         enabled: instanceSettings.transcriptionEnabled,
-        activeModel: instanceSettings.activeModel,
+        activeEngine: instanceSettings.activeEngine,
       })
       .from(instanceSettings)
     if (!settings?.enabled) {
@@ -92,21 +114,31 @@ export function createTranscribeHandler({
       await setStatus(recording, 'skipped')
       return 'skipped'
     }
-    const model = modelById(models, settings.activeModel)
-    if (transcriber && transcriber.modelId !== model.id) await dropModel()
+    const engineId =
+      providerById(providers, settings.activeEngine)?.id ??
+      modelById(models, settings.activeEngine).id
+    if (transcriber && transcriber.modelId !== engineId) await dropModel()
 
     await setStatus(recording, 'transcribing')
     const wav = await storage.tempFile('wav')
     try {
-      await convertToWav(
-        storage.localPath(recording.filePath),
-        wav.path,
-        ffmpegFormatFor(extname(recording.filePath).slice(1)) ?? '',
-      )
-      transcriber ??= createTranscriber(model)
+      transcriber ??= createTranscriber(engineId)
+      const extension = extname(recording.filePath).slice(1) as AudioExtension
+      const audio: AudioFile = {
+        path: storage.localPath(recording.filePath),
+        extension,
+        durationMs: recording.durationMs,
+        recordingId,
+        userId,
+      }
+      if (transcriber.input === 'wav') {
+        await convertToWav(audio.path, wav.path, ffmpegFormatFor(extension) ?? '')
+        audio.path = wav.path
+        audio.extension = 'wav'
+      }
       const modelId = transcriber.modelId
       const startedAt = performance.now()
-      const result = await transcriber.transcribe(wav.path, recording.language)
+      const result = await transcriber.transcribe(audio, recording.language, job.signal)
       const seconds = (performance.now() - startedAt) / 1000
       if (recording.durationMs > 0) {
         metrics.transcriptionRtf
@@ -124,6 +156,7 @@ export function createTranscribeHandler({
             model: modelId,
             language: result.language,
             text: result.text,
+            transcribedAt: new Date(),
           })
           .onConflictDoUpdate({
             target: transcripts.recordingId,
@@ -131,13 +164,14 @@ export function createTranscribeHandler({
               model: modelId,
               language: result.language,
               text: result.text,
+              transcribedAt: new Date(),
               ...(replaceEdited ? { isUserEdited: false } : {}),
             },
             ...(replaceEdited ? {} : { setWhere: eq(transcripts.isUserEdited, false) }),
           })
         await tx
           .update(recordings)
-          .set({ status: 'done', replaceEdited: false })
+          .set({ status: 'done', replaceEdited: false, failure: null })
           .where(eq(recordings.id, recordingId))
       })
       await events.publishToUser(userId, {
@@ -148,24 +182,27 @@ export function createTranscribeHandler({
       })
       return 'completed'
     } catch (error) {
+      const failure = failureOf(error)
       const lastAttempt = job.retryCount >= job.retryLimit
       log.warn(
         {
           errorName: error instanceof Error ? error.name : 'unknown',
           unreadable: error instanceof UnreadableAudioError,
+          ...(failure ? { failure } : {}),
+          ...(error instanceof ProviderError && error.httpStatus !== undefined
+            ? { httpStatus: error.httpStatus }
+            : {}),
           attempt: job.retryCount + 1,
           lastAttempt,
         },
         'transcription failed',
       )
       await dropModel()
-      if (lastAttempt) {
-        await db
-          .update(recordings)
-          .set({ replaceEdited: false })
-          .where(eq(recordings.id, recording.id))
-        await setStatus(recording, 'failed')
+      if (failure && permanent.includes(failure)) {
+        await fail(recording, failure)
+        return 'failed'
       }
+      if (lastAttempt) await fail(recording, failure)
       throw error
     } finally {
       await wav.remove()

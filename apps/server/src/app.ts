@@ -17,6 +17,7 @@ import { registerEventRoutes } from './modules/events/routes.ts'
 import { registerRecordingRoutes } from './modules/recordings/routes.ts'
 import { registerSearchRoutes } from './modules/search/routes.ts'
 import { registerTranscriptionRoutes } from './modules/transcription/routes.ts'
+import type { CloudProvider } from './modules/transcription/cloud/provider.ts'
 import type { TranscriptionService } from './modules/transcription/service.ts'
 import type { Readiness } from './readiness.ts'
 import type { Storage } from './storage.ts'
@@ -29,6 +30,7 @@ export interface AppDependencies {
   storage: Storage
   events: Events
   transcription: TranscriptionService
+  providers: readonly CloudProvider[]
   /** Largest accepted audio upload in bytes. */
   maxUploadBytes?: number | undefined
   /** The current time. Tests pass a fixed clock. */
@@ -58,6 +60,7 @@ export async function buildApp({
   storage,
   events,
   transcription,
+  providers,
   maxUploadBytes,
   now,
   getAuth,
@@ -130,7 +133,7 @@ export async function buildApp({
     maxUploadBytes,
   })
   registerSearchRoutes(app, { database })
-  registerTranscriptionRoutes(app, { transcription })
+  registerTranscriptionRoutes(app, { transcription, providers })
   registerEventRoutes(app, { events })
 
   app.addHook('onResponse', async (request, reply) => {

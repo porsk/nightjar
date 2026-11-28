@@ -67,6 +67,7 @@ const toRecording = (row: RecordingRow, transcript: TranscriptRow | null | undef
     durationMs: row.durationMs,
     mimeType: row.mimeType,
     language: row.language,
+    failure: row.failure,
     createdAt: row.createdAt.toISOString(),
     transcript: transcript ? toTranscript(transcript) : null,
   })
@@ -288,7 +289,7 @@ export function registerRecordingRoutes(
     const status = await transcription.initialStatus()
     const [updated] = await db
       .update(recordings)
-      .set({ status })
+      .set({ status, failure: null })
       .where(eq(recordings.id, row.id))
       .returning()
     if (!updated) throw new AppError(404, 'recording_not_found')
@@ -316,7 +317,7 @@ export function registerRecordingRoutes(
     if (transcript?.isUserEdited && !replaceEdited) throw new AppError(409, 'transcript_edited')
     const [updated] = await db
       .update(recordings)
-      .set({ status: 'pending', replaceEdited })
+      .set({ status: 'pending', replaceEdited, failure: null })
       .where(
         and(eq(recordings.id, row.id), inArray(recordings.status, ['done', 'failed', 'skipped'])),
       )

@@ -94,12 +94,13 @@ export function createSherpaTranscriber(
 
   return {
     modelId: model.id,
-    transcribe: async (wavPath, language) => {
+    input: 'wav',
+    transcribe: async (audio, language) => {
       if (dead) throw new Error('the transcription process stopped')
       const id = nextId++
       const reply = await new Promise<SherpaReply>((resolve, reject) => {
         pending.set(id, { resolve, reject })
-        child.postMessage({ id, wavPath, language })
+        child.postMessage({ id, wavPath: audio.path, language })
       })
       if (!reply.ok) throw new Error('the model could not transcribe the audio')
       return {

@@ -44,3 +44,25 @@ describe('loadConfig', () => {
     expect(() => loadConfig({})).toThrow(/DATABASE_URL/)
   })
 })
+
+describe('010-cloud-transcription: NIGHTJAR_SECRET_KEY in the configuration', () => {
+  it('AC-12: accepts 64 hex characters, and rejects any other value without echoing it', () => {
+    const good = 'ab12'.repeat(16)
+    expect(loadConfig({ ...valid, NIGHTJAR_SECRET_KEY: good }).NIGHTJAR_SECRET_KEY).toBe(good)
+    expect(loadConfig(valid).NIGHTJAR_SECRET_KEY).toBeUndefined()
+    for (const bad of ['', 'short', 'zz12'.repeat(16), `${good}0`]) {
+      const error = (() => {
+        try {
+          loadConfig({ ...valid, NIGHTJAR_SECRET_KEY: bad })
+        } catch (caught) {
+          return caught
+        }
+        return undefined
+      })()
+      expect(error).toBeInstanceOf(ConfigError)
+      const message = (error as ConfigError).message
+      expect(message).toContain('NIGHTJAR_SECRET_KEY')
+      if (bad !== '') expect(message).not.toContain(bad)
+    }
+  })
+})
